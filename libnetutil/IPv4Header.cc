@@ -399,6 +399,14 @@ int IPv4Header::setRF(){
   return OP_SUCCESS;
 } /* End of setRF() */
 
+/** Set RF flag */
+int IPv4Header::setRF(bool val){
+  if(val)
+    return this->setRF();
+  else
+    return this->unsetRF();
+} /* End of setRF() */
+
 /** Unset RF flag */
 int IPv4Header::unsetRF(){
   h.ip_off = h.ip_off & ~(htons(IP_RF));
@@ -419,6 +427,15 @@ int IPv4Header::setMF(){
 } /* End of setMF() */
 
 
+/** Set MF flag */
+int IPv4Header::setMF(bool val){
+  if(val)
+    return this->setMF();
+  else
+    return this->unsetMF();
+} /* End of setMF() */
+
+
 /** Unset MF flag */
 int IPv4Header::unsetMF(){
   h.ip_off = h.ip_off & ~(htons(IP_MF));
@@ -436,6 +453,15 @@ bool IPv4Header::getMF() const {
 int IPv4Header::setDF(){
   h.ip_off |= htons(IP_DF);
   return OP_SUCCESS;
+} /* End of setDF() */
+
+
+/** Set DF flag */
+int IPv4Header::setDF(bool val){
+  if(val)
+    return this->setDF();
+  else
+    return this->unsetDF();
 } /* End of setDF() */
 
 

@@ -229,12 +229,15 @@ class IPv4Header : public NetworkLayerElement {
 
         /* Flags */
         int setRF();
+        int setRF(bool val);
         int unsetRF();
         bool getRF() const;
         int setDF();
+        int setDF(bool val);
         int unsetDF();
         bool getDF() const;
         int setMF();
+        int setMF(bool val);
         int unsetMF();
         bool getMF() const;
 

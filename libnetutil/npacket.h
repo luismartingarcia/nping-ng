@@ -152,6 +152,7 @@
 #include "FragmentHeader.h"
 #include "RoutingHeader.h"
 #include "PacketParser.h"
+#include "IPAddress.h"
 
 #endif	/* __NPACKET_H__ */
 
