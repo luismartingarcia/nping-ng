@@ -153,6 +153,7 @@
 #include "RoutingHeader.h"
 #include "PacketParser.h"
 #include "IPAddress.h"
+#include "MACAddress.h"
 
 #endif	/* __NPACKET_H__ */
 
