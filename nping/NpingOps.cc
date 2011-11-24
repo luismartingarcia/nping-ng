@@ -2746,10 +2746,16 @@ int NpingOps::setupTargetHosts(){
   const char *errmsg=NULL;
   TargetHost *newhost=NULL;
   NetworkInterface *newiface=NULL;
-  struct sockaddr_storage ss;
+  struct sockaddr_storage dst_ss;
+  struct sockaddr_storage src_ss;
   struct route_nfo route;
   IPAddress *auxaddr;
   bool iface_found=false;
+
+  /* Store the spoof address if we have it */
+  if(this->spoof_addr!=NULL){
+    this->spoof_addr->getAddress(&src_ss);
+  }
 
   /* Turn each target spec into an array of addresses */
   for(u32 i=0; i<this->target_specs.size(); i++){
@@ -2768,11 +2774,12 @@ int NpingOps::setupTargetHosts(){
    * packets to it. If we have, turn the address into a full TargetHost object
    * and store it in the list of targets */
   for(u32 i=0; i<this->target_addresses.size(); i++){
-    memset(&ss, 0, sizeof(struct sockaddr_storage));
+    memset(&dst_ss, 0, sizeof(struct sockaddr_storage));
     memset(&route, 0, sizeof(struct route_nfo));
-    this->target_addresses[i]->getAddress(&ss);
+    this->target_addresses[i]->getAddress(&dst_ss);
+
     /* Let's see if we can route packets to the current target. */
-    if(route_dst(&ss, &route, this->device_set ? this->device : NULL, NULL) == 1 ){  // TODO: implement spoofsrc
+    if(route_dst(&dst_ss, &route, this->device_set ? this->device : NULL, this->spoof_addr!=NULL ? &src_ss : NULL) == 1 ){  // TODO: implement spoofsrc
       /* Yes, we can! Extract the info returned by route_dst() and store it
        * in the target's class */
 
@@ -2781,9 +2788,13 @@ int NpingOps::setupTargetHosts(){
       newhost->setTargetAddress(this->target_addresses[i]);
 
       /* Source IP address */
-      auxaddr=new IPAddress();
-      auxaddr->setAddress(route.srcaddr);
-      newhost->setSourceAddress(auxaddr);
+      if(this->spoof_addr!=NULL){
+        newhost->setSourceAddress(this->spoof_addr);
+      }else{
+        auxaddr=new IPAddress();
+        auxaddr->setAddress(route.srcaddr);
+        newhost->setSourceAddress(auxaddr);
+      }
 
       /* Network distance */
       if(route.direct_connect!=0){
