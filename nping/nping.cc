@@ -214,7 +214,7 @@ int main(int argc, char *argv[] ){
   switch( o.getRole() ){
 
         case ROLE_NORMAL:
-            prob.start(o.target_hosts);
+            prob.start(o.target_hosts, o.interfaces);
             prob.cleanup();
         break;
 

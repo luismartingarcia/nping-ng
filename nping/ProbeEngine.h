@@ -114,11 +114,11 @@ class ProbeEngine  {
     ~ProbeEngine();
     void reset();
     int init_nsock();
-    int start(vector<TargetHost *> &Targets);
+    int start(vector<TargetHost *> &Targets, vector<NetworkInterface *> &Interfaces);
     int cleanup();
     nsock_pool getNsockPool();
 
-    static char *bpf_filter(vector<TargetHost *> &Targets);
+    static char *bpf_filter(vector<TargetHost *> &Targets, NetworkInterface *target_interface);
     int setup_sniffer(vector<NetworkInterface *> &ifacelist, vector<const char *>bpf_filters);
 
 }; /* End of class ProbeEngine */

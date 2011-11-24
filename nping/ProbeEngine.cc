@@ -202,11 +202,12 @@ int ProbeEngine::setup_sniffer(vector<NetworkInterface *> &ifacelist, vector<con
   * to schedule transmissions. The actual Tx and Rx is done inside the nsock
   * event handlers, here we just schedule them, take care of the timers,
   * set up pcap and the bpf filter, etc. */
-int ProbeEngine::start(vector<TargetHost *> &Targets){
+int ProbeEngine::start(vector<TargetHost *> &Targets, vector<NetworkInterface *> &Interfaces){
 
   bool probemode_done = false;
-  const char *bpf_filter = NULL;
+  const char *filter = NULL;
   struct timeval begin_time;
+  vector<const char *>bpf_filters;
 
   nping_print(DBG_1, "Starting Nping Probe Engine...");
 
@@ -214,12 +215,16 @@ int ProbeEngine::start(vector<TargetHost *> &Targets){
   gettimeofday(&begin_time, NULL);
   this->init_nsock();
 
-  /* Build the BPF filter */
-  bpf_filter = this->bpf_filter(Targets);
-  nping_print(DBG_2, "[ProbeEngine] Interface=%s BPF:%s", Targets[0]->interface(), bpf_filter);
+  /* Build a BPF filter for each interface */
+  for(u32 i=0; i<Interfaces.size(); i++){
+    filter = this->bpf_filter(Targets, Interfaces[i]);
+    assert(filter!=NULL);
+    bpf_filters.push_back(strdup(filter));
+    nping_print(DBG_2, "[ProbeEngine] Interface=%s BPF:%s", Interfaces[i]->getName(), filter);
+  }
 
   /* Set up the sniffer */
-
+  this->setup_sniffer(Interfaces, bpf_filters);
 
   /* Do the Probe Mode rounds */
   while (!probemode_done) {
@@ -259,7 +264,7 @@ int ProbeEngine::start(vector<TargetHost *> &Targets){
   * is done here already.
   * @warning Returned pointer is a statically allocated buffer that subsequent
   *  calls will overwrite. */
-char *ProbeEngine::bpf_filter(vector<TargetHost *> &Targets){
+char *ProbeEngine::bpf_filter(vector<TargetHost *> &Targets, NetworkInterface *target_interface){
   static char filterstring[2048];
   return filterstring;
 } /* End of getBPFFilterString() */
