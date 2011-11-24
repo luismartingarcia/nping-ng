@@ -174,16 +174,17 @@ int TargetHost::getNetworkDistance(){
 /* Stores the supplied interface information structure inside the object.
  * The information that the structure contains can later be accessed using
  * other helper methods. */
-int TargetHost::setInterfaceInfo(interface_info ifinfo){
-  this->iface=ifinfo;
+int TargetHost::setInterface(NetworkInterface *val){
+  assert(val!=NULL);
+  this->iface=val;
   return OP_SUCCESS;
-} /* End of setInterfaceInfo(); */
+} /* End of setInterface(); */
 
 
-/* Returns the name of a suitable interface to use to send packets to the
+/* Returns the  a suitable interface to be used when sending packets to the
  * target host. */
-const char *TargetHost::getInterface(){
-  return this->iface.devname;
+NetworkInterface *TargetHost::getInterface(){
+  return this->iface;
 } /* End of getInterface() */
 
 
