@@ -2259,6 +2259,19 @@ const char *spec_to_addresses(const char *target_expr, int af, vector<IPAddress 
           range_address->setAddress(currentaddr);
           addrlist.push_back(range_address);
     }
+
+  /* IPv6 */
+  }else{
+    /* For IPv6, only hostnames or single addresses are accepted */
+    base_address=new IPAddress();
+    if( base_address->setIPv6Address(hostexp) != OP_SUCCESS ){
+      delete base_address;
+      return "Failed to resolve the supplied IPv6 address.";
+    }else{
+      /* We got the host's IPv6 address! Now we insert it into the address list */
+      addrlist.push_back(base_address);
+      return NULL;
+    }
   }
   return NULL;
 } /* End of spec_to_addresses() */
