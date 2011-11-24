@@ -112,7 +112,7 @@ HeaderTemplate::~HeaderTemplate(){
  ******************************************************************************/
 
 IPv4HeaderTemplate::IPv4HeaderTemplate(){
-
+  this->reset();
 } /* End of IPv4HeaderTemplate constructor */
 
 
@@ -154,7 +154,7 @@ void IPv4HeaderTemplate::reset(){
  ******************************************************************************/
 
 TCPHeaderTemplate::TCPHeaderTemplate(){
-
+  this->reset();
 } /* End of TCPHeaderTemplate constructor */
 
 
