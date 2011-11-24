@@ -257,7 +257,7 @@ int ProbeEngine::start(vector<TargetHost *> &Targets, vector<NetworkInterface *>
 
       /* Determine when does the next packet transmission time start */
       gettimeofday(&now, NULL);
-      nping_print(DBG_2, "[%f] (%ld msecs delay)\n", (float)TIMEVAL_MSEC_SUBTRACT(now, start_time), o.getDelay());
+      nping_print(DBG_2, "[%f] (%ld msecs delay)", (float)TIMEVAL_MSEC_SUBTRACT(now, start_time), o.getDelay());
 
       /* The first time there is no inter-packet delay */
       TIMEVAL_MSEC_ADD(next_time, start_time, (r*total_ports + p)*o.getDelay() + o.getDelay() );
