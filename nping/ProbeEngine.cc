@@ -203,19 +203,19 @@ int ProbeEngine::setup_sniffer(vector<NetworkInterface *> &ifacelist, vector<con
   * event handlers, here we just schedule them, take care of the timers,
   * set up pcap and the bpf filter, etc. */
 int ProbeEngine::start(vector<TargetHost *> &Targets, vector<NetworkInterface *> &Interfaces){
-
-  bool probemode_done = false;
   const char *filter = NULL;
   vector<const char *>bpf_filters;
   PacketElement *pkt2send;
   struct timeval start_time, now, next_time;
   int wait_time=0;
-  u32 current_round=0;
+  u16 total_ports=0;
 
   nping_print(DBG_1, "Starting Nping Probe Engine...");
 
   /* Initialize Nsock */
   this->init_nsock();
+  o.getTargetPorts(&total_ports);
+  total_ports = (total_ports==0) ? 1 : total_ports;
 
   /* Build a BPF filter for each interface */
   for(u32 i=0; i<Interfaces.size(); i++){
@@ -231,38 +231,38 @@ int ProbeEngine::start(vector<TargetHost *> &Targets, vector<NetworkInterface *>
   /* Init the time counters */
   gettimeofday(&start_time, NULL);
 
-  /* Do the Probe Mode rounds */
-  while (!probemode_done) {
-    probemode_done = true; /* It will remain true only when all hosts are .done() */
+  /* Do the Probe Mode rounds! */
+  for(unsigned int r=0; r<o.getRounds(); r++){
 
-    /* Go through the list of hosts and ask them to schedule their probes */
-    for (unsigned int i = 0; i < Targets.size(); i++) {
+    for(unsigned int p=0; p<total_ports; p++){
 
-      /* If the host is not done yet, call schedule() to let it schedule
-       * new probes. */
-      if (!Targets[i]->done()) {
-        probemode_done = false;
-        pkt2send=Targets[i]->getNextPacket();
+      for(unsigned int t = 0; t < Targets.size(); t++){
+
+        pkt2send=Targets[t]->getNextPacket();
         /* Here, schedule transmission for right now. */
-        nping_print(DBG_2, "[ProbeEngine] Host #%u not done", i);
+        nping_print(DBG_2, "[ProbeEngine] Host #%u not done", t);
+
       }
+
+      /* Determine when does the next packet transmission time start */
+      gettimeofday(&now, NULL);
+      printf("[%f] (%d msecs delay)\n", (float)TIMEVAL_MSEC_SUBTRACT(now, start_time), o.getDelay());
+
+      /* The first time there is no inter-packet delay */
+      TIMEVAL_MSEC_ADD(next_time, start_time, (r*total_ports + p)*o.getDelay() + o.getDelay() );
+      if((wait_time=TIMEVAL_MSEC_SUBTRACT(next_time, now)) < 0){
+        nping_print(DBG_1, "Wait time < 0 ! (wait_time=%d)", wait_time);
+        wait_time=0;
+      }
+
+      /* Now schedule a dummy wait event so we don't schedule more packets
+       * transmission until the inter-packet delay has passed */
+      nsock_timer_create(nsp, interpacket_delay_wait_handler, wait_time, NULL);
+
+      /* Now wait until all events have been dispatched */
+      nsock_loop(this->nsp, -1);
+
     }
-
-    /* Determine when does the next packet transmission time start */
-    gettimeofday(&now, NULL);
-    printf("[%f] (%d msecs delay)\n", (float)TIMEVAL_MSEC_SUBTRACT(now, start_time), o.getDelay());
-    TIMEVAL_MSEC_ADD(next_time, start_time, current_round*o.getDelay());
-    if((wait_time=TIMEVAL_MSEC_SUBTRACT(next_time, now)) < 0)
-      wait_time=0;
-
-    /* Now schedule a dummy wait event so we don't schedule more packets
-     * transmission until the inter-packet delay has passed */
-    nsock_timer_create(nsp, interpacket_delay_wait_handler, wait_time, NULL);
-
-    /* Now wait until all events have been dispatched */
-    nsock_loop(this->nsp, -1);
-
-    current_round++;
   }
 
   /* Cleanup and return */
