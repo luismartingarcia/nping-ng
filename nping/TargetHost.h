@@ -121,6 +121,9 @@ class TargetHost{
     int net_distance;        /* If >=0, indicates how many hops away the target is    */
     NetworkInterface *iface; /* Info about the proper interface to reach target       */
 
+    IPv4Header *getIPv4Header(const char *next_proto);
+    TCPHeader *getTCPHeader();
+
   public:
     TargetHost();
     ~TargetHost();

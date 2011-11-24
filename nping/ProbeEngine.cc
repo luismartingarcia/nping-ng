@@ -407,10 +407,6 @@ int ProbeEngine::send_packet(TargetHost *tgt, PacketElement *pkt){
     nping_fatal(QT_3, "%s(): Unknown protocol", __func__);
   }
 
-
-
-
-
   gettimeofday(&now, NULL);
   nping_print(VB_0|NO_NEWLINE,"SENT (%.4fs) ", ((double)TIMEVAL_MSEC_SUBTRACT(now, this->start_time)) / 1000);
   pkt->print(stdout, 3);
