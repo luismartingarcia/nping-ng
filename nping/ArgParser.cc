@@ -745,6 +745,7 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
 /* PACKET PAYLOAD OPTIONS  ***************************************************/
     /* Hexadecimal payload specification */
     } else if (optcmp(long_options[option_index].name, "data") == 0 ){
+        o.setPayloadType(PL_HEX);
         u8 *tempbuff=NULL;
         size_t len=0;
         if( (tempbuff=parseBufferSpec(optarg, &len))==NULL) 
@@ -753,12 +754,10 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
             u8 *buff = (u8 *) safe_malloc(len);
             memcpy(buff, tempbuff, len);
             o.setPayloadBuffer(buff, len);
-            o.setPayloadType(PL_HEX);
         }
     /* Random payload */
     } else if (optcmp(long_options[option_index].name, "data-length") == 0 ){
-        if( o.issetPayloadType() != false )
-            nping_fatal(QT_3,"Only one type of payload may be selected.");
+        o.setPayloadType(PL_RAND);
         if( meansRandom(optarg) ){
             /* We do not generate more than Ethernet standard MTU */
             aux32 = 1 + get_random_u16() % (MAX_RANDOM_PAYLOAD-1);
@@ -769,7 +768,7 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
             nping_fatal(QT_3,"data-length must be a value between 0 and %d.", MAX_PAYLOAD_ALLOWED);
         if ( aux32 > MAX_RECOMMENDED_PAYLOAD )
             nping_print(QT_3, "WARNING: Payload exceeds maximum recommended payload (%d)", MAX_RECOMMENDED_PAYLOAD);
-        o.setPayloadType(PL_RAND);
+
         /* Allocate a buffer big enough to hold the desired payload */
         if( (auxbuff=(u8 *)safe_malloc(aux32)) == NULL )
              nping_fatal(QT_3,"Not enough memory to store payload.");

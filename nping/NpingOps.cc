@@ -875,16 +875,12 @@ bool NpingOps::issetIsRoot(){
  *  Payloads                                                                  *
  ******************************************************************************/
 
-/** Sets payload type. Supplied parameter must be one of: PL_RAND, PL_HEX or
- *  PL_FILE;
+/** Sets payload type. Supplied parameter must be one of: PL_NONE, PL_HEX,
+ * PL_RAND, PL_FILE or PL_STRING;
  *  @return OP_SUCCESS on success and OP_FAILURE in case of error.           */
 int NpingOps::setPayloadType(int t){
-  if( t!=PL_RAND && t!=PL_HEX && t!=PL_FILE && t!=PL_STRING){
-    nping_fatal(QT_3,"setPayloadType(): Invalid value supplied\n");
-    return OP_FAILURE;
-  }else{
-    payload_type=t;
-  }
+  assert(t==PL_RAND || t==PL_HEX || t==PL_FILE || t==PL_STRING || t==PL_NONE);
+  this->payload_type=t;
   this->payload_type_set=true;
   return OP_SUCCESS;
 } /* End of setPayloadType() */
@@ -892,14 +888,8 @@ int NpingOps::setPayloadType(int t){
 
 /** Returns value of attribute payload_type */
 int NpingOps::getPayloadType(){
-  return payload_type;
+  return this->payload_type;
 } /* End of getPayloadType() */
-
-
-/* Returns true if option has been set */
-bool NpingOps::issetPayloadType(){
-  return this->payload_type_set;
-} /* End of issetPayloadType() */
 
 
 /** Sets payload buffer pointer. Supplied pointer must be a free()able
@@ -925,22 +915,10 @@ u8 *NpingOps::getPayloadBuffer(){
 } /* End of getPayloadBuffer() */
 
 
-/* Returns true if option has been set */
-bool NpingOps::issetPayloadBuffer(){
-  return this->payload_buff_set;
-} /* End of issetPayloadBuffer() */
-
-
 /** Returns value of attribute payload_len */
 int NpingOps::getPayloadLen(){
   return this->payload_len;
 } /* End of getPayloadLen() */
-
-
-/* Returns true if option has been set */
-bool NpingOps::issetPayloadLen(){
-  return this->payload_len_set;
-} /* End of issetPayloadLen() */
 
 
 /******************************************************************************
@@ -1955,8 +1933,8 @@ if (this->havePcap()==false){
 
 /** TCP CONNECT RELATED PARAMETERS *********************************************/
   if(this->mode(DO_TCP_CONNECT)) {
-      if(this->issetPayloadBuffer())
-        nping_print(VB_0, "Warning: Payload supplied in TCP Connect mode. Payload will be ignored.");
+    if(this->getPayloadType()!=PL_NONE)
+      nping_print(VB_0, "Warning: Payload supplied in TCP Connect mode. Payload will be ignored.");
   }
 
  if( this->mode(DO_TCP_CONNECT) || this->mode(DO_UDP_UNPRIV) )

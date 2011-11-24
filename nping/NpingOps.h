@@ -449,12 +449,9 @@ class NpingOps {
     /* Payloads */
     int setPayloadType(int t);
     int getPayloadType();
-    bool issetPayloadType();
     int setPayloadBuffer(u8 *p, int len);
     u8 *getPayloadBuffer();
-    bool issetPayloadBuffer();
     int getPayloadLen();
-    bool issetPayloadLen();
 
     /* Roles */
     int setRole(int r);
