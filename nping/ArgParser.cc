@@ -254,6 +254,7 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
   {"df", no_argument, 0, 0},
   {"mf", no_argument, 0, 0},
   {"ttl", required_argument, 0, 0},
+  {"fragoff", required_argument, 0, 0},
   {"badsum-ip", no_argument, 0, 0},
   {"ip-options", required_argument, 0, 0},
   {"mtu", required_argument, 0, 0},
@@ -687,6 +688,15 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
        * "bsd" etc, so the default TTL for those systems is used. Check
        * http://members.cox.net/~ndav1/self_published/TTL_values.html
        * for more information */
+    /* Fragment offset */
+    } else if (optcmp(long_options[option_index].name, "fragoff") == 0 ){
+      if(parse_u16(optarg, &aux16)!=OP_SUCCESS){
+        nping_fatal(QT_3,"Fragment offset must be a number between 0 and 8191 (inclusive)");
+      }else if(aux16>8191){
+        nping_fatal(QT_3, "Fragment offset cannot exceed 8191.");
+      }else{
+        o.ip4.off.setConstant(aux16);
+      }
     /* Set up a bad IP checksum */
     } else if (optcmp(long_options[option_index].name, "badsum-ip") == 0 ){
         o.enableBadsumIP();
@@ -1163,11 +1173,13 @@ void ArgParser::printUsage(void){
 "  -S, --source-ip                  : Set source IP address.\n"
 "  --dest-ip <addr>                 : Set destination IP address (used as an \n"
 "                                     alternative to {target specification} ). \n"
-"  --tos <tos>                      : Set type of service field (8bits).\n"
+"  --tos <tos>                      : Set type of service field (8 bits).\n"
 "  --id  <id>                       : Set identification field (16 bits).\n"
 "  --df                             : Set Don't Fragment flag.\n"
 "  --mf                             : Set More Fragments flag.\n"
+"  --rf                             : Set the reserved flag.\n"
 "  --ttl <hops>                     : Set time to live [0-255].\n"
+"  --fragoff <offset>               : Set the fragment offset (13 bits)"
 "  --badsum-ip                      : Use a random invalid checksum. \n"
 "  --ip-options <S|R [route]|L [route]|T|U ...> : Set IP options\n"
 "  --ip-options <hex string>                    : Set IP options\n"
