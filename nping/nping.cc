@@ -267,7 +267,22 @@ int do_safe_checks(){
   * called. You probably want to place an exit() call at the end of your
   * testing code so Nping does not actually continue its normal execution path
   * but exit after your tests.  */
+
+#include "ProtoField.h"
 void test_stuff(){
+  ProtoField_u8 f;
+
+  f.setBehavior(FIELD_TYPE_INCREMENTAL);
+  f.setStartValue(255);
+  f.setIncrementValue(1);
+  f.setMaxIncrements(16);
+
+  for(int i=0; i<30; i++){
+      printf("[%03d] %u\n", i, f.getNextValue() );
+  }
+  exit(1);
+
+
   return;
 } /* End of test_stuff() */
 
