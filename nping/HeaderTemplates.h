@@ -92,8 +92,52 @@
 
 #include "ProtoField.h"
 
-class HeaderTemplate{
 
+
+/******************************************************************************
+ * DEFAULT PROTOCOL FIELD VALUES                                              *
+ ******************************************************************************/
+
+/* IPv4 */
+
+/* IPv6 */
+
+/* TCP */
+#define DEFAULT_TCP_TARGET_PORT 80      /* Default target port              */
+#define DEFAULT_TCP_ACKNOWLEDGMENT 0    /* Default ACK number               */
+#define DEFAULT_TCP_WINDOW_SIZE 1480    /* Default TCP Window size          */
+#define DEFAULT_TCP_OFFSET 5            /* Default offset (TCP header size) */
+#define DEFAULT_TCP_FLAGS 0x20          /* Default TCP Flags (SYN)          */
+#define DEFAULT_TCP_URGENT_POINTER 0    /* Default urgent pointer */
+
+/* UDP */
+
+/* ICMPv4 */
+
+/* ICMPv6 */
+
+class HeaderTemplate{
+  public:
+    HeaderTemplate();
+    ~HeaderTemplate();
+};
+
+
+class TCPHeaderTemplate : public HeaderTemplate{
+  public:
+    ProtoField_u16 sport;  /* Source port                 */
+    ProtoField_u16 dport;  /* Destination port            */
+    ProtoField_u32 seq;    /* Sequence number             */
+    ProtoField_u32 ack;    /* Acknowledgement number      */
+    ProtoField_u8 off;     /* Data offset                 */
+    ProtoField_u8 flags;   /* Flags                       */
+    ProtoField_u16 win;    /* Window size                 */
+    ProtoField_u16 csum;   /* Checksum                    */
+    ProtoField_u16 urp;    /* Urgent pointer              */
+
+    TCPHeaderTemplate();
+    ~TCPHeaderTemplate();
+    void reset();
 };
 
 

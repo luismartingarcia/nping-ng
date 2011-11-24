@@ -373,10 +373,11 @@
 #define DEFAULT_IPv6_TRAFFIC_CLASS 0x00 /**< Default IPv6 Traffic Class      */
 
 
-#define DEFAULT_TCP_TARGET_PORT 80      /**< Default TCP target port         */
-#define DEFAULT_UDP_TARGET_PORT 40125   /**< Default UDP target port         */
-#define DEFAULT_UDP_SOURCE_PORT 53      /**< Default UDP source port         */
-#define DEFAULT_TCP_WINDOW_SIZE 1480    /**< Default TCP Window size         */
+/* NOTE: default values for IP/TCP/UDP/ICMP etc have been moved to
+ *       HeaderTemplates.h */
+
+#define DEFAULT_UDP_TARGET_PORT 40125   /* Default UDP target port         */
+#define DEFAULT_UDP_SOURCE_PORT 53      /* Default UDP source port         */
 
 /**< MTU used when user just supplies option -f but no MTU value */
 #define DEFAULT_MTU_FOR_FRAGMENTATION 72   

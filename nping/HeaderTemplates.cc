@@ -86,3 +86,72 @@
  * included with Nmap.                                                     *
  *                                                                         *
  ***************************************************************************/
+
+#include "HeaderTemplates.h"
+
+
+/******************************************************************************
+ * GENERIC HeaderTemplate CLASS                                               *
+ ******************************************************************************/
+
+HeaderTemplate::HeaderTemplate(){
+
+} /* End of HeaderTemplate constructor */
+
+
+HeaderTemplate::~HeaderTemplate(){
+
+} /* End of HeaderTemplate destructor */
+
+
+/******************************************************************************
+ * TCPHeaderTemplate Class                                                    *
+ ******************************************************************************/
+
+TCPHeaderTemplate::TCPHeaderTemplate(){
+
+} /* End of TCPHeaderTemplate constructor */
+
+
+TCPHeaderTemplate::~TCPHeaderTemplate(){
+
+} /* End of TCPHeaderTemplate destructor */
+
+
+/* This method returns the object to its default state. The reset() method is
+ * very important because it initializes TCP header fields with default values
+ * that will affect the final packets that Nping produces. However, note that
+ * the values set here may be overridden by NpingOps if necessary (when the
+ * user supplies his own values or when we have special restrictions, like
+ * in Echo Client Mode, where the source port cannot be the same as the
+ * NEP port number in use */
+void TCPHeaderTemplate::reset(){
+
+  /* Source Port. We chose a constant random port number, higher  than 1024. */
+  this->sport.setBehavior(FIELD_TYPE_CONSTANT);
+  this->sport.setStartValue(1024 + (get_random_u16()%(65535-1024)));
+  /* Destination Port */
+  this->dport.setBehavior(FIELD_TYPE_CONSTANT);
+  this->dport.setStartValue(DEFAULT_TCP_TARGET_PORT);
+  /* Sequence number */
+  this->seq.setBehavior(FIELD_TYPE_INCREMENTAL);
+  this->seq.setStartValue( get_random_u32() );
+  /* Acknowledgement number */
+  this->ack.setBehavior(FIELD_TYPE_CONSTANT);
+  this->ack.setStartValue(DEFAULT_TCP_ACKNOWLEDGMENT);
+  /* Offset (TCP header length in 32-bit words) */
+  this->off.setBehavior(FIELD_TYPE_CONSTANT);
+  this->off.setStartValue(DEFAULT_TCP_OFFSET);
+  /* Flags */
+  this->flags.setBehavior(FIELD_TYPE_CONSTANT);
+  this->flags.setStartValue(DEFAULT_TCP_FLAGS);
+  /* Window size */
+  this->win.setBehavior(FIELD_TYPE_CONSTANT);
+  this->win.setStartValue(DEFAULT_TCP_WINDOW_SIZE);
+  /* Checksum */
+  // We don't initialize the checksum so is_set() returns false
+  /* Urgent pointer */
+  this->urp.setBehavior(FIELD_TYPE_CONSTANT);
+  this->urp.setStartValue(DEFAULT_TCP_URGENT_POINTER);
+
+} /* End of reset() */
