@@ -1,6 +1,6 @@
 
 /***************************************************************************
- * ProbeEngine.cc -- Probe Mode is nping's default working mode. Basically,*
+ * ProbeEngine.cc -- Probe Mode is Nping's default working mode. Basically,*
  * it involves sending the packets that the user requested at regular      *
  * intervals and capturing responses from the wire.                        *
  *                                                                         *
@@ -223,7 +223,7 @@ int ProbeEngine::start(vector<TargetHost *> &Targets, vector<NetworkInterface *>
     nping_print(DBG_2, "[ProbeEngine] Interface=%s BPF:%s", Interfaces[i]->getName(), filter);
   }
 
-  /* Set up the sniffer */
+  /* Set up the sniffer(s) */
   this->setup_sniffer(Interfaces, bpf_filters);
 
   /* Do the Probe Mode rounds */
@@ -233,7 +233,7 @@ int ProbeEngine::start(vector<TargetHost *> &Targets, vector<NetworkInterface *>
     /* Go through the list of hosts and ask them to schedule their probes */
     for (unsigned int i = 0; i < Targets.size(); i++) {
 
-      /* If the host is not done yet, call shedule() to let it schedule
+      /* If the host is not done yet, call schedule() to let it schedule
        * new probes. */
       if (!Targets[i]->done()) {
         probemode_done = false;
@@ -241,19 +241,13 @@ int ProbeEngine::start(vector<TargetHost *> &Targets, vector<NetworkInterface *>
         nping_print(DBG_2, "[ProbeEngine] Host #%u not done", i);
       }
     }
-
-    /* Handle scheduled events */
-    //global_netctl.handle_events();
-
   }
 
   /* Cleanup and return */
-
   nping_print(DBG_1, "Nping Probe Engine Finished.");
   return OP_SUCCESS;
 
 } /* End of start() */
-
 
 /** This function creates a BPF filter specification, suitable to be passed to
   * pcap_compile() or nsock_pcap_open(). It reads info from "NpingOps o" and
