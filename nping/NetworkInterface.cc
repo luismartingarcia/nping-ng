@@ -109,6 +109,7 @@ NetworkInterface::~NetworkInterface(){
 
 void NetworkInterface::reset(){
   memset(&(this->iface), 0, sizeof(struct interface_info));
+  this->associated_hosts=0;
 } /* End of reset() */
 
 
@@ -116,3 +117,20 @@ void NetworkInterface::reset(){
 const char *NetworkInterface::getName(){
   return this->iface.devname;
 } /* End of getName() */
+
+
+/* This provides a minor optimization for ProbeEngine. If we know how many
+ * hosts are associated with a given interface, we can easily decide if we
+ * can build a BPF filter that mentions host addresses explicitly or we
+ * have to build a generic filter and discard packets later. If we didn't have
+ * this variable, for every interface, we'd have to traverse the list of
+ * hosts, counting how many are there. */
+int NetworkInterface::addAssociatedHost(){
+  this->associated_hosts++;
+} /* End of addAssociatedHost() */
+
+
+/* Returns the number of TargetHosts associated with this interface. */
+u32 NetworkInterface::associatedHosts(){
+  return this->associated_hosts;
+} /* End of associatedHosts() */

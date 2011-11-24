@@ -98,7 +98,8 @@
 class NetworkInterface{
 
   private:
-    struct interface_info iface;
+    struct interface_info iface; /* Relevant interface information            */
+    u32 associated_hosts;        /* Number of TargetHost that use this iface  */
 
   public:
     NetworkInterface();
@@ -107,10 +108,9 @@ class NetworkInterface{
     void reset();
 
     const char *getName();
-
+    int addAssociatedHost();
+    u32 associatedHosts();
 };
-
-
 
 
 #endif /* __NETWORKINTERFACE_H__ */
