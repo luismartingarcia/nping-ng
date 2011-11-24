@@ -114,7 +114,7 @@
 #define DEFAULT_TCP_ACKNOWLEDGMENT 0    /* Default ACK number               */
 #define DEFAULT_TCP_WINDOW_SIZE 1480    /* Default TCP Window size          */
 #define DEFAULT_TCP_OFFSET 5            /* Default offset (TCP header size) */
-#define DEFAULT_TCP_FLAGS 0x20          /* Default TCP Flags (SYN)          */
+#define DEFAULT_TCP_FLAGS 0x02          /* Default TCP Flags (SYN)          */
 #define DEFAULT_TCP_URGENT_POINTER 0    /* Default urgent pointer */
 
 /* UDP */
