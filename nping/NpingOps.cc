@@ -155,7 +155,7 @@ NpingOps::NpingOps() {
     show_sent_pkts_set=false;
 
     /* Operation and Performance */
-    pcount=0;
+    pcount=DEFAULT_PACKET_COUNT;
     pcount_set=false;
 
     sendpref=0;
@@ -164,7 +164,7 @@ NpingOps::NpingOps() {
     send_eth=false;
     send_eth_set=false;
 
-    delay=0;
+    delay=DEFAULT_DELAY;
     delay_set=false;
 
     memset(device, 0, MAX_DEV_LEN);
@@ -1996,17 +1996,12 @@ if (this->havePcap()==false){
   }
 
 /** PACKET COUNT / ROUNDS ****************************************************/
-  if( !this->issetPacketCount() ){
-    /* If --traceroute is set, the packet count is higher */
-    if(this->mode(DO_TRACEROUTE))
-      this->setPacketCount(TRACEROUTE_PACKET_COUNT);
-    else
-      this->setPacketCount(DEFAULT_PACKET_COUNT);
+  /* If --traceroute is set but the users has not specified any custom packet
+   * count, set the packet count to something higher, so we reach hosts over
+   * the Internet. */
+  if( !this->issetPacketCount() && this->mode(DO_TRACEROUTE) ){
+    this->setPacketCount(TRACEROUTE_PACKET_COUNT);
   }
-
-/** INTERPACKET DELAY ********************************************************/
-  if( !this->issetDelay() )
-    this->setDelay( DEFAULT_DELAY );
 
 /** UDP UNPRIVILEGED MODE? ***************************************************/
   /* If user is NOT root and specified UDP mode, check if he did not specify
