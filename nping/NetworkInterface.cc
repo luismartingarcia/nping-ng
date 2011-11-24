@@ -127,6 +127,7 @@ const char *NetworkInterface::getName(){
  * hosts, counting how many are there. */
 int NetworkInterface::addAssociatedHost(){
   this->associated_hosts++;
+  return OP_SUCCESS;
 } /* End of addAssociatedHost() */
 
 
