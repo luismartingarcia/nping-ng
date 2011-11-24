@@ -249,16 +249,85 @@ int ProbeEngine::start(vector<TargetHost *> &Targets, vector<NetworkInterface *>
 
 } /* End of start() */
 
-/** This function creates a BPF filter specification, suitable to be passed to
-  * pcap_compile() or nsock_pcap_open(). It reads info from "NpingOps o" and
-  * creates the right BPF filter for the current operation mode. However, if
-  * user has supplied a custom BPF filter through option --bpf-filter, the
-  * same string stored in o.getBPFFilterSpec() is returned (so the caller
-  * should not even bother to check o.issetBPFFilterSpec() because that check
-  * is done here already.
-  * @warning Returned pointer is a statically allocated buffer that subsequent
-  *  calls will overwrite. */
+
+/* This function creates a BPF filter specification, suitable to be passed to
+ * pcap_compile() or nsock_pcap_open(). Note that @param target_interface
+ * determines which subset of @param Targets will be considered for the
+ * BPF filter. In other words, if we have some targets that use eth0 and a
+ * target that uses "lo", then if "target_interface" is "lo", only the right
+ * target host will be included in the filter. Same thing for "eth0", etc.
+ * If less than 20 targets are associated with the supplied interfacer,
+ * the filter contains an explicit list of target addresses. It looks similar
+ * to this:
+ *
+ * dst host fe80::250:56ff:fec0:1 and (src host fe80::20c:29ff:feb0:2316 or src host fe80::20c:29ff:fe9f:5bc2)
+ *
+ * When more than 20 targets are passed, a generic filter based on the source
+ * address is used. The returned filter looks something like:
+ *
+ * dst host fe80::250:56ff:fec0:1
+ *
+ * @warning Returned pointer is a statically allocated buffer that subsequent
+ *  calls will overwrite. */
 char *ProbeEngine::bpf_filter(vector<TargetHost *> &Targets, NetworkInterface *target_interface){
-  static char filterstring[2048];
-  return filterstring;
-} /* End of getBPFFilterString() */
+  static char pcap_filter[2048];
+  /* 20 IPv6 addresses is max (46 byte addy + 14 (" or src host ")) * 20 == 1200 */
+  char dst_hosts[1220];
+  int filterlen=0;
+  int len=0;
+  unsigned int targetno;
+  memset(pcap_filter, 0, sizeof(pcap_filter));
+  IPAddress *src_addr;
+  bool first=true;
+
+  /* If we have 20 or less targets, build a list of addresses so we can set
+   * an explicit BPF filter */
+  if (target_interface->associatedHosts() <= 20) {
+    /* Iterate over all targets so we can build the list of addresses we
+     * expect packets from */
+    for(targetno = 0; targetno < Targets.size(); targetno++) {
+      /* Only process hosts whose network interface matches target_interface */
+      if( strcmp(Targets[targetno]->getInterface()->getName(), target_interface->getName()) ){
+        continue;
+      }else if(first){
+        src_addr=Targets[targetno]->getSourceAddress();
+      }
+      len = Snprintf(dst_hosts + filterlen,
+                     sizeof(dst_hosts) - filterlen,
+                     "%ssrc host %s", (first)? "" : " or ",
+                     Targets[targetno]->getTargetAddress()->toString());
+      first=false;
+      if (len < 0 || len + filterlen >= (int) sizeof(dst_hosts))
+        nping_fatal(QT_3, "ran out of space in dst_hosts");
+      filterlen += len;
+    }
+    /* Now build the actual BPF filter, where we specify the address we expect
+     * the packets to be directed to (our address) and the address we expect
+     * the packets to come from */
+    if (len < 0 || len + filterlen >= (int) sizeof(dst_hosts))
+      nping_fatal(QT_3, "ran out of space in dst_hosts");
+    len = Snprintf(pcap_filter, sizeof(pcap_filter), "dst host %s and (%s)",
+                   src_addr->toString(), dst_hosts);
+  /* If we have too many targets to list every single IP address that we
+   * plan to send packets too, just set the filter with our own address, so
+   * we only capture packets destined to the source address we chose for the
+   * packets we sent. */
+  }else{
+    /* Find the first target that uses our interface so we can extract the source
+     * IP address */
+    for(targetno = 0; targetno < Targets.size(); targetno++) {
+      /* Only process hosts whose network interface matches target_interface */
+      if( strcmp(Targets[targetno]->getInterface()->getName(), target_interface->getName()) ){
+        continue;
+      }else{
+        src_addr=Targets[targetno]->getSourceAddress();
+        break;
+      }
+    }
+    len = Snprintf(pcap_filter, sizeof(pcap_filter), "dst host %s", src_addr->toString());
+  }
+  /* Make sure we haven't screwed up */
+  if (len < 0 || len >= (int) sizeof(pcap_filter))
+    nping_fatal(QT_3, "ran out of space in pcap filter");
+  return pcap_filter;
+} /* End of bpf_filter() */
