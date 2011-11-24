@@ -187,13 +187,8 @@ int ProtoField_u8::setDiscreteSet(u8 *set, u32 set_len){
 /* Sets a constant value for the field. Note that this method overwrites the
  * current field behavior, setting it to FIELD_TYPE_CONSTANT, */
 int ProtoField_u8::setConstant(u8 val){
-  this->start_value=val;
-  this->current_value=val;
-  this->discrete_set=NULL;
-  this->discrete_set_len=0;
-  this->current_set_element=0;
+  this->setStartValue(val);
   this->setBehavior(FIELD_TYPE_CONSTANT);
-  this->set=true;
   return OP_SUCCESS;
 } /* End of setConstant() */
 
@@ -291,13 +286,8 @@ int ProtoField_u16::setDiscreteSet(u16 *set, u32 set_len){
 /* Sets a constant value for the field. Note that this method overwrites the
  * current field behavior, setting it to FIELD_TYPE_CONSTANT, */
 int ProtoField_u16::setConstant(u16 val){
-  this->start_value=val;
-  this->current_value=val;
-  this->discrete_set=NULL;
-  this->discrete_set_len=0;
-  this->current_set_element=0;
+  this->setStartValue(val);
   this->setBehavior(FIELD_TYPE_CONSTANT);
-  this->set=true;
   return OP_SUCCESS;
 } /* End of setConstant() */
 
@@ -395,13 +385,8 @@ int ProtoField_u32::setDiscreteSet(u32 *set, u32 set_len){
 /* Sets a constant value for the field. Note that this method overwrites the
  * current field behavior, setting it to FIELD_TYPE_CONSTANT, */
 int ProtoField_u32::setConstant(u32 val){
-  this->start_value=val;
-  this->current_value=val;
-  this->discrete_set=NULL;
-  this->discrete_set_len=0;
-  this->current_set_element=0;
+  this->setStartValue(val);
   this->setBehavior(FIELD_TYPE_CONSTANT);
-  this->set=true;
   return OP_SUCCESS;
 } /* End of setConstant() */
 
@@ -500,13 +485,8 @@ int ProtoField_bool::setDiscreteSet(bool *set, u32 set_len){
 /* Sets a constant value for the field. Note that this method overwrites the
  * current field behavior, setting it to FIELD_TYPE_CONSTANT, */
 int ProtoField_bool::setConstant(bool val){
-  this->start_value=val;
-  this->current_value=val;
-  this->discrete_set=NULL;
-  this->discrete_set_len=0;
-  this->current_set_element=0;
+  this->setStartValue(val);
   this->setBehavior(FIELD_TYPE_CONSTANT);
-  this->set=true;
   return OP_SUCCESS;
 } /* End of setConstant() */
 
