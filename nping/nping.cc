@@ -132,7 +132,7 @@
 #include "EchoHeader.h"
 #include "EchoClient.h"
 #include "EchoServer.h"
-#include "ProbeMode.h"
+#include "ProbeEngine.h"
 #include "common.h"
 #include "dnet.h"
 #include "pcap.h"
@@ -161,7 +161,7 @@ int main(int argc, char *argv[] ){
   char tbuf[128];   /* Stores current time as a string */
   ArgParser a;      /* Command line argument parser    */
   unsigned long int i=0;
-  ProbeMode prob;
+  ProbeEngine prob;
   NpingTarget *t=NULL;
 
   /* Get current time */
@@ -213,7 +213,7 @@ int main(int argc, char *argv[] ){
   switch( o.getRole() ){
 
         case ROLE_NORMAL:
-            prob.start();
+            prob.start(o.targets.Targets);
             prob.cleanup();
         break;
 
