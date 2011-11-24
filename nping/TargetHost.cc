@@ -213,7 +213,7 @@ bool TargetHost::done(){
 } /* End of done() */
 
 
-int TargetHost::schedule(){
-  printf("schedule()\n");
-  return OP_SUCCESS;
-} /* End of schedule() */
+PacketElement *TargetHost::getNextPacket(){
+  printf("getNextPacket()\n");
+  return NULL;
+} /* End of getNextPacket() */
