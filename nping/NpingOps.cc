@@ -201,21 +201,6 @@ NpingOps::NpingOps() {
     family=AF_INET;
 
     /* IPv4 */
-    ttl=0;
-    ttl_set=false;
-
-    tos=0;
-    tos_set=false;
-
-    identification=0;
-    identification_set=false;
-
-    mf=false;
-    mf_set=false;
-
-    df=false;
-    df_set=false;
-
     mtu=0;
     mtu_set=false;
 
@@ -944,129 +929,6 @@ int NpingOps::getRole(){
 /******************************************************************************
  * Internet Protocol  Version 4                                               *
  ******************************************************************************/
-
-/** Sets IPv4 TTL / IPv6 hop limit. Supplied parameter must be an integer
- *  between 0 and 255 (included).
- *  @return OP_SUCCESS                                                       */
-int NpingOps::setTTL(u8 t){
-  this->ttl=t;
-  this->ttl_set=true;
-  return OP_SUCCESS;
-} /* End of setTTL() */
-
-
-/** Sets IPv4 TTL / IPv6 hop limit. This a wrapper for setTTL(). It is provided
- *  for consistency with IPv6 option setters.
- *  @return OP_SUCCESS on success and OP_FAILURE in case of error.           */
-int NpingOps::setHopLimit(u8 t){
-  return setTTL(t);
-} /* End of setHopLimit() */
-
-
-/** Returns value of attribute ttl */
-u8 NpingOps::getTTL(){
-  return ttl;
-} /* End of getTTL() */
-
-
-/** Returns value of attribute ttl */
-u8 NpingOps::getHopLimit(){
-  return getTTL();
-} /* End of getHopLimit() */
-
-
-/* Returns true if option has been set */
-bool NpingOps::issetTTL(){
-  return this->ttl_set;
-} /* End of issetTTL() */
-
-
-/* Returns true if option has been set */
-bool NpingOps::issetHopLimit(){
-  return issetTTL();
-} /* End of issetHopLimit() */
-
-
-/** Sets IP TOS. Supplied parameter must be 0<=n<=255
- *  @return OP_SUCCESS on success and OP_FAILURE in case of error.           */
-int NpingOps::setTOS(u8 val){
-  this->tos=val;
-  this->tos_set=true;
-  return OP_SUCCESS;
-} /* End of setTOS() */
-
-
-/** Returns value of attribute TOS */
-u8 NpingOps::getTOS(){
-  return this->tos;
-} /* End of getTOS() */
-
-
-/* Returns true if option has been set */
-bool NpingOps::issetTOS(){
-  return this->tos_set;
-} /* End of isset() */
-
-
-/** Sets IP Identification. Supplied parameter must be 0<=n<=255
- *  @return OP_SUCCESS on success and OP_FAILURE in case of error.           */
-int NpingOps::setIdentification(u16 val){
-  this->identification=val;
-  this->identification_set=true;
-  return OP_SUCCESS;
-} /* End of setIdentification() */
-
-
-/** Returns value of attribute Identification */
-u16 NpingOps::getIdentification(){
-  return this->identification;
-} /* End of getIdentification() */
-
-
-/* Returns true if option has been set */
-bool NpingOps::issetIdentification(){
-  return this->identification_set;
-} /* End of issetIdentification() */
-
-
-int NpingOps::setMF(){
-  this->mf = true;
-  this->mf_set=true;
-  return OP_SUCCESS;
-} /* End of setMF() */
-
-
-/* Get MF flag */
-bool NpingOps::getMF(){
-  return this->mf;
-} /* End of getMF() */
-
-
-/** Set DF flag */
-int NpingOps::setDF(){
-  this->df = true;
-  this->df_set=true;
-  return OP_SUCCESS;
-} /* End of setDF() */
-
-
-/** Get DF flag */
-bool NpingOps::getDF(){
-  return this->df;
-} /* End of getDF() */
-
-
-/* Returns true if option has been set */
-bool NpingOps::issetMF(){
-  return this->mf_set;
-} /* End of isset() */
-
-
-/* Returns true if option has been set */
-bool NpingOps::issetDF(){
-  return this->df_set;
-} /* End of isset() */
-
 
 /** Sets Maximum Transmission Unit length. Supplied parameter must be a positive
  *  integer and must be a multiple of 8.
@@ -1993,12 +1855,13 @@ if(this->source_ports!=NULL && this->mode(DO_TCP_CONNECT) && this->getPacketCoun
 /** Returns true if requested mode is a simple TCP connect probe mode */
 bool NpingOps::canRunUDPWithoutPrivileges(){
   if( this->issetBadsumIP() ||
-    this->issetTTL() ||
-    this->issetHopLimit() ||
-    this->issetTOS() ||
-    this->issetIdentification() ||
-    this->issetMF() ||
-    this->issetDF() ||
+    this->ip4.ttl.is_set() ||
+    //this->ip6.hlim.is_set() ||
+    this->ip4.tos.is_set() ||
+    this->ip4.id.is_set() ||
+    this->ip4.rf.is_set() ||
+    this->ip4.df.is_set() ||
+    this->ip4.mf.is_set() ||
     this->getSpoofAddress()!=NULL ||
     this->issetIPOptions() ||
     this->issetMTU() ||
@@ -2266,15 +2129,7 @@ int NpingOps::setDefaultHeaderValues(){
         this->ipv6_tclass=DEFAULT_IPv6_TRAFFIC_CLASS;
     if(!this->issetFlowLabel())
         this->ipv6_flowlabel=(get_random_u32() % 1048575);
-    if(!this->issetHopLimit() && !this->mode(DO_TRACEROUTE))
-        this->ttl=DEFAULT_IPv6_TTL;
   }else{ /* IPv4 */
-    if(!this->issetTOS())
-        this->tos=DEFAULT_IP_TOS;
-    if(!this->issetIdentification())
-        this->identification=get_random_u16();
-    if(!this->issetTTL() && !this->mode(DO_TRACEROUTE))
-        this->ttl=DEFAULT_IP_TTL;
 
   }
   if( this->mode(DO_TCP)){

@@ -366,8 +366,7 @@
  /** Milliseconds Nping waits for replies after all probes have been sent */
 #define DEFAULT_WAIT_AFTER_PROBES 1000 
 
-#define DEFAULT_IP_TTL 64               /**< Default IP Time To Live         */
-#define DEFAULT_IP_TOS 0                /**< Default IP Type of Service      */
+
 
 #define DEFAULT_IPv6_TTL 64             /**< Default IPv6 Hop Limit          */
 #define DEFAULT_IPv6_TRAFFIC_CLASS 0x00 /**< Default IPv6 Traffic Class      */

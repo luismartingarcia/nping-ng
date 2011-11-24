@@ -99,6 +99,13 @@
  ******************************************************************************/
 
 /* IPv4 */
+#define DEFAULT_IPv4_TTL 64             /* Default IPv4 Time To Live        */
+#define DEFAULT_IPv4_TOS 0              /* Default IPv4 Type of Service     */
+#define DEFAULT_IPv4_FRAG_OFFSET 0      /* Default IPv4 Fragment Offset     */
+#define DEFAULT_IPv4_FLAG_RF false      /* Default IPv4 Reserved flag       */
+#define DEFAULT_IPv4_FLAG_DF false      /* Default IPv4 Don't Fragment flag */
+#define DEFAULT_IPv4_FLAG_MF false      /* Default IPv4 More Fragments flag */
+
 
 /* IPv6 */
 
@@ -121,6 +128,24 @@ class HeaderTemplate{
     HeaderTemplate();
     ~HeaderTemplate();
 };
+
+
+class IPv4HeaderTemplate : public HeaderTemplate{
+  public:
+    ProtoField_u8 tos;    /* Type of Service             */
+    ProtoField_u16 id;    /* Identification              */
+    ProtoField_bool rf;   /* Reserved flag               */
+    ProtoField_bool df;   /* Don't Fragment flag         */
+    ProtoField_bool mf;   /* More Fragments flag         */
+    ProtoField_u16 off;   /* Fragment Offset             */
+    ProtoField_u8 ttl;    /* Time to Live                */
+    ProtoField_u8 nh;     /* Next Header                 */
+
+    IPv4HeaderTemplate();
+    ~IPv4HeaderTemplate();
+    void reset();
+};
+
 
 
 class TCPHeaderTemplate : public HeaderTemplate{

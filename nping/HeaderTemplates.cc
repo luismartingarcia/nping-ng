@@ -104,6 +104,51 @@ HeaderTemplate::~HeaderTemplate(){
 } /* End of HeaderTemplate destructor */
 
 
+
+
+
+/******************************************************************************
+ * IPv4PHeaderTemplate Class                                                    *
+ ******************************************************************************/
+
+IPv4HeaderTemplate::IPv4HeaderTemplate(){
+
+} /* End of IPv4HeaderTemplate constructor */
+
+
+IPv4HeaderTemplate::~IPv4HeaderTemplate(){
+
+} /* End of IPv4HeaderTemplate destructor */
+
+
+/* This method returns the object to its default state. The reset() method is
+ * very important because it initializes IPv4 header fields with default values
+ * that will affect the final packets that Nping produces. However, note that
+ * the values set here may be overridden by NpingOps if necessary (when the
+ * user supplies his own values or when we have special restrictions) */
+void IPv4HeaderTemplate::reset(){
+
+  /* Type of Service */
+  this->tos.setConstant(DEFAULT_IPv4_TOS);
+
+  /* Identification */
+  this->id.setBehavior(FIELD_TYPE_INCREMENTAL);
+  this->id.setStartValue(get_random_u16());
+
+  /* Flags */
+  this->rf.setConstant(DEFAULT_IPv4_FLAG_RF);
+  this->df.setConstant(DEFAULT_IPv4_FLAG_DF);
+  this->mf.setConstant(DEFAULT_IPv4_FLAG_MF);
+
+  /* Fragment Offset */
+  this->off.setConstant(DEFAULT_IPv4_FRAG_OFFSET);
+
+  /* Time To Live */
+  this->ttl.setConstant(DEFAULT_IPv4_TTL);
+
+  // this->nh.setConstant() The Next header is unset on purpose.
+} /* End of reset() */
+
 /******************************************************************************
  * TCPHeaderTemplate Class                                                    *
  ******************************************************************************/

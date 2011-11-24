@@ -250,6 +250,7 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
   {"dest-ip", required_argument, 0, 0},
   {"tos", required_argument, 0, 0},
   {"id", required_argument, 0, 0},
+  {"rf", no_argument, 0, 0},
   {"df", no_argument, 0, 0},
   {"mf", no_argument, 0, 0},
   {"ttl", required_argument, 0, 0},
@@ -643,45 +644,49 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
 /* IPv4 OPTIONS **************************************************************/
     /* Destination IP address. This is just another way to specify targets,
      * provided for consistency with the rest of the parameters. */
-    } else if (optcmp(long_options[option_index].name, "dest-ip") == 0 ){
+    }else if (optcmp(long_options[option_index].name, "dest-ip") == 0 ){
         o.addTargetSpec( strdup(optarg) );
     /* IP Type of service*/
-    } else if (optcmp(long_options[option_index].name, "tos") == 0 ){
-        if ( parse_u8(optarg, &aux8) == OP_SUCCESS ){
-            o.setTOS(aux8);
-        }else{
-            nping_fatal(QT_3,"TOS option must be a number between 0 and 255 (inclusive)");
-        }
+    }else if (optcmp(long_options[option_index].name, "tos") == 0 ){
+      if(o.ipv6()){
+        nping_fatal(QT_3, "Type of Service (--tos) can only be used in IPv4.");
+      }else if( parse_u8(optarg, &aux8)!=OP_SUCCESS){
+        nping_fatal(QT_3,"TOS option must be a number between 0 and 255 (inclusive)");
+      }else{
+        o.ip4.tos.setConstant(aux8);
+      }
     /* IP Identification field */
-    } else if (optcmp(long_options[option_index].name, "id") == 0 ){
-        if ( parse_u16(optarg, &aux16) == OP_SUCCESS ){
-            o.setIdentification(aux16);
-        }else{
-            nping_fatal(QT_3,"Identification must be a number between 0 and 65535 (inclusive)");
-        }
+    }else if (optcmp(long_options[option_index].name, "id") == 0 ){
+      if(o.ipv6()){
+        nping_fatal(QT_3, "Identification (--id) can only be used in IPv4.");
+      }else if ( parse_u16(optarg, &aux16)!=OP_SUCCESS){
+        nping_fatal(QT_3,"Identification must be a number between 0 and 65535 (inclusive)");
+      }else{
+        o.ip4.id.setConstant(aux16);
+      }
+    }else if (optcmp(long_options[option_index].name, "rf") == 0 ){
+      o.ip4.rf.setConstant(true);
     /* Don't fragment bit */
-    } else if (optcmp(long_options[option_index].name, "df") == 0 ){
-        o.setDF();
+    }else if (optcmp(long_options[option_index].name, "df") == 0 ){
+      o.ip4.df.setConstant(true);
     /* More fragments bit */
     } else if (optcmp(long_options[option_index].name, "mf") == 0 ){
-        o.setMF();
+      o.ip4.mf.setConstant(true);
     /* Time to live (hop-limit in IPv6) */
-    } else if (optcmp(long_options[option_index].name, "ttl") == 0  ||
-               optcmp(long_options[option_index].name, "hop-limit") == 0 ){
-               /* IPv6 TTL field is named "hop limit" but has exactly the same
-                * function as in IPv4 so handling of that option should be the
-                * same in both versions. */
-        if ( parse_u8(optarg, &aux8) == OP_SUCCESS ){
-            o.setTTL(aux8);
+    } else if (optcmp(long_options[option_index].name, "ttl") == 0  || optcmp(long_options[option_index].name, "hop-limit") == 0 ){
+      if (parse_u8(optarg, &aux8)!=OP_SUCCESS){
+        nping_fatal(QT_3,"TTL/Hop Limit must be a number between 0 and 255 (inclusive)");
+      }else{
+        if(o.ipv6()){
+          //o.ip6.hlim.setConstant(aux8); // TODO: Finish this!!
         }else{
-            nping_fatal(QT_3,"%s option must be a number between 0 and 255 (inclusive)",
-             optcmp(long_options[option_index].name, "ttl")==0 ? "TTL" : "Hop Limit"
-            );
+          o.ip4.ttl.setConstant(aux8);
         }
-        /* TODO: At some point we may want to let users specify TTLs like "linux",
-         * "bsd" etc, so the default TTL for those systems is used. Check
-         * http://members.cox.net/~ndav1/self_published/TTL_values.html
-         * for more information */
+      }
+      /* TODO: At some point we may want to let users specify TTLs like "linux",
+       * "bsd" etc, so the default TTL for those systems is used. Check
+       * http://members.cox.net/~ndav1/self_published/TTL_values.html
+       * for more information */
     /* Set up a bad IP checksum */
     } else if (optcmp(long_options[option_index].name, "badsum-ip") == 0 ){
         o.enableBadsumIP();
@@ -696,7 +701,7 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
          if( parse_ip_options(optarg, buffer, 128, &foo, &bar, errstr, sizeof(errstr)) < 0 )
             nping_fatal(QT_3, "Incorrect IP options specification.");
          /* If we get here it's safe to store the options */
-         o.setIPOptions( optarg );
+         o.setIPOptions(optarg);
     /* Maximum Transmission Unit */
     } else if (optcmp(long_options[option_index].name, "mtu") == 0 ){
         /* Special treatment for random here since the generated number must be n%8==0 */

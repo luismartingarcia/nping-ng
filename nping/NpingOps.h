@@ -249,23 +249,10 @@ class NpingOps {
     u8 family;                /* IP version to be used in all packets  */
 
     /* IPv4 */
-    u8 ttl;                   /* IPv4 TTL / IPv6 Hop limit             */
-    bool ttl_set;
-    u8 tos;                   /* Type of service                       */
-    bool tos_set;
-    u16 identification;       /* Identification field                  */
-    bool identification_set;
-    bool mf;                  /* More fragments flag                   */
-    bool mf_set;
-    bool df;                  /* Don't fragment flag                   */
-    bool df_set;
     u32 mtu;                  /* Custom MTU len (for IP fragmentation) */
     bool mtu_set;
     bool badsum_ip;           /* Generate invalid checksums in TCP/UDP */
     bool badsum_ip_set;
-
-
-
     char *ip_options;         /* IP Options                            */
     bool ip_options_set;
     IPAddress *spoof_addr;    /* Spoofed source IP address             */
@@ -361,6 +348,7 @@ class NpingOps {
     vector<TargetHost *> target_hosts;     /* List of Nping target hosts  */
     vector<NetworkInterface *> interfaces; /* List of relevant net ifaces */
     NpingStats stats;                      /* Global statistics           */
+    IPv4HeaderTemplate ip4;                /* Header field values for IPv4*/
     TCPHeaderTemplate tcp;                 /* Header field values for TCP */
 
   public:
