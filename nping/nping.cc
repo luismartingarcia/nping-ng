@@ -160,7 +160,7 @@ int main(int argc, char *argv[] ){
   time_t now;       /* Stores current time             */
   char tbuf[128];   /* Stores current time as a string */
   ArgParser a;      /* Command line argument parser    */
-  ProbeEngine prob;
+  ProbeEngine prob; /* Probe Mode Engine               ŝ*/
 
   /* Get current time */
   now = time(NULL);
