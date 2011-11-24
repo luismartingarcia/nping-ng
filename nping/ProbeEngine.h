@@ -124,10 +124,8 @@ class ProbeEngine  {
 }; /* End of class ProbeEngine */
 
 
-/* Handler wrappers */
-void nping_event_handler(nsock_pool nsp, nsock_event nse, void *arg);
-void tcpconnect_event_handler(nsock_pool nsp, nsock_event nse, void *arg);
-void udpunpriv_event_handler(nsock_pool nsp, nsock_event nse, void *arg);
-void delayed_output_handler(nsock_pool nsp, nsock_event nse, void *arg);
+/* Handlers and handler wrappers */
+void interpacket_delay_wait_handler(nsock_pool nsp, nsock_event nse, void *arg);
 
 #endif /* __PROBE_ENGINE_H__ */
+

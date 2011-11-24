@@ -206,13 +206,15 @@ int ProbeEngine::start(vector<TargetHost *> &Targets, vector<NetworkInterface *>
 
   bool probemode_done = false;
   const char *filter = NULL;
-  struct timeval begin_time;
   vector<const char *>bpf_filters;
+  PacketElement *pkt2send;
+  struct timeval start_time, now, next_time;
+  int wait_time=0;
+  u32 current_round=0;
 
   nping_print(DBG_1, "Starting Nping Probe Engine...");
 
-  /* Initialize variables, timers, etc. */
-  gettimeofday(&begin_time, NULL);
+  /* Initialize Nsock */
   this->init_nsock();
 
   /* Build a BPF filter for each interface */
@@ -226,6 +228,9 @@ int ProbeEngine::start(vector<TargetHost *> &Targets, vector<NetworkInterface *>
   /* Set up the sniffer(s) */
   this->setup_sniffer(Interfaces, bpf_filters);
 
+  /* Init the time counters */
+  gettimeofday(&start_time, NULL);
+
   /* Do the Probe Mode rounds */
   while (!probemode_done) {
     probemode_done = true; /* It will remain true only when all hosts are .done() */
@@ -237,10 +242,27 @@ int ProbeEngine::start(vector<TargetHost *> &Targets, vector<NetworkInterface *>
        * new probes. */
       if (!Targets[i]->done()) {
         probemode_done = false;
-        Targets[i]->schedule();
+        pkt2send=Targets[i]->getNextPacket();
+        /* Here, schedule transmission for right now. */
         nping_print(DBG_2, "[ProbeEngine] Host #%u not done", i);
       }
     }
+
+    /* Determine when does the next packet transmission time start */
+    gettimeofday(&now, NULL);
+    printf("[%f] (%d msecs delay)\n", (float)TIMEVAL_MSEC_SUBTRACT(now, start_time), o.getDelay());
+    TIMEVAL_MSEC_ADD(next_time, start_time, current_round*o.getDelay());
+    if((wait_time=TIMEVAL_MSEC_SUBTRACT(next_time, now)) < 0)
+      wait_time=0;
+
+    /* Now schedule a dummy wait event so we don't schedule more packets
+     * transmission until the inter-packet delay has passed */
+    nsock_timer_create(nsp, interpacket_delay_wait_handler, wait_time, NULL);
+
+    /* Now wait until all events have been dispatched */
+    nsock_loop(this->nsp, -1);
+
+    current_round++;
   }
 
   /* Cleanup and return */
@@ -331,3 +353,21 @@ char *ProbeEngine::bpf_filter(vector<TargetHost *> &Targets, NetworkInterface *t
     nping_fatal(QT_3, "ran out of space in pcap filter");
   return pcap_filter;
 } /* End of bpf_filter() */
+
+
+
+/******************************************************************************
+ * Nsock handlers and handler wrappers.                                       *
+ ******************************************************************************/
+
+
+/* This handler is a dummy handler used to keep the interpacket delay between
+ * packet schedule operations. When this handler is called by nsock, it means
+ * it's time for another round of packets. We just call nsock_loop_quit() so
+ * packet capture events don't make us miss the next round of probe
+ * transmissions */
+void interpacket_delay_wait_handler(nsock_pool nsp, nsock_event nse, void *arg){
+  nping_print(DBG_4, "%s()", __func__);
+  nsock_loop_quit(nsp);
+  return;
+} /* End of interpacket_delay_wait_handler() */
