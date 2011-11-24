@@ -111,6 +111,7 @@ void TargetHost::reset(){
   this->nxthop_mac=NULL;
   this->net_distance=DISTANCE_UNKONWN;
   this->iface=NULL;
+  this->tcp=NULL;
 } /* End of reset() */
 
 
@@ -187,6 +188,14 @@ int TargetHost::setInterface(NetworkInterface *val){
 NetworkInterface *TargetHost::getInterface(){
   return this->iface;
 } /* End of getInterface() */
+
+
+/* Associates the host with a TCP header template. */
+int TargetHost::setTCP(TCPHeaderTemplate *hdr){
+  assert(hdr!=NULL);
+  this->tcp=hdr;
+  return OP_SUCCESS;
+} /* End of setTCP() */
 
 
 bool TargetHost::done(){

@@ -95,6 +95,7 @@
 
 #include "nping.h"
 #include "NetworkInterface.h"
+#include "HeaderTemplates.h"
 
 /* The internal attribute net_distance may be tested for one of the following to
  * determine if we've discovered how far the target is. */
@@ -111,6 +112,8 @@ class TargetHost{
     MACAddress *target_mac;  /* Target's MAC. Valid only if tgt is directly connected */
     MACAddress *source_mac;  /* Source MAC address for frames sent to target          */
     MACAddress *nxthop_mac;  /* Destination MAC address for frames sent to target     */
+
+    TCPHeaderTemplate *tcp;  /* Header values for TCP                                 */
 
     int net_distance;        /* If >=0, indicates how many hops away the target is    */
     NetworkInterface *iface; /* Info about the proper interface to reach target       */
@@ -138,6 +141,9 @@ class TargetHost{
     /* Interface Information */
     int setInterface(NetworkInterface *val);
     NetworkInterface *getInterface();
+
+    /* Packet information */
+    int setTCP(TCPHeaderTemplate *hdr);
 
     void reset();
     bool done();
