@@ -2800,6 +2800,7 @@ int NpingOps::setupTargetHosts(){
       for(u32 k=0; k<this->interfaces.size(); k++){
         if( !strcmp(this->interfaces[k]->getName(), route.ii.devname) ){
           iface_found=true;
+          this->interfaces[k]->addAssociatedHost();
           newhost->setInterface(this->interfaces[k]);
           nping_print(DBG_4, "Same interface required. Reusing %s", route.ii.devname);
           break;
@@ -2809,6 +2810,7 @@ int NpingOps::setupTargetHosts(){
        * and store it in the interface vector. */
       if(iface_found==false){
         newiface=new NetworkInterface(route.ii);
+        newiface->addAssociatedHost();
         newhost->setInterface(newiface);
         this->interfaces.push_back(newiface);
         nping_print(DBG_4, "New interface required: %s", route.ii.devname);
