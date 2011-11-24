@@ -107,6 +107,7 @@ class ProbeEngine  {
     nsock_pool nsp;              /* Internal Nsock pool                     */
     bool nsock_init;             /* True if Nsock pool has been initialized */
     vector<nsock_iod> pcap_iods; /* List of Nsock Pcap descriptors.         */
+    struct timeval start_time;   /* Time at which the engine was started    */
 
   public:
 
@@ -120,6 +121,7 @@ class ProbeEngine  {
 
     static char *bpf_filter(vector<TargetHost *> &Targets, NetworkInterface *target_interface);
     int setup_sniffer(vector<NetworkInterface *> &ifacelist, vector<const char *>bpf_filters);
+    int send_packet(TargetHost *tgt, PacketElement *pkt);
 
 }; /* End of class ProbeEngine */
 

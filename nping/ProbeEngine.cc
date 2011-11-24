@@ -206,7 +206,7 @@ int ProbeEngine::start(vector<TargetHost *> &Targets, vector<NetworkInterface *>
   const char *filter = NULL;
   vector<const char *>bpf_filters;
   vector<PacketElement *> Packets;
-  struct timeval start_time, now, next_time;
+  struct timeval now, next_time;
   int wait_time=0;
   u16 total_ports=0;
 
@@ -229,7 +229,7 @@ int ProbeEngine::start(vector<TargetHost *> &Targets, vector<NetworkInterface *>
   this->setup_sniffer(Interfaces, bpf_filters);
 
   /* Init the time counters */
-  gettimeofday(&start_time, NULL);
+  gettimeofday(&this->start_time, NULL);
 
   /* Do the Probe Mode rounds! */
   for(unsigned int r=0; r<o.getRounds(); r++){
@@ -237,26 +237,25 @@ int ProbeEngine::start(vector<TargetHost *> &Targets, vector<NetworkInterface *>
     for(unsigned int p=0; p<total_ports; p++){
 
       for(unsigned int t = 0; t < Targets.size(); t++){
+
         /* Obtain a list of packets to send (each TargetHost adds whatever
          * packets it wants to send to the supplied vector) */
         Targets[t]->getNextPacketBatch(Packets);
-      }
 
-      /* Here, schedule the immediate transmission of all the packets
-       * provided by the TargetHosts. */
-      nping_print(DBG_2, "Starting transmission of %d packets", (int)Packets.size());
-      while(Packets.size()>0){
-         // call transmission_handler(Packets[0]);
-         /* Delete the packet we've just sent from the list so we don't send
-          * it again the next time */
-         Packets[0]->print(stdout, 3);
-         printf("\n");
-         Packets.erase(Packets.begin(), Packets.begin()+1);
+        /* Here, schedule the immediate transmission of all the packets
+         * provided by the TargetHosts. */
+        nping_print(DBG_2, "Starting transmission of %d packets", (int)Packets.size());
+        while(Packets.size()>0){
+            this->send_packet(Targets[t], Packets[0]);
+           /* Delete the packet we've just sent from the list so we don't send
+            * it again the next time */
+           Packets.erase(Packets.begin(), Packets.begin()+1);
+        }
+
       }
 
       /* Determine when does the next packet transmission time start */
       gettimeofday(&now, NULL);
-      nping_print(DBG_2, "[%f] (%ld msecs delay)", (float)TIMEVAL_MSEC_SUBTRACT(now, start_time), o.getDelay());
 
       /* The first time there is no inter-packet delay */
       TIMEVAL_MSEC_ADD(next_time, start_time, (r*total_ports + p)*o.getDelay() + o.getDelay() );
@@ -363,6 +362,17 @@ char *ProbeEngine::bpf_filter(vector<TargetHost *> &Targets, NetworkInterface *t
     nping_fatal(QT_3, "ran out of space in pcap filter");
   return pcap_filter;
 } /* End of bpf_filter() */
+
+
+
+int ProbeEngine::send_packet(TargetHost *tgt, PacketElement *pkt){
+  struct timeval now;
+  gettimeofday(&now, NULL);
+  nping_print(VB_0|NO_NEWLINE,"SENT (%.4fs) ", ((double)TIMEVAL_MSEC_SUBTRACT(now, this->start_time)) / 1000);
+  pkt->print(stdout, 3);
+  printf("\n");
+  return OP_SUCCESS;
+} /* End of send_packet() */
 
 
 
