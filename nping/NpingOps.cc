@@ -198,7 +198,11 @@ NpingOps::NpingOps() {
     role=0;
     role_set=false;
 
-    /* IP */
+
+    /* IP Protocol */
+    family=AF_INET;
+
+    /* IPv4 */
     ttl=0;
     ttl_set=false;
 
@@ -222,9 +226,6 @@ NpingOps::NpingOps() {
 
     badsum_ip=false;
     badsum_ip_set=false;
-
-    ipversion=0;
-    ipversion_set=false;
 
     ip_options=NULL;
     ip_options_set=false;
@@ -805,57 +806,31 @@ bool NpingOps::issetDisablePacketCapture(){
   return this->disable_packet_capture_set;
 } /* End of issetDisablePacketCapture() */
 
-/** Sets the IP version that will be used in all packets. Supplied parameter
- *  must be either IP_VERSION_4 or IP_VERSION_&.
- *  @return OP_SUCCESS on success and OP_FAILURE in case of error.           */
-int NpingOps::setIPVersion(u8 val){
-  if( val!=IP_VERSION_4 && val!=IP_VERSION_6 ){
-    nping_fatal(QT_3,"setIPVersion(): Invalid value supplied\n");
-    return OP_FAILURE;
-  }else{
-    this-> ipversion=val;
-  }
-  this->ipversion_set=true;
+
+/** Sets the IP address family that will be used in all packets. Supplied
+ * parameter must be either AF_INET or AF_INET6. */
+int NpingOps::setAddressFamily(int addrfamily){
+  assert(addrfamily==AF_INET || addrfamily==AF_INET6);
+  this->family=addrfamily;
   return OP_SUCCESS;
 } /* End of setIPVersion() */
 
 
-/** Returns value of attribute ipversion. */
-int NpingOps::getIPVersion(){
-  return ipversion;
-} /* End of getIPVersion() */
-
-
-/* Returns true if option has been set */
-bool NpingOps::issetIPVersion(){
-  return this->ipversion_set;
-} /* End of issetIPversion() */
-
-
 /* Returns true if we are using IPv4 */
 bool NpingOps::ipv4(){
-  if( this->getIPVersion() == IP_VERSION_4 )
-    return true;
-  else
-    return false;
+  return this->family==AF_INET;
 } /* End of ipv4() */
 
 
 /* Returns true if we are using IPv6 */
 bool NpingOps::ipv6(){
-  if( this->getIPVersion() == IP_VERSION_6 )
-    return true;
-  else
-    return false;
+  return this->family==AF_INET6;
 } /* End of ipv6() */
 
 
 /* Returns AF_INET or AF_INET6, depending on current configuration */
 int NpingOps::af(){
-  if( this->getIPVersion() == IP_VERSION_6 )
-    return AF_INET6;
-  else
-    return AF_INET;
+  return this->family;
 } /* End of af() */
 
 
@@ -1978,13 +1953,6 @@ if (this->havePcap()==false){
       nping_fatal(QT_3,"No echo server was specified.");
     }
   }
-
-
-/** IP VERSION ***************************************************************/
-  /* Default to IP version 4 */
-  if( !this->issetIPVersion() )
-    this->setIPVersion( IP_VERSION_4 );
-
 
 /** PROBE MODE SELECTION *****************************************************/
   /* Ensure that one probe mode is selected */

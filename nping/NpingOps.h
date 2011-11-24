@@ -246,6 +246,9 @@ class NpingOps {
     int role;                 /* Nping's role: normal|cliente|server.  */
     bool role_set;
 
+    /* IP Protocol */
+    u8 family;                /* IP version to be used in all packets  */
+
     /* IPv4 */
     u8 ttl;                   /* IPv4 TTL / IPv6 Hop limit             */
     bool ttl_set;
@@ -261,8 +264,9 @@ class NpingOps {
     bool mtu_set;
     bool badsum_ip;           /* Generate invalid checksums in TCP/UDP */
     bool badsum_ip_set;
-    u8 ipversion;             /* IP version to be used in all packets  */
-    bool ipversion_set;
+
+
+
     char *ip_options;         /* IP Options                            */
     bool ip_options_set;
     IPAddress *spoof_addr;    /* Spoofed source IP address             */
@@ -432,9 +436,7 @@ class NpingOps {
     bool disablePacketCapture();
     bool issetDisablePacketCapture();
 
-    int setIPVersion(u8 val);
-    int getIPVersion();
-    bool issetIPVersion();
+    int setAddressFamily(int addrfamily);
     bool ipv4();
     bool ipv6();
     int af();

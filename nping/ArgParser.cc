@@ -883,11 +883,11 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
 /* OPTIONS THAT CAN BE SPECIFIED AS A SINGLE CHARACTER ***********************/
 
     case '4': /* IPv4 */
-        o.setIPVersion(IP_VERSION_4);
+      o.setAddressFamily(AF_INET);
     break; /* case '4': */
 
     case '6': /* IPv6 */
-        o.setIPVersion(IP_VERSION_6);
+      o.setAddressFamily(AF_INET6);
     break; /* case '6': */
 
     case 'f': /* Fragment packets */
@@ -924,7 +924,7 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
 
     case 'S': /* Source/Spoof IP address */
         /* IPv6 */
-        if( o.getIPVersion() == IP_VERSION_6){
+        if( o.ipv6() ){
           /* Set random address */
           if( meansRandom(optarg) ){
             struct in6_addr ipv6addr;
