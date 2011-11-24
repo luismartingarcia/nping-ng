@@ -254,7 +254,6 @@ int ProbeEngine::start(vector<TargetHost *> &Targets, vector<NetworkInterface *>
          Packets.erase(Packets.begin(), Packets.begin()+1);
       }
 
-
       /* Determine when does the next packet transmission time start */
       gettimeofday(&now, NULL);
       nping_print(DBG_2, "[%f] (%ld msecs delay)", (float)TIMEVAL_MSEC_SUBTRACT(now, start_time), o.getDelay());
@@ -266,8 +265,8 @@ int ProbeEngine::start(vector<TargetHost *> &Targets, vector<NetworkInterface *>
         wait_time=0;
       }
 
-      /* Now schedule a dummy wait event so we don't schedule more packets
-       * transmission until the inter-packet delay has passed */
+      /* Now schedule a dummy wait event so we don't send more packets
+       * until the inter-packet delay has passed */
       nsock_timer_create(nsp, interpacket_delay_wait_handler, wait_time, NULL);
 
       /* Now wait until all events have been dispatched */
