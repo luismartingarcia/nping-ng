@@ -111,6 +111,9 @@ ProbeEngine::~ProbeEngine() {
 /** Sets every attribute to its default value- */
 void ProbeEngine::reset() {
   this->nsock_init=false;
+  memset(&start_time, 0, sizeof(struct timeval));
+  this->rawsd4=-1;
+  this->rawsd6=-1;
 } /* End of reset() */
 
 
@@ -224,6 +227,9 @@ int ProbeEngine::start(vector<TargetHost *> &Targets, vector<NetworkInterface *>
     bpf_filters.push_back(strdup(filter));
     nping_print(DBG_2, "[ProbeEngine] Interface=%s BPF:%s", Interfaces[i]->getName(), filter);
   }
+
+  /* Obtain raw socket TODO: This should be called only when working at the raw IP level, not with Ethernet frames */
+  this->rawsd4=socket(AF_INET, SOCK_RAW, IPPROTO_RAW);
 
   /* Set up the sniffer(s) */
   this->setup_sniffer(Interfaces, bpf_filters);
@@ -366,14 +372,45 @@ char *ProbeEngine::bpf_filter(vector<TargetHost *> &Targets, NetworkInterface *t
 
 
 int ProbeEngine::send_packet(TargetHost *tgt, PacketElement *pkt){
-  struct timeval now;
-  int sd=socket(AF_INET, SOCK_RAW, IPPROTO_RAW);
-  struct sockaddr_in s4;
-  u8 pktbuff[65535];
+  struct timeval now;      /* For current time                      */
+  eth_t *ethsd=NULL;       /* DNET Ethernet handler                 */
+  struct sockaddr_in s4;   /* Target IPv4 address                   */
+  struct sockaddr_in6 s6;  /* Target IPv6 address                   */
+  u8 pktbuff[65535];       /* Binary buffer for the outgoing packet */
   assert(tgt!=NULL && pkt!=NULL);
-  tgt->getTargetAddress()->getIPv4Address(&s4);
   pkt->dumpToBinaryBuffer(pktbuff, 65535);
-  send_ip_packet_sd(sd, &s4, pktbuff, pkt->getLen() );
+
+  /* Now decide whether the packet should be transmitted at the raw Ethernet
+   * level or at the IP level. TargetHosts are already aware of their needs
+   * so if the PacketElement that we got starts with an Ethernet frame,
+   * that means we have to inject and Ethernet frame. Otherwise we do raw IP. */
+  if(pkt->protocol_id()==HEADER_TYPE_ETHERNET){
+    /* Determine which interface we should use for the packet */
+    NetworkInterface *dev=tgt->getInterface();
+    assert(dev!=NULL);
+
+    /* Obtain an Ethernet handler from DNET */
+    if((ethsd=eth_open_cached(dev->getName()))==NULL)
+      nping_fatal(QT_3, "%s: Failed to open ethernet device (%s)", __func__, dev->getName());
+
+    /* Inject the packet into the wire */
+    if(eth_send(ethsd, pktbuff, pkt->getLen()) < pkt->getLen()){
+      nping_warning(QT_2, "Failed to send Ethernet frame through %s", dev->getName());
+      return OP_FAILURE;
+    }
+  }else if(pkt->protocol_id()==HEADER_TYPE_IPv4){
+    tgt->getTargetAddress()->getIPv4Address(&s4);
+    send_ip_packet_sd(this->rawsd4, &s4, pktbuff, pkt->getLen() );
+  }else if(pkt->protocol_id()==HEADER_TYPE_IPv6){
+
+  }else{
+    nping_fatal(QT_3, "%s(): Unknown protocol", __func__);
+  }
+
+
+
+
+
   gettimeofday(&now, NULL);
   nping_print(VB_0|NO_NEWLINE,"SENT (%.4fs) ", ((double)TIMEVAL_MSEC_SUBTRACT(now, this->start_time)) / 1000);
   pkt->print(stdout, 3);

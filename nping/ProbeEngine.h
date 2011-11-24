@@ -108,6 +108,8 @@ class ProbeEngine  {
     bool nsock_init;             /* True if Nsock pool has been initialized */
     vector<nsock_iod> pcap_iods; /* List of Nsock Pcap descriptors.         */
     struct timeval start_time;   /* Time at which the engine was started    */
+    int rawsd4;                  /* Raw socket descriptor for IPv4          */
+    int rawsd6;                  /* Raw socket descriptor for IPv6          */
 
   public:
 
