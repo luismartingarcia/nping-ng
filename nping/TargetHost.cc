@@ -222,6 +222,47 @@ bool TargetHost::done(){
  * so the actual transmission rate must be handled externally. This method
  * return OP_SUCCESS on success and OP_FAILURE in case of error. */
 int TargetHost::getNextPacketBatch(vector<PacketElement *> &Packets){
-  printf("getNextPacketBatch()\n");
-  return OP_SUCCESS;
+  IPv4Header *myip4=NULL;
+  TCPHeader *mytcp=NULL;
+  bool set_nexthdr=true;
+
+  if(this->ip4!=NULL){
+    myip4=new IPv4Header();
+    myip4->setSourceAddress(this->source_addr->getIPv4Address());
+    myip4->setDestinationAddress(this->target_addr->getIPv4Address());
+    myip4->setTOS(this->ip4->tos.getNextValue());
+    myip4->setIdentification(this->ip4->id.getNextValue());
+    myip4->setFragOffset(this->ip4->off.getNextValue());
+    myip4->setRF(this->ip4->rf.getNextValue());
+    myip4->setMF(this->ip4->mf.getNextValue());
+    myip4->setDF(this->ip4->df.getNextValue());
+    myip4->setTTL(this->ip4->ttl.getNextValue());
+    if(this->ip4->nh.is_set()){
+      set_nexthdr=false;
+      myip4->setNextProto(this->ip4->nh.getNextValue());
+    }else{
+      myip4->setNextProto("TCP");
+    }
+  }
+
+  if(this->tcp!=NULL){
+    mytcp=new TCPHeader();
+    mytcp->setSourcePort(this->tcp->sport.getNextValue());
+    mytcp->setDestinationPort(this->tcp->dport.getNextValue());
+    mytcp->setSeq(this->tcp->seq.getNextValue());
+    mytcp->setAck(this->tcp->ack.getNextValue());
+    mytcp->setOffset(this->tcp->off.getNextValue());
+    mytcp->setFlags(this->tcp->flags.getNextValue());
+    mytcp->setWindow(this->tcp->win.getNextValue());
+    printf("WIN=%d\n", mytcp->getWindow());
+    mytcp->setUrgPointer(this->tcp->urp.getNextValue());
+  }
+
+  myip4->setNextElement(mytcp);
+  myip4->setSum(); // TODO: Here handle IP and TCP badsums
+  mytcp->setSum();
+
+  Packets.push_back(myip4);
+
+    return OP_SUCCESS;
 } /* End of getNextPacketBatch() */

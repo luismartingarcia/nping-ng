@@ -245,8 +245,13 @@ int ProbeEngine::start(vector<TargetHost *> &Targets, vector<NetworkInterface *>
       /* Here, schedule the immediate transmission of all the packets
        * provided by the TargetHosts. */
       nping_print(DBG_2, "Starting transmission of %d packets", (int)Packets.size());
-      for(unsigned int pkt=0; pkt<Packets.size(); pkt++){
-         // call_transmission_handler_here()
+      while(Packets.size()>0){
+         // call transmission_handler(Packets[0]);
+         /* Delete the packet we've just sent from the list so we don't send
+          * it again the next time */
+         Packets[0]->print();
+         printf("\n");
+         Packets.erase(Packets.begin(), Packets.begin()+1);
       }
 
 
