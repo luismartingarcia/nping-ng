@@ -337,12 +337,15 @@ NpingOps::NpingOps() {
 
 /* Destructor */
 NpingOps::~NpingOps() {
- if (payload_buff!=NULL)
+  if(payload_buff!=NULL)
     free(payload_buff);
- if ( ip_options!=NULL )
+  if(ip_options!=NULL)
     free(ip_options);
- if ( target_ports!=NULL )
+  if(target_ports!=NULL)
     free(target_ports);
+  if(source_ports!=NULL)
+    free(source_ports);
+  /* TODO: Free elements from target_addresses, target_hosts, interfaces, etc. */
  return;
 } /* End of ~NpingOps() */
 
