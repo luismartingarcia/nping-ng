@@ -3148,7 +3148,7 @@ int NpingOps::echoPayload(bool value){
 int NpingOps::getTotalProbes(){
   int total_ports=0;
   this->getTargetPorts(&total_ports);
-  return this->getPacketCount() * total_ports * this->targets.Targets.size();
+  return this->getPacketCount() * total_ports * this->target_hosts.size();
 }
 
 
@@ -3226,6 +3226,7 @@ int NpingOps::setupTargetHosts(){
 
   return OP_SUCCESS;
 }/* End of setupTargetHosts() */
+
 
 u32 NpingOps::totalTargetHosts(){
   return this->target_hosts.size();
