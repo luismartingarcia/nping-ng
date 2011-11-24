@@ -367,6 +367,13 @@ char *ProbeEngine::bpf_filter(vector<TargetHost *> &Targets, NetworkInterface *t
 
 int ProbeEngine::send_packet(TargetHost *tgt, PacketElement *pkt){
   struct timeval now;
+  int sd=socket(AF_INET, SOCK_RAW, IPPROTO_RAW);
+  struct sockaddr_in s4;
+  u8 pktbuff[65535];
+  assert(tgt!=NULL && pkt!=NULL);
+  tgt->getTargetAddress()->getIPv4Address(&s4);
+  pkt->dumpToBinaryBuffer(pktbuff, 65535);
+  send_ip_packet_sd(sd, &s4, pktbuff, pkt->getLen() );
   gettimeofday(&now, NULL);
   nping_print(VB_0|NO_NEWLINE,"SENT (%.4fs) ", ((double)TIMEVAL_MSEC_SUBTRACT(now, this->start_time)) / 1000);
   pkt->print(stdout, 3);
