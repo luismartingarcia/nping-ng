@@ -254,7 +254,6 @@ int TargetHost::getNextPacketBatch(vector<PacketElement *> &Packets){
     mytcp->setOffset(this->tcp->off.getNextValue());
     mytcp->setFlags(this->tcp->flags.getNextValue());
     mytcp->setWindow(this->tcp->win.getNextValue());
-    printf("WIN=%d\n", mytcp->getWindow());
     mytcp->setUrgPointer(this->tcp->urp.getNextValue());
   }
 
