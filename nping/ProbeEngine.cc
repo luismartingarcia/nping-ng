@@ -228,9 +228,6 @@ int ProbeEngine::start(vector<TargetHost *> &Targets, vector<NetworkInterface *>
     nping_print(DBG_2, "[ProbeEngine] Interface=%s BPF:%s", Interfaces[i]->getName(), filter);
   }
 
-  /* Obtain raw socket TODO: This should be called only when working at the raw IP level, not with Ethernet frames */
-  this->rawsd4=socket(AF_INET, SOCK_RAW, IPPROTO_RAW);
-
   /* Set up the sniffer(s) */
   this->setup_sniffer(Interfaces, bpf_filters);
 
@@ -400,6 +397,12 @@ int ProbeEngine::send_packet(TargetHost *tgt, PacketElement *pkt){
     }
   }else if(pkt->protocol_id()==HEADER_TYPE_IPv4){
     tgt->getTargetAddress()->getIPv4Address(&s4);
+    /* First time this is called, we obtain a raw socket for IPv4 */
+    if(this->rawsd4<0){
+      if((this->rawsd4=socket(AF_INET, SOCK_RAW, IPPROTO_RAW))<0){
+        nping_fatal(QT_3, "%s(): Unable to obtain raw socket.", __func__);
+      }
+    }
     send_ip_packet_sd(this->rawsd4, &s4, pktbuff, pkt->getLen() );
   }else if(pkt->protocol_id()==HEADER_TYPE_IPv6){
 
