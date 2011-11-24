@@ -2558,32 +2558,32 @@ int NpingOps::setDefaultHeaderValues(){
   }
   switch( this->getMode() ){
     case TCP:
-        if(!this->issetTargetPorts()){
-            u16 *list = (u16 *)safe_zalloc( sizeof(u16) );
-            list[0]=DEFAULT_TCP_TARGET_PORT;
-            this->setTargetPorts(list, 1);
-        }
-        if(!this->issetSourcePort()){
-            /* Generate any source port higher than 1024 */
-            if(this->getRole()!=ROLE_CLIENT){
-                this->source_port=(1024 + ( get_random_u16()%(65535-1024) ));
-            }else{
-                /* For the echo client, avoid choosing the port used for the echo side channel */
-                while( (this->source_port=(1024 + ( get_random_u16()%(65535-1024) )))==this->echo_port );
-            }
-        }
-        if(!this->issetTCPSequence())
-            this->tcpseq=get_random_u32();
-        if(!this->issetTCPAck()){
-            if(this->getFlagTCP(FLAG_ACK))
-                this->tcpack=get_random_u32();
-            else
-                this->tcpack=0;
-        }
-        if(!this->issetTCPFlags())
-            this->setFlagTCP(FLAG_SYN);
-        if(!this->issetTCPWindow())
-            this->tcpwin=DEFAULT_TCP_WINDOW_SIZE;
+//        if(!this->issetTargetPorts()){
+//            u16 *list = (u16 *)safe_zalloc( sizeof(u16) );
+//            list[0]=DEFAULT_TCP_TARGET_PORT;
+//            this->setTargetPorts(list, 1);
+//        }
+//        if(!this->issetSourcePort()){
+//            /* Generate any source port higher than 1024 */
+//            if(this->getRole()!=ROLE_CLIENT){
+//                this->source_port=(1024 + ( get_random_u16()%(65535-1024) ));
+//            }else{
+//                /* For the echo client, avoid choosing the port used for the echo side channel */
+//                while( (this->source_port=(1024 + ( get_random_u16()%(65535-1024) )))==this->echo_port );
+//            }
+//        }
+//        if(!this->issetTCPSequence())
+//            this->tcpseq=get_random_u32();
+//        if(!this->issetTCPAck()){
+//            if(this->getFlagTCP(FLAG_ACK))
+//                this->tcpack=get_random_u32();
+//            else
+//                this->tcpack=0;
+//        }
+//        if(!this->issetTCPFlags())
+//            this->setFlagTCP(FLAG_SYN);
+//        if(!this->issetTCPWindow())
+//            this->tcpwin=DEFAULT_TCP_WINDOW_SIZE;
         /* @todo ADD urgent pointer handling here when it gets implemented */
     break;
 
@@ -2627,11 +2627,11 @@ int NpingOps::setDefaultHeaderValues(){
     break;
 
     case TCP_CONNECT:
-        if( !this->issetTargetPorts() ) {
-            u16 *list = (u16 *)safe_zalloc( sizeof(u16) );
-            list[0]=DEFAULT_TCP_TARGET_PORT;
-            this->setTargetPorts(list, 1);
-        }
+//        if( !this->issetTargetPorts() ) {
+//            u16 *list = (u16 *)safe_zalloc( sizeof(u16) );
+//            list[0]=DEFAULT_TCP_TARGET_PORT;
+//            this->setTargetPorts(list, 1);
+//        }
 
     default:
         return OP_FAILURE;
