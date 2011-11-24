@@ -110,6 +110,7 @@ void TargetHost::reset(){
   this->source_mac=NULL;
   this->nxthop_mac=NULL;
   this->net_distance=DISTANCE_UNKONWN;
+  this->iface=NULL;
 } /* End of reset() */
 
 
