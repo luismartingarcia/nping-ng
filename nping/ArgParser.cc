@@ -1190,10 +1190,7 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
   while ( (next_spec= grab_next_host_spec(NULL, false, argc, argv)) != NULL ){
     o.addTargetSpec(next_spec);
   }
-  /* TODO: Add the IPAddress vector to NpingOps so we can build NpingTargets
-   * from it later */
-
- return OP_SUCCESS;
+  return OP_SUCCESS;
 } /* End of parseArguments() */
 
 
