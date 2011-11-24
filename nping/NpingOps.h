@@ -353,10 +353,10 @@ class NpingOps {
    private:
     vector<IPAddress *> target_addresses;  /* List of target IP addresses */
     vector<const char *> target_specs;     /* List of user target specs   */
-    vector<NetworkInterface *> interfaces; /* List of relevant net ifaces */
 
   public:
     vector<TargetHost *> target_hosts;     /* List of Nping target hosts  */
+    vector<NetworkInterface *> interfaces; /* List of relevant net ifaces */
     NpingStats stats;                      /* Global statistics           */
 
   public:
