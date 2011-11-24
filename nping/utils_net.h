@@ -135,6 +135,10 @@
 #define NETINET_IP_H
 #endif
 
+#include "nping.h"
+#include <vector>
+using std::vector;
+
 int atoIP(const char *hostname, struct in_addr *dst);
 int atoIP(const char *hostname, struct sockaddr_storage *ss, int family);
 char *IPtoa(u32 i);
@@ -214,5 +218,7 @@ typedef struct sys_route6 {
 
 int getroutes_inet6_linux(route6_t *rtbuf, int max_routes);
 route6_t *route_dst_ipv6_linux(const struct sockaddr_storage *const dst);
+
+const char *spec_to_addresses(const char *target_expr, int af, vector<IPAddress *> &addrlist, u8 max_netmask);
 
 #endif /* UTILS_NET_H */

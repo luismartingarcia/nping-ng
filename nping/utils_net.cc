@@ -2002,3 +2002,263 @@ route6_t *route_dst_ipv6_linux(const struct sockaddr_storage *const dst){
   }
   return &theone;
 } /* End of route_dst_ipv6() */
+
+
+
+/* Turns the supplied target specification into an array of IPAddress objects.
+ * Addresses generated from the spec will be added to the supplied addrlist
+ * vector using the push_back() operation. Note that it is OK to pass
+ * and address vector that already contains some elements. New elements will
+ * be appended.
+ *
+ * Returns NULL on success and a printable error message string in case of
+ * failure. */
+const char *spec_to_addresses(const char *target_expr, int af, vector<IPAddress *> &addrlist, u8 max_netmask) {
+  int start=0, end=0;
+  char *r=NULL, *s=NULL, *target_net=NULL;
+  char *addy[5]={NULL, NULL, NULL, NULL, NULL};
+  char hostexp[512];
+  IPAddress *base_address=NULL;
+  IPAddress *range_address=NULL;
+  u32 netmask=0;
+  struct in_addr startaddr;
+  struct in_addr currentaddr;
+  struct in_addr endaddr;
+  bool netmask_spec=false;
+  bool range_spec=false;
+  bool hostname_spec=false;
+  bool has_hyphen=false;
+  bool has_star=false;
+  bool has_comma=false;
+  u8 addresses[4][256];
+  u16 total_octets[4];
+  u8 address[4];
+
+  /* Safe initializations */
+  strncpy(hostexp, target_expr, 512);
+  memset(addresses[0], 0, 256);
+  memset(addresses[1], 0, 256);
+  memset(addresses[2], 0, 256);
+  memset(addresses[3], 0, 256);
+  memset(address, 0, 4);
+  memset(total_octets, 0, 4);
+
+  if (af == AF_INET) {
+
+    /* No colons allowed in IPv4 addresses */
+    if( strchr(hostexp, ':') )
+      return "Invalid host expression: colons only allowed in IPv6 addresses, and then you need the -6 switch";
+
+    /* Initialize things properly before we begin */
+    addy[0] = addy[1] = addy[2] = addy[3] = addy[4] = NULL;
+    addy[0] = r = hostexp;
+
+    /* First we break the expression up into the four parts of the IP address
+     * plus the optional '/mask' */
+    target_net = hostexp;
+
+    /* Determine if we have a range spec, a netmask spec, a regular address or
+     * a hostname */
+    for(int i=0; i<(int)strlen(hostexp); i++){
+      if(hostexp[i]=='/')
+        netmask_spec=true;
+      if(hostexp[i]=='-' || hostexp[i]=='*' || hostexp[i]==','){
+        range_spec=true;
+        if(hostexp[i]=='-')
+          has_hyphen=true;
+        if(hostexp[i]=='*')
+          has_star=true;
+        if(hostexp[i]==',')
+            has_comma=true;
+      }
+      if(isalpha((int) hostexp[i]) )
+        hostname_spec=true;
+    }
+
+    /* If we only found a hyphen but what we have is a hostname, it does not
+     * mean that user specified an address range (hostnames may include
+     * hyphens). */
+    if(hostname_spec==true && has_hyphen==true && has_comma==false && has_star==false)
+      range_spec=false;
+
+    /* Make sure we don't have weird combinations */
+    if(netmask_spec==true && range_spec==true)
+      return "Invalid address expression. Ranges and subnet masks cannot be used together.";
+    if(hostname_spec==true && range_spec==true)
+      return "Invalid hostname expression. Characters '*' or ',' cannot be used for a hostname.";
+
+    /* If we have a netmask, let's determine how many bits are for the network part */
+    if(netmask_spec){
+      /* Find the slash */
+      s = strchr(hostexp, '/');
+      assert(s!=NULL);
+
+      char *tail=NULL;
+      long netmask_length=0;
+      *s = '\0';  /* Make sure target_net is terminated before the /## */
+      s++;        /* Point s at the netmask */
+      if (s=='\0' || !isdigit(*s)) {
+        return "Illegal netmask value. IPv4 netmasks must be specified as an integer.";
+      }else{
+        netmask_length = strtol(s, (char**) &tail, 10);
+        if (*tail != '\0' || tail == s || netmask_length < 0 || netmask_length > 32) {
+          return "Illegal netmask value. IPv4 netmasks must be in the range /0 - /32.";
+        }else if(netmask_length<max_netmask){
+          return "Supplied netmask is too large.";
+        }else{
+          netmask = (u32) netmask_length;
+        }
+      }
+    }else{ /* No netmask was supplied so just assume a /32 (only one host) */
+      netmask = 32;
+    }
+
+    /* If we have a hostname, resolve it's address */
+    if(hostname_spec==true){
+      base_address=new IPAddress();
+      if( base_address->setIPv4Address(target_net) != OP_SUCCESS ){
+        delete base_address;
+        return "Failed to resolve the supplied hostname.";
+      }else if(netmask==32){
+        /* We got the host's address! Now we insert it into the address list */
+        addrlist.push_back(base_address);
+        return NULL;
+      }
+    /* If what we have is a range, we need to convert it into a list of addresses */
+    }else if(range_spec==true){
+
+      /* First, divide the range spec into four groups, one for each octet */
+      int i=0;
+      while(*r) {
+        /* We set the end of a group when we find the dot */
+        if (*r == '.' && ++i < 4) {
+          *r = '\0';
+          addy[i] = r + 1;
+        }
+        else if (*r != '*' && *r != ',' && *r != '-' && !isdigit((int)*r))
+          return "Invalid character in host specification.";
+        r++;
+      }
+      if (i != 3)
+        return "Invalid target host specification.";
+
+      /* Now process each group. First determine which values are into
+       * the range for each octet. */
+      for(i=0; i < 4; i++) {
+        int j=0;
+        do {
+          s = strchr(addy[i],',');
+          if (s) *s = '\0';
+          if (*addy[i] == '*') { start = 0; end = 255; }
+          else if (*addy[i] == '-') {
+            start = 0;
+            if (*(addy[i] + 1) == '\0') end = 255;
+            else end = atoi(addy[i]+ 1);
+          }
+          else {
+            start = end = atoi(addy[i]);
+            if ((r = strchr(addy[i],'-')) && *(r+1) ) end = atoi(r + 1);
+            else if (r && !*(r+1)) end = 255;
+          }
+
+          /* Error checking */
+          if (start < 0 || start > end || start > 255 || end > 255)
+            return "Invalid range specification. Ranges for each octet must be in the range [0,255].";
+          if (j + (end - start) > 255)
+            return "Invalid range specification.";
+
+          /* Everything went well, let's store the range */
+          for(int k=start; k <= end; k++){
+            addresses[i][k] = 1;
+            total_octets[i]++;
+          }
+          if (s!=NULL)
+            addy[i] = s + 1;
+        } while (s);
+      }
+
+      /* Check that we don't have too many addresses */
+      if(total_octets[0]==256 && total_octets[1]==256 && total_octets[2]==256 && total_octets[3]==256 && max_netmask>0)
+        return "Supplied range covers the whole address space. Too many addresses.";
+      u32 total_addresses= total_octets[0] * total_octets[1] * total_octets[2] * total_octets[3];
+      if(total_addresses > pow(2, 32-max_netmask) )
+        return "The supplied range contains too many addresses.";
+
+      /* Now form all possible combinations and turn them into an array of
+       * IP addresses. */
+      for(int octet1=0; octet1<256; octet1++){
+        if(addresses[0][octet1]==0)
+          continue;
+        for(int octet2=0; octet2<256; octet2++){
+          if(addresses[1][octet2]==0)
+            continue;
+          for(int octet3=0; octet3<256; octet3++){
+            if(addresses[2][octet3]==0)
+              continue;
+            for(int octet4=0; octet4<256; octet4++){
+              if(addresses[3][octet4]==0)
+                continue;
+
+              /* If we get here it means that the value of octet1, octet2,
+               * octet3 and octet4 form an actual address that belongs to
+               * the specified range. So here we just pack those octets into
+               * a proper IP address that we can insert to the IP address
+               * vector */
+              address[0]=(u8)octet1;
+              address[1]=(u8)octet2;
+              address[2]=(u8)octet3;
+              address[3]=(u8)octet4;
+              currentaddr.s_addr= *((u32 *)address); /* In big endian already */
+              range_address=new IPAddress();
+              range_address->setAddress(currentaddr);
+              addrlist.push_back(range_address);
+              //printf("[$] %d.%d.%d.%d\n", octet1, octet2, octet3, octet4);
+            }
+          }
+        }
+      }
+      return NULL;
+
+    /* Otherwise we have a nice IP address that we also need to store. */
+    }else{
+      if( IPAddress::str2in_addr(target_net, &startaddr) != OP_SUCCESS ){
+        return "Invalid IPv4 address supplied.";
+      }else{
+        base_address=new IPAddress();
+        base_address->setAddress(startaddr);
+        if(netmask==32){
+          addrlist.push_back(base_address);
+          return NULL;
+        }
+      }
+    }
+
+    /* If we get here it means that we have the base address but we need to
+     * expand it because we got a netmask spec from the caller. At this
+     * point, no address has been inserted in the address list but base_address
+     * contains the right address needed to compute the whole range. First
+     * thing we do is determine the first and last address of the range.*/
+    if(netmask!=0){
+      startaddr=base_address->getIPv4Address();
+      unsigned long longtmp = ntohl(startaddr.s_addr);
+      startaddr.s_addr =  htonl( longtmp & (unsigned long) (0 - (1<<(32 - netmask))) );
+      endaddr.s_addr = htonl( longtmp | (unsigned long)  ((1<<(32 - netmask)) - 1) );
+    }else{
+      /* The above calculations don't work for a /0 netmask, though at first
+       * glance it appears that they would. */
+      startaddr.s_addr = 0;
+      endaddr.s_addr = 0xffffffff;
+    }
+    /* Do the actual expansion. We instantiate a new IPAddress object for
+     * every address in the range. */
+    for( currentaddr.s_addr=startaddr.s_addr;
+         ntohl(currentaddr.s_addr) <= ntohl(endaddr.s_addr);
+         currentaddr.s_addr = htonl( ntohl(currentaddr.s_addr)+1 )
+        ){
+          range_address=new IPAddress();
+          range_address->setAddress(currentaddr);
+          addrlist.push_back(range_address);
+    }
+  }
+  return NULL;
+} /* End of spec_to_addresses() */
