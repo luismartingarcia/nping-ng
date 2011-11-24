@@ -104,9 +104,9 @@ using namespace std;
 class ProbeEngine  {
 
   private:
-    nsock_pool nsp;        /* Internal Nsock pool                     */
-    bool nsock_init;       /* True if Nsock pool has been initialized */
-    nsock_iod pcap_nsi;    /* Nsock Pcap descriptor.                  */
+    nsock_pool nsp;              /* Internal Nsock pool                     */
+    bool nsock_init;             /* True if Nsock pool has been initialized */
+    vector<nsock_iod> pcap_iods; /* List of Nsock Pcap descriptors.         */
 
   public:
 
@@ -119,7 +119,7 @@ class ProbeEngine  {
     nsock_pool getNsockPool();
 
     static char *bpf_filter(vector<TargetHost *> &Targets);
-    int setup_sniffer(const char *iface, const char *bpf_filter);
+    int setup_sniffer(vector<NetworkInterface *> &ifacelist, const char *bpf_filter);
 
 }; /* End of class ProbeEngine */
 

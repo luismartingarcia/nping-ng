@@ -157,33 +157,40 @@ nsock_pool ProbeEngine::getNsockPool(){
 
 
 
-/* This method gets the probe engien ready for packet capture. Basically it
+/* This method gets the probe engine ready for packet capture. Basically it
  * obtains a pcap descriptor from nsock and sets an appropriate BPF filter. */
-int ProbeEngine::setup_sniffer(const char *iface, const char *bpf_filter) {
+int ProbeEngine::setup_sniffer(vector<NetworkInterface *> &ifacelist, const char *bpf_filter) {
   char *errmsg = NULL;
   char pcapdev[128];
+  nsock_iod my_pcap_iod;
 
-#ifdef WIN32
-  /* Nmap normally uses device names obtained through dnet for interfaces, but
-     Pcap has its own naming system.  So the conversion is done here */
-  if (!DnetName2PcapName(iface, pcapdev, sizeof(pcapdev))) {
-    /* Oh crap -- couldn't find the corresponding dev apparently.  Let's just go
-       with what we have then ... */
-    Strncpy(pcapdev, iface, sizeof(pcapdev));
+  for(u32 i; i<ifacelist.size(); i++){
+
+    /* Get a new descriptor from Nsock and associate it with the interface name
+     * it belongs to. */
+    my_pcap_iod=nsi_new(this->nsp, (void *)ifacelist[i]->getName());
+
+    /* Do some magic to make pcap names work in Windows. Nping may use device
+     * names obtained through dnet, but WinPcap has its own naming system, so
+     * the conversion is done here*/
+    #ifdef WIN32
+      if (!DnetName2PcapName(ifacelist[i]->getName(), pcapdev, sizeof(pcapdev))) {
+        /* Couldn't find the corresponding dev. We'll try with the one we have */
+        Strncpy(pcapdev, ifacelist[i]->getName(), sizeof(pcapdev));
+      }
+    #else
+      Strncpy(pcapdev, ifacelist[i]->getName(), sizeof(pcapdev));
+    #endif
+
+    /* Obtain the pcap descriptor */
+    if ((errmsg = nsock_pcap_open(this->nsp, my_pcap_iod, pcapdev, 8192, o.getSpoofAddress() ? 1 : 0, bpf_filter)) != NULL)
+      nping_fatal(QT_3, "Error opening capture device %s --> %s\n", pcapdev, errmsg);
+
+    /* Add the IOD for the current interface to the list of pcap IODs */
+    this->pcap_iods.push_back(my_pcap_iod);
   }
-#else
-  Strncpy(pcapdev, iface, sizeof(pcapdev));
-#endif
-
-  /* Obtain a pcap descriptor */
-  if ((errmsg = nsock_pcap_open(this->nsp, this->pcap_nsi, pcapdev, 8192, 0, bpf_filter)) != NULL)
-    fatal("Error opening capture device %s --> %s\n", pcapdev, errmsg);
-
-  /* Store the pcap NSI inside the pool so we can retrieve it inside a callback */
-  nsp_setud(this->nsp, (void *)&(this->pcap_nsi));
-
   return OP_SUCCESS;
-}
+} /* End of setup_sniffer() */
 
 
 /** This function handles regular ping mode. Basically it handles both
@@ -199,7 +206,7 @@ int ProbeEngine::start(vector<TargetHost *> &Targets){
   const char *bpf_filter = NULL;
   struct timeval begin_time;
 
-  nping_print(DBG_1, "Starting Nping Probe Engine...\n");
+  nping_print(DBG_1, "Starting Nping Probe Engine...");
 
   /* Initialize variables, timers, etc. */
   gettimeofday(&begin_time, NULL);
@@ -207,7 +214,7 @@ int ProbeEngine::start(vector<TargetHost *> &Targets){
 
   /* Build the BPF filter */
   bpf_filter = this->bpf_filter(Targets);
-  nping_print(DBG_2, "[ProbeEngine] Interface=%s BPF:%s\n", Targets[0]->interface(), bpf_filter);
+  nping_print(DBG_2, "[ProbeEngine] Interface=%s BPF:%s", Targets[0]->interface(), bpf_filter);
 
   /* Set up the sniffer */
 
@@ -224,7 +231,7 @@ int ProbeEngine::start(vector<TargetHost *> &Targets){
       if (!Targets[i]->done()) {
         probemode_done = false;
         Targets[i]->schedule();
-        nping_print(DBG_2, "[ProbeEngine] Host #%u not done\n", i);
+        nping_print(DBG_2, "[ProbeEngine] Host #%u not done", i);
       }
     }
 
@@ -235,7 +242,7 @@ int ProbeEngine::start(vector<TargetHost *> &Targets){
 
   /* Cleanup and return */
 
-  nping_print(DBG_1, "Nping Probe Engine Finished.\n");
+  nping_print(DBG_1, "Nping Probe Engine Finished.");
   return OP_SUCCESS;
 
 } /* End of start() */
