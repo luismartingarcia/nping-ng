@@ -195,9 +195,7 @@ NpingOps::NpingOps() {
     payload_len_set=false;
 
     /* Roles */
-    role=0;
-    role_set=false;
-
+    role=ROLE_NORMAL;
 
     /* IP Protocol */
     family=AF_INET;
@@ -946,63 +944,20 @@ bool NpingOps::issetPayloadLen(){
  *  Roles (normal, client, server... )                                        *
  ******************************************************************************/
 
-/** Sets nping's role. Supplied argument must be one of: ROLE_NORMAL,
+/** Sets Nping's role. Supplied argument must be one of: ROLE_NORMAL,
  *  ROLE_CLIENT or ROLE_SERVER.
- *  @return previous value of attribute "role" or OP_FAILURE in case of error.
- *  */
+ *  @return OP_SUCCESS on success or OP_FAILURE in case of error.  */
 int NpingOps::setRole(int r){
-  int prev = this->role;
-  if (r!=ROLE_NORMAL && r!=ROLE_CLIENT && r!=ROLE_SERVER){
-    nping_warning(QT_2,"setRoleClient(): Invalid role supplied");
-    return OP_FAILURE;
-  }
-  else
-    this->role=r;
-  this->role_set=true;
-  return prev;
+  assert(r==ROLE_NORMAL || r==ROLE_CLIENT || r==ROLE_SERVER);
+  this->role=r;
+  return OP_SUCCESS;
 } /* End of setRole() */
 
 
-/** Sets nping's role to ROLE_CLIENT.
- *  @return previous value of attribute "role".  */
-int NpingOps::setRoleClient(){
-  int prev = this->role;
-  this->role=ROLE_CLIENT;
-  this->role_set=true;
-  return prev;
-} /* End of setRoleClient() */
-
-
-/** Sets nping's role to ROLE_SERVER.
- *  @return previous value of attribute "role". */
-int NpingOps::setRoleServer(){
-  int prev = this->role;
-  this->role=ROLE_SERVER;
-  this->role_set=true;
-  return prev;
-} /* End of setRoleServer() */
-
-
-/** Sets nping's role to ROLE_NORMAL.
- *  @return previous value of attribute "role". */
-int NpingOps::setRoleNormal(){
-  int prev = this->role;
-  this->role=ROLE_NORMAL;
-  this->role_set=true;
-  return prev;
-} /* End of setRoleNormal() */
-
-/* Returns nping role. */
+/* Returns Nping's current role. */
 int NpingOps::getRole(){
   return this->role;
 } /* End of getRole() */
-
-
-/* Returns true if option has been set */
-bool NpingOps::issetRole(){
-  return this->role_set;
-} /* End of issetRole() */
-
 
 
 /******************************************************************************
@@ -1936,13 +1891,6 @@ if (this->havePcap()==false){
         nping_fatal(QT_3, "Nping requires libpcap to be installed on your system.");
     #endif
 }
-
-
-/** ROLE SELECTION ***********************************************************/
-  /* Ensure that at least one role is selected */
-  if ( !this->issetRole() ) {
-      this->setRoleNormal();
-  }
 
 /** TARGET SPECIFICATION *****************************************************/
   /* Check if user entered at least one target spec */

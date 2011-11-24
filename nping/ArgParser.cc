@@ -797,11 +797,11 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
 /* ECHO C/S MODE OPTIONS *****************************************************/
     } else if (optcmp(long_options[option_index].name, "echo-client")==0 ||
                optcmp(long_options[option_index].name, "ec")==0 ){
-        o.setRoleClient();
+        o.setRole(ROLE_CLIENT);
         o.setEchoPassphrase(optarg);
     } else if (optcmp(long_options[option_index].name, "echo-server")==0 ||
                optcmp(long_options[option_index].name, "es")==0 ){
-        o.setRoleServer();
+        o.setRole(ROLE_SERVER);
         o.setEchoPassphrase(optarg);
     } else if (optcmp(long_options[option_index].name, "echo-port")==0 ||
                optcmp(long_options[option_index].name, "ep")==0 ){

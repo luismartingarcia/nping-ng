@@ -244,7 +244,6 @@ class NpingOps {
 
     /* Roles */
     int role;                 /* Nping's role: normal|cliente|server.  */
-    bool role_set;
 
     /* IP Protocol */
     u8 family;                /* IP version to be used in all packets  */
