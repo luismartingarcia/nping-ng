@@ -119,7 +119,7 @@ class ProbeEngine  {
     nsock_pool getNsockPool();
 
     static char *bpf_filter(vector<TargetHost *> &Targets);
-    int setup_sniffer(vector<NetworkInterface *> &ifacelist, const char *bpf_filter);
+    int setup_sniffer(vector<NetworkInterface *> &ifacelist, vector<const char *>bpf_filters);
 
 }; /* End of class ProbeEngine */
 

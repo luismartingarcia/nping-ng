@@ -159,10 +159,12 @@ nsock_pool ProbeEngine::getNsockPool(){
 
 /* This method gets the probe engine ready for packet capture. Basically it
  * obtains a pcap descriptor from nsock and sets an appropriate BPF filter. */
-int ProbeEngine::setup_sniffer(vector<NetworkInterface *> &ifacelist, const char *bpf_filter) {
+int ProbeEngine::setup_sniffer(vector<NetworkInterface *> &ifacelist, vector<const char *>bpf_filters){
   char *errmsg = NULL;
   char pcapdev[128];
   nsock_iod my_pcap_iod;
+
+  assert(ifacelist.size()==bpf_filters.size());
 
   for(u32 i; i<ifacelist.size(); i++){
 
@@ -183,7 +185,7 @@ int ProbeEngine::setup_sniffer(vector<NetworkInterface *> &ifacelist, const char
     #endif
 
     /* Obtain the pcap descriptor */
-    if ((errmsg = nsock_pcap_open(this->nsp, my_pcap_iod, pcapdev, 8192, o.getSpoofAddress() ? 1 : 0, bpf_filter)) != NULL)
+    if ((errmsg = nsock_pcap_open(this->nsp, my_pcap_iod, pcapdev, 8192, o.getSpoofAddress() ? 1 : 0, bpf_filters[i])) != NULL)
       nping_fatal(QT_3, "Error opening capture device %s --> %s\n", pcapdev, errmsg);
 
     /* Add the IOD for the current interface to the list of pcap IODs */
