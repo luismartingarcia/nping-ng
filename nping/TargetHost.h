@@ -96,6 +96,8 @@
 #include "nping.h"
 #include "NetworkInterface.h"
 #include "HeaderTemplates.h"
+#include <vector>
+using namespace std;
 
 /* The internal attribute net_distance may be tested for one of the following to
  * determine if we've discovered how far the target is. */
@@ -149,7 +151,7 @@ class TargetHost{
 
     void reset();
     bool done();
-    PacketElement *getNextPacket();
+    int getNextPacketBatch(vector<PacketElement *> &Packets);
 
 };
 

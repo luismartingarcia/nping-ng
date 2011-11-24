@@ -205,7 +205,7 @@ int ProbeEngine::setup_sniffer(vector<NetworkInterface *> &ifacelist, vector<con
 int ProbeEngine::start(vector<TargetHost *> &Targets, vector<NetworkInterface *> &Interfaces){
   const char *filter = NULL;
   vector<const char *>bpf_filters;
-  PacketElement *pkt2send;
+  vector<PacketElement *> Packets;
   struct timeval start_time, now, next_time;
   int wait_time=0;
   u16 total_ports=0;
@@ -237,16 +237,22 @@ int ProbeEngine::start(vector<TargetHost *> &Targets, vector<NetworkInterface *>
     for(unsigned int p=0; p<total_ports; p++){
 
       for(unsigned int t = 0; t < Targets.size(); t++){
-
-        pkt2send=Targets[t]->getNextPacket();
-        /* Here, schedule transmission for right now. */
-        nping_print(DBG_2, "[ProbeEngine] Host #%u not done", t);
-
+        /* Obtain a list of packets to send (each TargetHost adds whatever
+         * packets it wants to send to the supplied vector) */
+        Targets[t]->getNextPacketBatch(Packets);
       }
+
+      /* Here, schedule the immediate transmission of all the packets
+       * provided by the TargetHosts. */
+      nping_print(DBG_2, "Starting transmission of %d packets", (int)Packets.size());
+      for(unsigned int pkt=0; pkt<Packets.size(); pkt++){
+         // call_transmission_handler_here()
+      }
+
 
       /* Determine when does the next packet transmission time start */
       gettimeofday(&now, NULL);
-      printf("[%f] (%d msecs delay)\n", (float)TIMEVAL_MSEC_SUBTRACT(now, start_time), o.getDelay());
+      nping_print(DBG_2, "[%f] (%ld msecs delay)\n", (float)TIMEVAL_MSEC_SUBTRACT(now, start_time), o.getDelay());
 
       /* The first time there is no inter-packet delay */
       TIMEVAL_MSEC_ADD(next_time, start_time, (r*total_ports + p)*o.getDelay() + o.getDelay() );

@@ -213,7 +213,15 @@ bool TargetHost::done(){
 } /* End of done() */
 
 
-PacketElement *TargetHost::getNextPacket(){
-  printf("getNextPacket()\n");
-  return NULL;
-} /* End of getNextPacket() */
+/* This method inserts whatever packets this TargetHost needs to send into the
+ * supplied vector. The number of packets inserted in each call is always the
+ * same but it depends on user configuration. If, for example, user passed
+ * --tcp and --icmp, then two packets will be inserted in the array for each
+ * call. The inserted packets are meant to be sent straight away, or whenever
+ * the caller wants, but note that TargetHosts do not keep timing information
+ * so the actual transmission rate must be handled externally. This method
+ * return OP_SUCCESS on success and OP_FAILURE in case of error. */
+int TargetHost::getNextPacketBatch(vector<PacketElement *> &Packets){
+  printf("getNextPacketBatch()\n");
+  return OP_SUCCESS;
+} /* End of getNextPacketBatch() */
