@@ -249,7 +249,7 @@ int ProbeEngine::start(vector<TargetHost *> &Targets, vector<NetworkInterface *>
          // call transmission_handler(Packets[0]);
          /* Delete the packet we've just sent from the list so we don't send
           * it again the next time */
-         Packets[0]->print();
+         Packets[0]->print(stdout, 3);
          printf("\n");
          Packets.erase(Packets.begin(), Packets.begin()+1);
       }
