@@ -2398,7 +2398,10 @@ int NpingOps::setupTargetHosts(){
       }
 
       /* Now, tell the target host which packets it has to send. */
-      newhost->setTCP(&this->tcp);
+      if(this->ipv4())
+        newhost->setIPv4(&this->ip4);
+      if(this->mode(DO_TCP))
+        newhost->setTCP(&this->tcp);
 
       /* We have all the info we need. Now, just add the new host to the list of
        * target hosts. */

@@ -113,6 +113,7 @@ class TargetHost{
     MACAddress *source_mac;  /* Source MAC address for frames sent to target          */
     MACAddress *nxthop_mac;  /* Destination MAC address for frames sent to target     */
 
+    IPv4HeaderTemplate *ip4; /* Header values for IPv4                                */
     TCPHeaderTemplate *tcp;  /* Header values for TCP                                 */
 
     int net_distance;        /* If >=0, indicates how many hops away the target is    */
@@ -143,6 +144,7 @@ class TargetHost{
     NetworkInterface *getInterface();
 
     /* Packet information */
+    int setIPv4(IPv4HeaderTemplate *hdr);
     int setTCP(TCPHeaderTemplate *hdr);
 
     void reset();

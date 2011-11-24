@@ -111,6 +111,7 @@ void TargetHost::reset(){
   this->nxthop_mac=NULL;
   this->net_distance=DISTANCE_UNKONWN;
   this->iface=NULL;
+  this->ip4=NULL;
   this->tcp=NULL;
 } /* End of reset() */
 
@@ -188,6 +189,14 @@ int TargetHost::setInterface(NetworkInterface *val){
 NetworkInterface *TargetHost::getInterface(){
   return this->iface;
 } /* End of getInterface() */
+
+
+/* Associates the host with an IPv4 header template. */
+int TargetHost::setIPv4(IPv4HeaderTemplate *hdr){
+  assert(hdr!=NULL);
+  this->ip4=hdr;
+  return OP_SUCCESS;
+} /* End of setIPv4() */
 
 
 /* Associates the host with a TCP header template. */
