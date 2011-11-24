@@ -174,9 +174,6 @@ NpingOps::NpingOps() {
     memset(device, 0, MAX_DEV_LEN);
     device_set=false;
 
-    spoofsource=false;
-    spoofsource_set=false;
-
     bpf_filter_spec=NULL;
     bpf_filter_spec_set=false;
 
@@ -233,11 +230,10 @@ NpingOps::NpingOps() {
     ipversion=0;
     ipversion_set=false;
 
-    memset(&ipv4_src_address, 0, sizeof(struct in_addr));
-    ipv4_src_address_set=false;
-
     ip_options=NULL;
     ip_options_set=false;
+
+    spoof_addr=NULL;
 
     /* IPv6 */
     ipv6_tclass=0;
@@ -245,9 +241,6 @@ NpingOps::NpingOps() {
 
     ipv6_flowlabel=0;
     ipv6_flowlabel_set=false;
-
-    memset(&ipv6_src_address, 0, sizeof(struct in6_addr));
-    ipv6_src_address_set=false;
 
     /* TCP / UDP */
     target_ports=NULL;
@@ -795,31 +788,6 @@ bool NpingOps::issetDevice(){
 } /* End of issetDevice() */
 
 
-/** Returns true if user requested explicitly that he wants IP source
- *  spoofing */
-bool NpingOps::spoofSource(){
-  return this->spoofsource;
-} /* End of spoofSource() */
-
-
-bool NpingOps::getSpoofSource(){
-  return this->spoofsource;
-} /* End of getSpoofSource() */
-
-
-int NpingOps::setSpoofSource(){
-  this->spoofsource=true;
-  this->spoofsource_set=true;
-  return OP_SUCCESS;
-} /* End of spoofSource() */
-
-
-/* Returns true if option has been set */
-bool NpingOps::issetSpoofSource(){
-  return this->spoofsource_set;
-} /* End of issetSpoofSource() */
-
-
 /** Sets BPFFilterSpec.
  *  @return OP_SUCCESS on success and OP_FAILURE in case of error.           */
 int NpingOps::setBPFFilterSpec(char *val){
@@ -1330,23 +1298,27 @@ bool NpingOps::issetBadsumIP(){
 } /* End of issetBadsumIP() */
 
 
-/** @warning Supplied parameter must be in NETWORK byte order */
-int NpingOps::setIPv4SourceAddress(struct in_addr i){
-  this->ipv4_src_address=i;
-  this->ipv4_src_address_set=true;
+/** Sets the source address to be used in outgoing packets. */
+int NpingOps::setSpoofAddress(IPAddress *addr){
+  this->spoof_addr=addr;
   return OP_SUCCESS;
-} /* End of setIPv4SourceAddress() */
+} /* End of setSpoofAddress() */
 
 
-struct in_addr NpingOps::getIPv4SourceAddress(){
-  return ipv4_src_address;
-} /* End of getIPv4SourceAddress() */
+/** Sets the source address to be used in outgoing packets. */
+int NpingOps::setSpoofAddress(IPAddress addr){
+  IPAddress *myaddr=new IPAddress();
+  *myaddr=addr;
+  this->spoof_addr=myaddr;
+  return OP_SUCCESS;
+} /* End of setSpoofAddress() */
 
 
-/* Returns true if option has been set */
-bool NpingOps::issetIPv4SourceAddress(){
-  return this->ipv4_src_address_set;
-} /* End of issetIPv4SourceAddress() */
+/** Returns the source address to be used in outgoing packets. */
+IPAddress *NpingOps::getSpoofAddress(){
+  return this->spoof_addr;
+} /* End of getSpoofAddress() */
+
 
 
 /** @warning  This method makes a copy of the supplied buffer. That copy will
@@ -1413,81 +1385,6 @@ u32 NpingOps::getFlowLabel(){
 bool NpingOps::issetFlowLabel(){
   return this->ipv6_flowlabel_set;
 } /* End of issetFlowLabel() */
-
-
-
-int NpingOps::setIPv6SourceAddress(u8 *val){
-  if(val==NULL)
-    nping_fatal(QT_3,"setIPv6SourceAddress(): NULL pointer supplied\n");
-  memcpy(this->ipv6_src_address.s6_addr, val, 16);
-  this->ipv6_src_address_set=true;
-  return OP_SUCCESS;
-} /* End of setIPv6SourceAddress() */
-
-
-int NpingOps::setIPv6SourceAddress(struct in6_addr val){
-  this->ipv6_src_address = val;
-  this->ipv6_src_address_set=true;
-  return OP_SUCCESS;
-} /* End of setIPv6SourceAddress() */
-
-
-struct in6_addr NpingOps::getIPv6SourceAddress(){
-  return ipv6_src_address;
-} /* End of getIPv6SourceAddress() */
-
-
-/* Returns true if option has been set */
-bool NpingOps::issetIPv6SourceAddress(){
-  return this->ipv6_src_address_set;
-} /* End of issetIPv6SourceAddress() */
-
-
-/* Returns a pointer to a sockaddr_storage structure that contains the
- * source IP address. This function takes into account this->getIPVersion()
- * an returns an IPv4 sockaddr_in or an IPv6 sockaddr_in6 struct.  */
-struct sockaddr_storage *NpingOps::getSourceSockAddr(){
-  static struct sockaddr_storage ss;
-  return getSourceSockAddr(&ss);
-} /* End of getSourceSockAddr() */
-
-
-/* Returns a pointer to the supplied sockaddr_storage structure that now
- * contains the source IP address. This function takes into account
- * this->getIPVersion() an returns an IPv4 sockaddr_in or an IPv6
- * sockaddr_in6 struct.  */
-struct sockaddr_storage *NpingOps::getSourceSockAddr(struct sockaddr_storage *ss){
-  struct sockaddr_in *s4 = (struct sockaddr_in*)ss;
-  struct sockaddr_in6 *s6 = (struct sockaddr_in6*)ss;
-  memset(ss, 0, sizeof(struct sockaddr_storage));
-  if( this->getIPVersion() == IP_VERSION_4){
-    if(this->spoofSource())
-        s4->sin_addr=getIPv4SourceAddress();
-    else
-        s4->sin_addr.s_addr=INADDR_ANY;
-    s4->sin_family=AF_INET;
-    if(this->issetSourcePort())
-        s4->sin_port=htons(this->getSourcePort());
-    else
-        s4->sin_port=0;
-  }
-  else if (this->getIPVersion() == IP_VERSION_6){
-    if(this->spoofSource())
-        s6->sin6_addr=this->getIPv6SourceAddress();
-    else
-        s6->sin6_addr=in6addr_any;
-    s6->sin6_addr=this->getIPv6SourceAddress();
-    s6->sin6_family=AF_INET6;
-    if(this->issetSourcePort())
-        s6->sin6_port=htons(this->getSourcePort());
-    else
-        s6->sin6_port=0;
-  }else{
-    nping_fatal(QT_3, "NpingOps::getSourceSockAddr(): IP version unset.");
-  }
-  return ss;
-} /* End of getSourceSockAddr() */
-
 
 
 /******************************************************************************
@@ -2482,11 +2379,9 @@ bool NpingOps::canRunUDPWithoutPrivileges(){
     this->issetIdentification() ||
     this->issetMF() ||
     this->issetDF() ||
-    this->issetIPv4SourceAddress() ||
-    this->issetIPv6SourceAddress() ||
+    this->getSpoofAddress()!=NULL ||
     this->issetIPOptions() ||
     this->issetMTU() ||
-    this->issetSpoofSource() ||
     this->issetSourceMAC() ||
     this->issetDestMAC() ||
     this->issetEtherType() ||
@@ -2508,7 +2403,7 @@ bool NpingOps::canDoIPv6ThroughSocket(){
     this->issetHopLimit() ||
     this->issetTrafficClass() ||
     this->issetFlowLabel() ||
-    this->issetIPv6SourceAddress()
+    this->getSpoofAddress()!=NULL
   )
     return false;
   else
@@ -2519,7 +2414,7 @@ bool NpingOps::canDoIPv6ThroughSocket(){
 /** Returns true if user supplied all necessary options to allow IPv6 at raw
   * Ethernet level */
 bool NpingOps::canDoIPv6Ethernet(){
-  if( this->issetDestMAC() &&  this->issetSourceMAC() && this->issetIPv6SourceAddress() )
+  if( this->issetDestMAC() &&  this->issetSourceMAC() && this->getSpoofAddress()!=NULL )
     return true;
   else
     return false;

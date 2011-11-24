@@ -211,12 +211,13 @@ class NpingOps {
     bool send_eth_set;
     long delay;               /* Delay between each probe              */
     bool delay_set;
-    char device[MAX_DEV_LEN]; /* Network interface                     */
+
+    char device[MAX_DEV_LEN]; /**< Network interface                     */
     bool device_set;
-    bool spoofsource;         /* Did user request IP spoofing?         */
-    bool spoofsource_set;
-    char *bpf_filter_spec;    /* Custom, user-supplied BPF filter spec */
+
+    char *bpf_filter_spec;    /**< Custom, user-supplied BPF filter spec */
     bool bpf_filter_spec_set;
+    
     int current_round;        /** Current round. Used in traceroute mode */
     bool have_pcap;           /* True if we have access to libpcap     */
     bool disable_packet_capture; /* If false, no packets are captured  */
@@ -253,26 +254,25 @@ class NpingOps {
     bool mtu_set;
     bool badsum_ip;           /* Generate invalid checksums in TCP/UDP */
     bool badsum_ip_set;
-    u8 ipversion;             /* IP version to be used in all packets  */
+    
+    u8 ipversion;             /**< IP version to be used in all packets  */
     bool ipversion_set;
-    struct in_addr ipv4_src_address;     /* Source IPv4 address        */
-    bool ipv4_src_address_set;
 
     char *ip_options;
     bool ip_options_set;
+
+    IPAddress *spoof_addr;
 
     /* IPv6 */
     u8 ipv6_tclass;
 
     bool ipv6_tclass_set;
-    u32 ipv6_flowlabel;       /* Flow Label                            */
+    u32 ipv6_flowlabel;
     bool ipv6_flowlabel_set;
-    struct in6_addr ipv6_src_address;  /**< Source IPv6 address          */
-    bool ipv6_src_address_set;
 
     /* TCP / UDP */
-    u16 *target_ports;        /* Will point to an array of ports       */
-    int tportcount;           /* Total number of target ports          */
+    u16 *target_ports;        /**< Will point to an array of ports       */
+    int tportcount;           /**< Total number of target ports          */
     bool target_ports_set;
     u16 source_port;          /* Source port for TCP/UPD packets       */
     bool source_port_set;
@@ -431,11 +431,6 @@ class NpingOps {
     char *getDevice();
     bool issetDevice();
 
-    int setSpoofSource();
-    bool spoofSource();
-    bool getSpoofSource();
-    bool issetSpoofSource();
-
     int setBPFFilterSpec(char *val);
     char *getBPFFilterSpec();
     bool issetBPFFilterSpec();
@@ -509,10 +504,6 @@ class NpingOps {
     bool getDF();
     bool issetDF();
 
-    struct in_addr getIPv4SourceAddress();
-    int setIPv4SourceAddress(struct in_addr i);
-    bool issetIPv4SourceAddress();
-
     int setIPOptions(char *txt);
     char *getIPOptions();
     bool issetIPOptions();
@@ -520,6 +511,11 @@ class NpingOps {
     int setMTU(u32 t);
     u32 getMTU();
     bool issetMTU();
+
+    IPAddress *getSpoofAddress();
+    int setSpoofAddress(IPAddress *addr);
+    int setSpoofAddress(IPAddress addr);
+
 
     /* IPv6 */
     int setTrafficClass(u8 val);
@@ -533,14 +529,6 @@ class NpingOps {
     int setHopLimit(u8 t);
     u8 getHopLimit();
     bool issetHopLimit();
-
-    int setIPv6SourceAddress(u8 *val);
-    int setIPv6SourceAddress(struct in6_addr val);    
-    struct in6_addr getIPv6SourceAddress();
-    bool issetIPv6SourceAddress();
-
-    struct sockaddr_storage *getSourceSockAddr();
-    struct sockaddr_storage *getSourceSockAddr(struct sockaddr_storage *ss);
 
     /* TCP / UDP */
     u16 *getTargetPorts( int *len );

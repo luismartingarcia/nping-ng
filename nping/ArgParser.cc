@@ -1021,7 +1021,7 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
         }
     break; /* case 'p': */
 
-    case 'S': /* Source IP */
+    case 'S': /* Source/Spoof IP address */
         /* IPv6 */
         if( o.getIPVersion() == IP_VERSION_6){
           /* Set random address */
@@ -1029,30 +1029,31 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
             struct in6_addr ipv6addr;
             for(int i6=0; i6<16; i6++)
                ipv6addr.s6_addr[i6]=get_random_u8();
-           o.setIPv6SourceAddress(ipv6addr);
+            aux_ip4.setAddress(ipv6addr);
+            o.setSpoofAddress(aux_ip4);
           }
           /* Set user supplied address (if we manage to resolve it) */
           else{
             if(aux_ip4.setIPv6Address(optarg)!=OP_SUCCESS){
               nping_fatal(QT_3, "Could not resolve source IPv6 address.");
             }else{
-              o.setIPv6SourceAddress(aux_ip4.getIPv6Address());
+              o.setSpoofAddress(aux_ip4);
             }
           }
         /* IPv4 */
         }else{
           if( meansRandom(optarg) ){
             while ( (auxinaddr.s_addr=get_random_u32()) == 0 );
-            o.setIPv4SourceAddress(auxinaddr);
+            aux_ip4.setAddress(auxinaddr);
+            o.setSpoofAddress(aux_ip4);
           }else{
              if( aux_ip4.setIPv4Address(optarg)!=OP_SUCCESS){
                nping_fatal(QT_3, "Could not resolve source IPv4 address.");
              }else{
-               o.setIPv4SourceAddress(aux_ip4.getIPv4Address());
+               o.setSpoofAddress(aux_ip4);
              }
           }
         }
-        o.setSpoofSource();
     break; /* case 'S': */
 
     case '?':
