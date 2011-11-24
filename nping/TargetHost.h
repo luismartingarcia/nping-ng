@@ -150,7 +150,6 @@ class TargetHost{
     void reset();
     bool done();
     int schedule();
-    const char *interface();
 
 };
 

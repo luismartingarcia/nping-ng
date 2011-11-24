@@ -217,9 +217,3 @@ int TargetHost::schedule(){
   printf("schedule()\n");
   return OP_SUCCESS;
 } /* End of schedule() */
-
-
-const char *TargetHost::interface(){
-  printf("interface()\n");
-  return NULL;
-} /* End of interface() */
