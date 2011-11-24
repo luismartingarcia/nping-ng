@@ -136,6 +136,30 @@
 
 class NpingTarget {
 
+/* <NEW STUFF> */
+  private:
+    IPAddress target_addr;   /* Target's IP address                           */
+    IPAddress source_addr;   /* Source address for packets sent to the target */
+
+    MACAddress target_mac;  /* Target's MAC. Valid only if tgt is directly connected */
+    MACAddress source_mac;  /* Source MAC address for frames sent to target          */
+    MACAddress nxthop_mac;  /* Destination MAC address for frames sent to target     */
+
+  public:
+
+    bool done();
+    int schedule();
+    const char *interface();
+
+/* </NEW STUFF> */
+
+
+
+
+
+
+
+
   private:
 
     char devname[32];       /**< Net interface normal name                   */
