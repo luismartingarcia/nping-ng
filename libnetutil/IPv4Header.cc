@@ -249,7 +249,7 @@ int IPv4Header::print(FILE *output, int detail) const {
   }else if( detail == PRINT_DETAIL_MED ){
       Snprintf(ipinfo, sizeof(ipinfo), "ttl=%d id=%d proto=%d csum=0x%04X iplen=%d%s%s%s%s",
           this->getTTL(), this->getIdentification(),
-          this->getNextProto(), this->getSum(),
+          this->getNextProto(), ntohs(this->getSum()),
           this->getTotalLength(), fragnfo,
           this->getHeaderLength()==5?"":" ipopts={",
           this->getHeaderLength()==5?"":format_ip_options(this->h.options , MIN(this->getHeaderLength()*4, this->length-IP_HEADER_LEN)),
@@ -265,7 +265,7 @@ int IPv4Header::print(FILE *output, int detail) const {
           (this->getMF() )? "M": "",
           frag_off, (this->getMF()) ? "+" : "",
           this->getTTL(), this->getNextProto(),
-          this->getSum(),
+          ntohs(this->getSum()),
           this->getHeaderLength()==5?"":" ipopts={",
           this->getHeaderLength()==5?"":format_ip_options(this->h.options , MIN(this->getHeaderLength()*4, this->length-IP_HEADER_LEN)),
           this->getHeaderLength()==5?"":"}");
