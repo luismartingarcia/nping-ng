@@ -112,7 +112,9 @@ void TargetHost::reset(){
   this->net_distance=DISTANCE_UNKONWN;
   this->iface=NULL;
   this->ip4=NULL;
+  this->ip6=NULL;
   this->tcp=NULL;
+  this->icmp4=NULL;
 } /* End of reset() */
 
 
