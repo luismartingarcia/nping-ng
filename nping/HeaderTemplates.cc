@@ -202,9 +202,11 @@ TCPHeaderTemplate::~TCPHeaderTemplate(){
  * NEP port number in use */
 void TCPHeaderTemplate::reset(){
 
-  /* Source Port. We chose a constant random port number, higher  than 1024. */
-  this->sport.setBehavior(FIELD_TYPE_CONSTANT);
-  this->sport.setStartValue(1024 + (get_random_u16()%(65535-1024)));
+  /* Source Port. We chose an incremental random port number, higher  than 1024. */
+  this->sport.setBehavior(FIELD_TYPE_INCREMENTAL);
+  u16 start_port=1024 + (get_random_u16()%(65535-1024))/2;
+  this->sport.setStartValue(start_port);
+  this->sport.setMaxIncrements(65535-start_port);
   /* Destination Port */
   this->dport.setBehavior(FIELD_TYPE_CONSTANT);
   this->dport.setStartValue(DEFAULT_TCP_TARGET_PORT);
