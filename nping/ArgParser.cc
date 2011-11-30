@@ -214,6 +214,7 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
   {"icmp-orig-time", required_argument, 0, 0},
   {"icmp-recv-time", required_argument, 0, 0},
   {"icmp-trans-time", required_argument, 0, 0},
+  {"icmp-mask", required_argument, 0, 0},
   /* TODO: Add relevant flags for different ICMP options */
 
   /* ARP/RARP */
@@ -559,8 +560,19 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
       o.addMode(DO_ICMP);
       this->parseICMPTimestamp(optarg, &aux32);
       o.icmp4.ts_tx.setConstant(aux32);
+    /* ICMP Netmask */
+    } else if (optcmp(long_options[option_index].name, "icmp-mask") == 0) {
+      o.addMode(DO_ICMP);
+      if(meansRandom(optarg)){
+        o.icmp4.mask.setBehavior(FIELD_TYPE_RANDOM);
+      }else{
+        if(aux_ip4.setIPv4Address(optarg) != OP_SUCCESS){
+          nping_fatal(QT_3, "Could not resolve specified ICMP netmask.");
+        }else{
+          o.icmp4.mask.setConstant(aux_ip4.getIPv4Address());
+        }
+      }
     /* TODO: Add more relevant flags for different ICMP options */
-
 
 /* ARP/RARP OPTIONS **********************************************************/
     /* Operation code */

@@ -431,8 +431,15 @@ ICMPv4Header *TargetHost::getICMPv4Header(){
 
     case ICMP_INFO:
     case ICMP_INFOREPLY:
+    break;
+
     case ICMP_MASK:
     case ICMP_MASKREPLY:
+      myicmp4->setIdentifier(this->icmp4->id.getNextValue());
+      myicmp4->setSequence(this->icmp4->seq.getNextValue());
+      myicmp4->setAddressMask(this->icmp4->mask.getNextValue());
+    break;
+
     case ICMP_TRACEROUTE:
     case ICMP_UNREACH:
     case ICMP_SOURCEQUENCH:
