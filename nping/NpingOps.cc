@@ -235,39 +235,6 @@ NpingOps::NpingOps() {
     badsum_set=false;
 
     /* ICMP */
-    icmp_type=0;
-    icmp_type_set=false;
-
-    icmp_code=0;
-    icmp_code_set=false;
-
-    badsum_icmp=false;
-    badsum_icmp_set=false;
-
-    icmp_redir_addr.s_addr=0;
-    icmp_redir_addr_set=false;
-
-    icmp_paramprob_pnt=0;
-    icmp_paramprob_pnt_set=false;
-
-    icmp_routeadv_ltime=0;
-    icmp_routeadv_ltime_set=false;
-
-    icmp_id=0;
-    icmp_id_set=false;
-
-    icmp_seq=0;
-    icmp_seq_set=false;
-
-    icmp_orig_time=0;
-    icmp_orig_time_set=false;
-
-    icmp_recv_time=0;
-    icmp_recv_time_set=false;
-
-    icmp_trans_time=0;
-    icmp_trans_time_set=false;
-
     memset( icmp_advert_entry_addr, 0, sizeof(u32)*MAX_ICMP_ADVERT_ENTRIES );
     memset( icmp_advert_entry_pref, 0, sizeof(u32)*MAX_ICMP_ADVERT_ENTRIES );
     icmp_advert_entry_count=0;
@@ -1193,248 +1160,6 @@ bool NpingOps::issetBadsum(){
 /******************************************************************************
  *  Internet Control Message Protocol                                         *
  ******************************************************************************/
-/** Sets ICMPType.
- *  @return OP_SUCCESS on success and OP_FAILURE in case of error.           */
-int NpingOps::setICMPType(u8 val){
-  this->icmp_type=val;
-  this->icmp_type_set=true;
-  return OP_SUCCESS;
-} /* End of setICMPType() */
-
-
-/** Returns value of attribute icmp_type */
-u8 NpingOps::getICMPType(){
-  return this->icmp_type;
-} /* End of getICMPType() */
-
-
-/* Returns true if option has been set */
-bool NpingOps::issetICMPType(){
-  return this->icmp_type_set;
-} /* End of issetICMPType() */
-
-
-/** Sets ICMPCode.
- *  @return OP_SUCCESS on success and OP_FAILURE in case of error.           */
-int NpingOps::setICMPCode(u8 val){
-  this->icmp_code=val;
-  this->icmp_code_set=true;
-  return OP_SUCCESS;
-} /* End of setICMPCode() */
-
-
-/** Returns value of attribute icmp_code */
-u8 NpingOps::getICMPCode(){
-  return this->icmp_code;
-} /* End of getICMPCode() */
-
-
-/* Returns true if option has been set */
-bool NpingOps::issetICMPCode(){
-  return this->icmp_code_set;
-} /* End of issetICMPCode() */
-
-
-/** Sets attribute badsum_icmp to "true". (Generate invalid checksums in ICMP
- *  packets)
- *  @return previous value of the attribute. */
-bool NpingOps::enableBadsumICMP() {
-  bool prev = this->badsum_icmp;
-  this->badsum_icmp=true;
-  this->badsum_icmp_set=true;
-  return prev;
-} /* End of enableBadsumICMPTCP() */
-
-
-/** Sets attribute traceroute to "false". (Do NOT Generate invalid checksums
- *  in UDP / TCP packets)
- *  @return previous value of the attribute. */
-bool NpingOps::disableBadsumICMP() {
-  bool prev = this->badsum_icmp;
-  this->badsum_icmp=false;
-  this->badsum_icmp_set=true;
-  return prev;
-} /* End of disableBadsumICMP() */
-
-
-/** Returns value of attribute badsum_icmp */
-bool NpingOps::getBadsumICMP() {
-  return this->badsum_icmp;
-} /* End of getBadsumICMP() */
-
-
-/* Returns true if option has been set */
-bool NpingOps::issetBadsumICMP(){
-  return this->badsum_icmp_set;
-} /* End of issetBadsumICMP() */
-
-
-/** Sets ICMPRedirectAddress.
- *  @return OP_SUCCESS on success and OP_FAILURE in case of error.           */
-int NpingOps::setICMPRedirectAddress(struct in_addr val){
-  this->icmp_redir_addr=val;
-  this->icmp_redir_addr_set=true;
-  return OP_SUCCESS;
-} /* End of setICMPRedirectAddress() */
-
-
-/** Returns value of attribute icmp_redir_addr */
-struct in_addr NpingOps::getICMPRedirectAddress(){
-  return this->icmp_redir_addr;
-} /* End of getICMPRedirectAddress() */
-
-
-/* Returns true if option has been set */
-bool NpingOps::issetICMPRedirectAddress(){
-  return this->icmp_redir_addr_set;
-} /* End of issetICMPRedirectAddress() */
-
-
-/** Sets ICMPParamProblemPointer.
- *  @return OP_SUCCESS on success and OP_FAILURE in case of error.           */
-int NpingOps::setICMPParamProblemPointer(u8 val){
-  this->icmp_paramprob_pnt=val;
-  this->icmp_paramprob_pnt_set=true;
-  return OP_SUCCESS;
-} /* End of setICMPParamProblemPointer() */
-
-
-/** Returns value of attribute icmp_paramprob_pnt */
-u8 NpingOps::getICMPParamProblemPointer(){
-  return this->icmp_paramprob_pnt;
-} /* End of getICMPParamProblemPointer() */
-
-
-/* Returns true if option has been set */
-bool NpingOps::issetICMPParamProblemPointer(){
-  return this->icmp_paramprob_pnt_set;
-} /* End of issetICMPParamProblemPointer() */
-
-
-/** Sets ICMPRouterAdvLifetime.
- *  @return OP_SUCCESS on success and OP_FAILURE in case of error.           */
-int NpingOps::setICMPRouterAdvLifetime(u16 val){
-  this->icmp_routeadv_ltime=val;
-  this->icmp_routeadv_ltime_set=true;
-  return OP_SUCCESS;
-} /* End of setICMPRouterAdvLifetime() */
-
-
-/** Returns value of attribute icmp_routeadv_ltime */
-u16 NpingOps::getICMPRouterAdvLifetime(){
-  return this->icmp_routeadv_ltime;
-} /* End of getICMPRouterAdvLifetime() */
-
-
-/* Returns true if option has been set */
-bool NpingOps::issetICMPRouterAdvLifetime(){
-  return this->icmp_routeadv_ltime_set;
-} /* End of issetICMPRouterAdvLifetime() */
-
-
-/** Sets ICMPIdentifier.
- *  @return OP_SUCCESS on success and OP_FAILURE in case of error.           */
-int NpingOps::setICMPIdentifier(u16 val){
-  this->icmp_id=val;
-  this->icmp_id_set=true;
-  return OP_SUCCESS;
-} /* End of setICMPIdentifier() */
-
-/** Returns value of attribute icmp_id */
-u16 NpingOps::getICMPIdentifier(){
-  return this->icmp_id;
-} /* End of getICMPIdentifier() */
-
-
-/* Returns true if option has been set */
-bool NpingOps::issetICMPIdentifier(){
-  return this->icmp_id_set;
-} /* End of issetICMPIdentifier() */
-
-
-/** Sets ICMPSequence.
- *  @return OP_SUCCESS on success and OP_FAILURE in case of error.           */
-int NpingOps::setICMPSequence(u16 val){
-  this->icmp_seq=val;
-  this->icmp_seq_set=true;
-  return OP_SUCCESS;
-} /* End of setICMPSequence() */
-
-
-/** Returns value of attribute icmp_seq */
-u16 NpingOps::getICMPSequence(){
-  return this->icmp_seq;
-} /* End of getICMPSequence() */
-
-
-/* Returns true if option has been set */
-bool NpingOps::issetICMPSequence(){
-  return this->icmp_seq_set;
-} /* End of issetICMPSequence() */
-
-
-/** Sets ICMPOriginateTimestamp.
- *  @return OP_SUCCESS on success and OP_FAILURE in case of error.           */
-int NpingOps::setICMPOriginateTimestamp(u32 val){
-  this->icmp_orig_time=val;
-  this->icmp_orig_time_set=true;
-  return OP_SUCCESS;
-} /* End of setICMPOriginateTimestamp() */
-
-
-/** Returns value of attribute icmp_orig_time */
-u32 NpingOps::getICMPOriginateTimestamp(){
-  return this->icmp_orig_time;
-} /* End of getICMPOriginateTimestamp() */
-
-
-/* Returns true if option has been set */
-bool NpingOps::issetICMPOriginateTimestamp(){
-  return this->icmp_orig_time_set;
-} /* End of issetICMPOriginateTimestamp() */
-
-
-/** Sets ICMPReceiveTimestamp.
- *  @return OP_SUCCESS on success and OP_FAILURE in case of error.           */
-int NpingOps::setICMPReceiveTimestamp(u32 val){
-  this->icmp_recv_time=val;
-  this->icmp_recv_time_set=true;
-  return OP_SUCCESS;
-} /* End of setICMPReceiveTimestamp() */
-
-
-/** Returns value of attribute icmp_recv_time */
-u32 NpingOps::getICMPReceiveTimestamp(){
-  return this->icmp_recv_time;
-} /* End of getICMPReceiveTimestamp() */
-
-
-/* Returns true if option has been set */
-bool NpingOps::issetICMPReceiveTimestamp(){
-  return this->icmp_recv_time_set;
-} /* End of issetICMPReceiveTimestamp() */
-
-
-/** Sets ICMPTransmitTimestamp.
- *  @return OP_SUCCESS on success and OP_FAILURE in case of error.           */
-int NpingOps::setICMPTransmitTimestamp(u32 val){
-  this->icmp_trans_time=val;
-  this->icmp_trans_time_set=true;
-  return OP_SUCCESS;
-} /* End of setICMPTransmitTimestamp() */
-
-
-/** Returns value of attribute icmp_trans_time */
-u32 NpingOps::getICMPTransmitTimestamp(){
-  return this->icmp_trans_time;
-} /* End of getICMPTransmitTimestamp() */
-
-
-/* Returns true if option has been set */
-bool NpingOps::issetICMPTransmitTimestamp(){
-  return this->icmp_trans_time_set;
-} /* End of issetICMPTransmitTimestamp() */
-
 
 int NpingOps::addICMPAdvertEntry(struct in_addr addr, u32 pref ){
   if( this->icmp_advert_entry_count > MAX_ICMP_ADVERT_ENTRIES )
@@ -2171,17 +1896,17 @@ int NpingOps::setDefaultHeaderValues(){
 //            this->source_port=DEFAULT_UDP_SOURCE_PORT;
   }
   if( this->mode(DO_ICMP)){
-        if(this->ipv6()){
-            if(!this->issetICMPType()) /* Default to ICMP Echo */
-                this->icmp_type=DEFAULT_ICMPv6_TYPE;
-            if(!this->issetICMPCode())
-                this->icmp_code=DEFAULT_ICMPv6_CODE;
-        }else{
-            if(!this->issetICMPType()) /* Default to ICMP Echo */
-                this->icmp_type=DEFAULT_ICMP_TYPE;
-            if(!this->issetICMPCode())
-                this->icmp_code=DEFAULT_ICMP_CODE;
-        }
+//        if(this->ipv6()){
+//            if(!this->issetICMPType()) /* Default to ICMP Echo */
+//                this->icmp_type=DEFAULT_ICMPv6_TYPE;
+//            if(!this->issetICMPCode())
+//                this->icmp_code=DEFAULT_ICMPv6_CODE;
+//        }else{
+//            if(!this->issetICMPType()) /* Default to ICMP Echo */
+//                this->icmp_type=DEFAULT_ICMP_TYPE;
+//            if(!this->issetICMPCode())
+//                this->icmp_code=DEFAULT_ICMP_CODE;
+//        }
   }
 
   if( this->mode(DO_ARP)){

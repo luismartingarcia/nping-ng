@@ -277,28 +277,7 @@ class NpingOps {
     bool badsum_set;
 
     /* ICMP */
-    u8 icmp_type;             /* ICMP Type                             */
-    bool icmp_type_set;
-    u8 icmp_code;             /* ICMP Code                             */
-    bool icmp_code_set;
-    bool badsum_icmp;         /* Generate invalid ICMP checksums?      */
-    bool badsum_icmp_set;
-    struct in_addr icmp_redir_addr; /* ICMP Redirect Address */ /* ##TODO## Turn this into an IPAddress object */
-    bool icmp_redir_addr_set;
-    u8 icmp_paramprob_pnt;    /* ICMP Parameter Problem pointer        */
-    bool icmp_paramprob_pnt_set;
-    u16 icmp_routeadv_ltime;  /* ICMP Router Advertisement lifetime    */
-    bool icmp_routeadv_ltime_set;
-    u16 icmp_id;              /* ICMP message identifier               */
-    bool icmp_id_set;
-    u16 icmp_seq;             /* ICMP sequence number                  */
-    bool icmp_seq_set;
-    u32 icmp_orig_time;       /* ICMP originate timestamp              */
-    bool icmp_orig_time_set;
-    u32 icmp_recv_time;       /* ICMP receive timestamp                */
-    bool icmp_recv_time_set;
-    u32 icmp_trans_time;      /* ICMP transmit timestamp               */
-    bool icmp_trans_time_set;
+
     /* ICMP Router advertisement entries */
     struct in_addr icmp_advert_entry_addr[MAX_ICMP_ADVERT_ENTRIES];
     u32 icmp_advert_entry_pref[MAX_ICMP_ADVERT_ENTRIES];
@@ -350,6 +329,7 @@ class NpingOps {
     NpingStats stats;                      /* Global statistics           */
     IPv4HeaderTemplate ip4;                /* Header field values for IPv4*/
     TCPHeaderTemplate tcp;                 /* Header field values for TCP */
+    ICMPv4HeaderTemplate icmp4;            /* Header fields for ICMPv4    */
 
   public:
 

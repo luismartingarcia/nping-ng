@@ -120,6 +120,8 @@
 /* UDP */
 
 /* ICMPv4 */
+#define DEFAULT_ICMPv4_TYPE 8           /* Default msg type = Echo request  */
+#define DEFAULT_ICMPv4_CODE 0           /* Default message code             */
 
 /* ICMPv6 */
 
@@ -162,6 +164,51 @@ class TCPHeaderTemplate : public HeaderTemplate{
 
     TCPHeaderTemplate();
     ~TCPHeaderTemplate();
+    void reset();
+};
+
+
+class ICMPv4HeaderTemplate : public HeaderTemplate{
+  public:
+
+    /* Common ICMP fields */
+    ProtoField_u8 type;              /* ICMP message type          */
+    ProtoField_u8 code;              /* ICMP message code          */
+    ProtoField_u16 csum;             /* Checksum                   */
+
+    /* Fields shared by ICMP Echo, Timestamp, mask, etc. */
+    ProtoField_u16 id;               /* Identifier                 */
+    ProtoField_u16 seq;              /* Sequence number            */
+
+    /* ICMP Parameter Problem */
+    ProtoField_u8 pointer;           /* Pointer                    */
+
+    /* ICMP Redirect */
+    ProtoField_inaddr redir_addr;    /* Gateway Internet Address   */
+
+    /* ICMP Timestamp */
+    ProtoField_u32 ts_orig;          /* Originate timestamp        */
+    ProtoField_u32 ts_rx;            /* Receive  timestamp         */
+    ProtoField_u32 ts_tx;            /* Transmit timestamp         */
+
+    /* ICMP Router Advertisement */
+    ProtoField_u8 numaddrs;          /* Number of router addresses */
+    ProtoField_u8 addrsize;          /* Length of each address     */
+    ProtoField_u16 lifetime;         /* Advertisement lifetime     */
+    ProtoField_inaddr routeraddr;    /* Router address             */
+    ProtoField_u32 preflevel;        /* Preference level           */
+
+    /* ICMP Netmask */
+    ProtoField_inaddr mask;          /* Address mask               */
+
+    /* ICMP Traceroute */
+    ProtoField_u16 outbound_hops;    /* Outbound hop count         */
+    ProtoField_u16 return_hops;      /* Return hop count           */
+    ProtoField_u32 speed;            /* Output link speed          */
+    ProtoField_u32 mtu;              /* Output link MTU            */
+
+    ICMPv4HeaderTemplate();
+    ~ICMPv4HeaderTemplate();
     void reset();
 };
 

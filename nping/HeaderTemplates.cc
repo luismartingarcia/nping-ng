@@ -200,3 +200,33 @@ void TCPHeaderTemplate::reset(){
   this->urp.setStartValue(DEFAULT_TCP_URGENT_POINTER);
 
 } /* End of reset() */
+
+
+
+/******************************************************************************
+ * ICMPv4HeaderTemplate Class                                                    *
+ ******************************************************************************/
+
+ICMPv4HeaderTemplate::ICMPv4HeaderTemplate(){
+  this->reset();
+} /* End of ICMPv4HeaderTemplate constructor */
+
+
+ICMPv4HeaderTemplate::~ICMPv4HeaderTemplate(){
+
+} /* End of ICMPv4HeaderTemplate destructor */
+
+
+/* This method returns the object to its default state. The reset() method is
+ * very important because it initializes ICMP header fields with default values
+ * that will affect the final packets that Nping produces. However, note that
+ * the values set here may be overridden by NpingOps if necessary */
+void ICMPv4HeaderTemplate::reset(){
+
+  this->type.setConstant(DEFAULT_ICMPv4_TYPE);
+  this->code.setConstant(DEFAULT_ICMPv4_CODE);
+  this->id.setConstant(get_random_u16());
+  this->seq.setBehavior(FIELD_TYPE_INCREMENTAL);
+  this->seq.setStartValue(0);
+
+} /* End of reset() */

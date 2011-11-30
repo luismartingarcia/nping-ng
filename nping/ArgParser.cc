@@ -463,97 +463,103 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
 /* ICMP OPTIONS **************************************************************/
     /* ICMP Type */
     } else if (optcmp(long_options[option_index].name, "icmp-type") == 0) {
-        o.addMode(DO_ICMP);
-        /* User may have supplied type as a number */
-        if( parse_u8(optarg, &aux8) == OP_SUCCESS )
-            o.setICMPType( aux8 );
-        /* Or maybe the supplied arg is a string that we can recognize */
-        else if ( atoICMPType(optarg, &aux8) == OP_SUCCESS )
-            o.setICMPType( aux8 );
-        /* Looks like user supplied a bogus value */
-        else
-           nping_fatal(QT_3, "Invalid ICMP Type. Value must be 0<=N<=255.");
-        /* Warn if ICMP Type is not RFC-compliant */
-        if( !isICMPType(aux8) )
-            nping_warning(QT_1, "Warning: Specified ICMP type (%d) is not RFC compliant.", aux8);
+      o.addMode(DO_ICMP);
+      /* User may have supplied type as a number */
+      if(parse_u8(optarg, &aux8) == OP_SUCCESS){
+        o.icmp4.type.setConstant(aux8);
+      /* Or maybe the supplied arg is a string that we can recognize */
+      }else if(atoICMPType(optarg, &aux8) == OP_SUCCESS){
+        o.icmp4.type.setConstant(aux8);
+      /* Looks like user supplied a bogus value */
+      }else{
+        nping_fatal(QT_3, "Invalid ICMP Type. Value must be 0<=N<=255.");
+      }
+      /* Warn if ICMP Type is not RFC-compliant */
+      if( !isICMPType(aux8) )
+        nping_warning(QT_1, "Warning: Specified ICMP type (%d) is not RFC compliant.", aux8);
     /* ICMP Code */
     } else if (optcmp(long_options[option_index].name, "icmp-code") == 0) {
-        o.addMode(DO_ICMP);
-        /* User may have supplied code as a number */
-        if ( parse_u8(optarg, &aux8) == OP_SUCCESS )
-            o.setICMPCode( aux8 );
-        /* Or maybe the supplied arg is a string that we can recognize */
-        else if ( atoICMPCode(optarg, &aux8) == OP_SUCCESS )
-            o.setICMPCode( aux8 );
-        /* Looks like user supplied a bogus value */
-        else
-           nping_fatal(QT_3, "Invalid ICMP Code. Value must be 0<=N<=255.");
+      o.addMode(DO_ICMP);
+      /* User may have supplied code as a number */
+      if(parse_u8(optarg, &aux8) == OP_SUCCESS){
+        o.icmp4.code.setConstant(aux8);
+      /* Or maybe the supplied arg is a string that we can recognize */
+      }else if(atoICMPCode(optarg, &aux8) == OP_SUCCESS){
+        o.icmp4.code.setConstant(aux8);
+      /* Looks like user supplied a bogus value */
+      }else{
+        nping_fatal(QT_3, "Invalid ICMP Code. Value must be 0<=N<=255.");
+      }
     /* ICMP Identification field */
     } else if (optcmp(long_options[option_index].name, "icmp-id") == 0) {
-        o.addMode(DO_ICMP);
-        if ( parse_u16(optarg, &aux16) == OP_SUCCESS )
-            o.setICMPIdentifier( aux16 );
-        else
-            nping_fatal(QT_3, "Invalid ICMP Identifier. Value must be 0<=N<2^16.");
+      o.addMode(DO_ICMP);
+      if(parse_u16(optarg, &aux16) == OP_SUCCESS){
+        o.icmp4.id.setConstant(aux16);
+      }else{
+        nping_fatal(QT_3, "Invalid ICMP Identifier. Value must be 0<=N<2^16.");
+      }
     /* ICMP Sequence number */
     } else if (optcmp(long_options[option_index].name, "icmp-seq") == 0) {
-        o.addMode(DO_ICMP);
-        if ( parse_u16(optarg, &aux16) == OP_SUCCESS )
-            o.setICMPSequence( aux16 );
-        else
-            nping_fatal(QT_3, "Invalid ICMP Sequence number. Value must be 0<=N<2^16.");
+      o.addMode(DO_ICMP);
+      if(parse_u16(optarg, &aux16) == OP_SUCCESS){
+        o.icmp4.seq.setConstant(aux16);
+      }else{
+        nping_fatal(QT_3, "Invalid ICMP Sequence number. Value must be 0<=N<2^16.");
+      }
     /* ICMP Redirect Address */
     } else if (optcmp(long_options[option_index].name, "icmp-redirect-addr") == 0) {
-        o.addMode(DO_ICMP);
-        if( meansRandom(optarg) ){
-            while ( (auxinaddr.s_addr=get_random_u32()) == 0 );
-            o.setICMPRedirectAddress(auxinaddr);
+      o.addMode(DO_ICMP);
+      if(meansRandom(optarg)){
+        o.icmp4.redir_addr.setBehavior(FIELD_TYPE_RANDOM);
+      }else{
+        if(aux_ip4.setIPv4Address(optarg) != OP_SUCCESS){
+          nping_fatal(QT_3, "Could not resolve specified ICMP Redirect Address.");
         }else{
-             if ( aux_ip4.setIPv4Address(optarg) != OP_SUCCESS)
-                nping_fatal(QT_3, "Could not resolve specified ICMP Redirect Address.");
-             else
-                o.setICMPRedirectAddress( aux_ip4.getIPv4Address() );
+          o.icmp4.redir_addr.setConstant(aux_ip4.getIPv4Address());
         }
+      }
     /* ICMP Parameter problem pointer */
     } else if (optcmp(long_options[option_index].name, "icmp-param-pointer") == 0) {
-        o.addMode(DO_ICMP);
-        if ( parse_u8(optarg, &aux8) == OP_SUCCESS )
-            o.setICMPParamProblemPointer( aux8 );
-        else
-            nping_fatal(QT_3, "Invalid ICMP Parameter problem pointer. Value must be 0<=N<=255..");
+      o.addMode(DO_ICMP);
+      if(parse_u8(optarg, &aux8) == OP_SUCCESS){
+        o.icmp4.pointer.setConstant(aux8);
+      }else{
+        nping_fatal(QT_3, "Invalid ICMP Parameter problem pointer. Value must be 0<=N<=255..");
+      }
     /* ICMP Router Advertisement lifetime */
     } else if (optcmp(long_options[option_index].name, "icmp-advert-lifetime") == 0) {
-        o.addMode(DO_ICMP);
-        if ( parse_u16(optarg, &aux16) == OP_SUCCESS )
-            o.setICMPRouterAdvLifetime( aux16 );
-        else
-            nping_fatal(QT_3, "Invalid ICMP Router advertisement lifetime. Value must be 0<=N<2^16..");
+      o.addMode(DO_ICMP);
+      if(parse_u16(optarg, &aux16) == OP_SUCCESS){
+        o.icmp4.lifetime.setConstant(aux16);
+      }else{
+        nping_fatal(QT_3, "Invalid ICMP Router advertisement lifetime. Value must be 0<=N<2^16..");
+      }
     /* ICMP Router Advertisement entry */
     } else if (optcmp(long_options[option_index].name, "icmp-advert-entry") == 0) {
-        o.addMode(DO_ICMP);
-        /* Format should be "IPADDR,PREF":  "192.168.10.99,31337" */
-        if( meansRandom(optarg) ){
-            while( (auxinaddr.s_addr=get_random_u32()) == 0);
-            o.addICMPAdvertEntry( auxinaddr, get_random_u32() );
-        }else{
-            parseAdvertEntry(optarg, &auxinaddr, &aux32); /* fatal()s on error */
-            o.addICMPAdvertEntry(auxinaddr, aux32);
-        }
+      o.addMode(DO_ICMP);
+      /* Format should be "IPADDR,PREF":  "192.168.10.99,31337" */
+      if( meansRandom(optarg) ){
+        while( (auxinaddr.s_addr=get_random_u32()) == 0);
+        o.addICMPAdvertEntry( auxinaddr, get_random_u32() );
+      }else{
+        parseAdvertEntry(optarg, &auxinaddr, &aux32); /* fatal()s on error */
+        o.addICMPAdvertEntry(auxinaddr, aux32);
+      }
     /* ICMP Timestamp originate timestamp */
     } else if (optcmp(long_options[option_index].name, "icmp-orig-time") == 0) {
-        o.addMode(DO_ICMP);
-        this->parseICMPTimestamp(optarg, &aux32);
-        o.setICMPOriginateTimestamp(aux32);
+      o.addMode(DO_ICMP);
+      this->parseICMPTimestamp(optarg, &aux32);
+      o.icmp4.ts_orig.setConstant(aux32);
     /* ICMP Timestamp receive timestamp */
     } else if (optcmp(long_options[option_index].name, "icmp-recv-time") == 0) {
-        o.addMode(DO_ICMP);
-        this->parseICMPTimestamp(optarg, &aux32);
-        o.setICMPReceiveTimestamp(aux32);
+      o.addMode(DO_ICMP);
+      this->parseICMPTimestamp(optarg, &aux32);
+      o.icmp4.ts_rx.setConstant(aux32);
     /* ICMP Timestamp transmit timestamp */
     } else if (optcmp(long_options[option_index].name, "icmp-trans-time") == 0) {
-        o.addMode(DO_ICMP);
-        this->parseICMPTimestamp(optarg, &aux32);
-        o.setICMPTransmitTimestamp(aux32);
+      o.addMode(DO_ICMP);
+      this->parseICMPTimestamp(optarg, &aux32);
+      o.icmp4.ts_tx.setConstant(aux32);
     /* TODO: Add more relevant flags for different ICMP options */
 
 
