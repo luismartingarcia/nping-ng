@@ -126,6 +126,7 @@ class TargetHost{
     IPv4Header *getIPv4Header(const char *next_proto);
     IPv6Header *getIPv6Header(const char *next_proto);
     TCPHeader *getTCPHeader();
+    ICMPv4Header *getICMPv4Header();
 
   public:
     TargetHost();

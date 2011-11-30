@@ -236,8 +236,10 @@ int TargetHost::getNextPacketBatch(vector<PacketElement *> &Packets){
   IPv6Header *myip6=NULL;
   NetworkLayerElement *myip=NULL;
   TCPHeader *mytcp=NULL;
+  ICMPv4Header *myicmp4=NULL;
   u16 sum=0, aux=0;
 
+  /* Build a TCP packet */
   if(this->tcp!=NULL){
 
     mytcp=this->getTCPHeader();
@@ -278,6 +280,41 @@ int TargetHost::getNextPacketBatch(vector<PacketElement *> &Packets){
     }
     /* Once we have the packet ready, insert it into the tx queue */
     Packets.push_back(myip);
+  }
+
+  /* Build an ICMPv4 packet */
+  if(this->icmp4!=NULL){
+
+    myicmp4=this->getICMPv4Header();
+    myip4=this->getIPv4Header("ICMP");
+    myip4->setNextElement(myicmp4);
+    myip4->setTotalLength();
+    myip4->setSum();
+
+    /* Set a bad IP checksum when appropriate */
+    if(this->ip4->csum.getBehavior()==FIELD_TYPE_BADSUM){
+      /* Store the correct checksum and pick a different one */
+      sum=myip4->getSum();
+      while( (aux=get_random_u16())==sum );
+      myip4->setSum(aux);
+    }else if(this->ip4->csum.is_set()){
+      /* This means the user set a specific value, not --badsum-ip */
+      myip4->setSum(this->ip4->csum.getNextValue());
+    }
+
+    /* Set the ICMP checksum (or a bad ICMP checksum if appropriate) */
+    myicmp4->setSum();
+    if(this->icmp4->csum.getBehavior()==FIELD_TYPE_BADSUM){
+      /* Store the correct checksum and pick a different one */
+      sum=myicmp4->getSum();
+      while( (aux=get_random_u16())==sum );
+      myicmp4->setSum(aux);
+    }else if(this->icmp4->csum.is_set()){
+      /* This means the user set a specific value, not --badsum */
+      myicmp4->setSum(this->icmp4->csum.getNextValue());
+    }
+    /* Once we have the packet ready, insert it into the tx queue */
+    Packets.push_back(myip4);
   }
 
   return OP_SUCCESS;
@@ -340,4 +377,73 @@ TCPHeader *TargetHost::getTCPHeader(){
   mytcp->setUrgPointer(this->tcp->urp.getNextValue());
   return mytcp;
 } /* End of getTCPHeader() */
+
+
+ICMPv4Header *TargetHost::getICMPv4Header(){
+  ICMPv4Header *myicmp4=NULL;
+  assert(this->icmp4!=NULL);
+  myicmp4=new ICMPv4Header();
+
+  myicmp4->setType(this->icmp4->type.getNextValue());
+  myicmp4->setCode(this->icmp4->code.getNextValue());
+
+  switch(myicmp4->getType()){
+
+    case ICMP_REDIRECT:
+      myicmp4->setGatewayAddress(this->icmp4->redir_addr.getNextValue() );
+    break;
+
+    case ICMP_ECHO:
+    case ICMP_ECHOREPLY:
+      myicmp4->setIdentifier(this->icmp4->id.getNextValue());
+      myicmp4->setSequence(this->icmp4->seq.getNextValue());
+    break;
+
+    case ICMP_ROUTERADVERT:
+      myicmp4->setAddrEntrySize(2);
+      myicmp4->setLifetime(this->icmp4->lifetime.getNextValue());
+
+      /* TODO @todo Implement advert entries! */
+      //if(o.issetICMPAdvertEntry()){
+      //  for (int z=0; z<o.getICMPAdvertEntryCount(); z++){
+      //    struct in_addr entryaddr;
+      //    u32 entrypref;
+      //    o.getICMPAdvertEntry(z, &entryaddr, &entrypref );
+      //    myicmp4->addRouterAdvEntry(entryaddr, entrypref);
+      //   }
+      //}
+    break;
+
+    case ICMP_PARAMPROB:
+        myicmp4->setParameterPointer(this->icmp4->pointer.getNextValue());
+    break;
+
+    case ICMP_TSTAMP:
+    case ICMP_TSTAMPREPLY:
+      myicmp4->setIdentifier(this->icmp4->id.getNextValue());
+      myicmp4->setSequence(this->icmp4->seq.getNextValue());
+      myicmp4->setOriginateTimestamp(this->icmp4->ts_orig.getNextValue());
+      myicmp4->setReceiveTimestamp(this->icmp4->ts_rx.getNextValue());
+      myicmp4->setTransmitTimestamp(this->icmp4->ts_tx.getNextValue());
+    break;
+
+    case ICMP_INFO:
+    case ICMP_INFOREPLY:
+    case ICMP_MASK:
+    case ICMP_MASKREPLY:
+    case ICMP_TRACEROUTE:
+    case ICMP_UNREACH:
+    case ICMP_SOURCEQUENCH:
+    case ICMP_ROUTERSOLICIT:
+    case ICMP_TIMXCEED:
+    break;
+
+    default:
+      /* TODO: What do we do here if user specified a non standard type? */
+    break;
+
+  }
+
+  return myicmp4;
+} /* End of getICMPv4Header() */
 
