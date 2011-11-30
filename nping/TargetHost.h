@@ -158,7 +158,6 @@ class TargetHost{
     int setICMPv4(ICMPv4HeaderTemplate *hdr);
 
     void reset();
-    bool done();
     int getNextPacketBatch(vector<PacketElement *> &Packets);
 
 };

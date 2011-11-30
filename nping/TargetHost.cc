@@ -223,12 +223,6 @@ int TargetHost::setICMPv4(ICMPv4HeaderTemplate *hdr){
 } /* End of setICMPv4() */
 
 
-bool TargetHost::done(){
-  printf("done()\n");
-  return false;
-} /* End of done() */
-
-
 /* This method inserts whatever packets this TargetHost needs to send into the
  * supplied vector. The number of packets inserted in each call is always the
  * same but it depends on user configuration. If, for example, user passed
