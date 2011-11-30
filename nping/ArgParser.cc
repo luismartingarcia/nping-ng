@@ -1423,6 +1423,14 @@ int ArgParser::atoICMPType(char *opt, u8 *type){
             !strcasecmp(opt, "trace") ||
             !strcasecmp(opt, "tc") )
     *type=30;
+  else if ( !strcasecmp(opt, "domain-request") ||
+            !strcasecmp(opt, "domain") ||
+            !strcasecmp(opt, "dm") )
+    *type=37;
+  else if ( !strcasecmp(opt, "domain-reply") ||
+            !strcasecmp(opt, "dom-rep") ||
+            !strcasecmp(opt, "dr") )
+    *type=38;
   else
     return OP_FAILURE;
 
@@ -1435,8 +1443,7 @@ int ArgParser::atoICMPType(char *opt, u8 *type){
  34     IPv6 I-Am-Here                          [Bill Simpson]
  35     Mobile Registration Request             [Bill Simpson]
  36     Mobile Registration Reply               [Bill Simpson]
- 37     Domain Name Request                     [RFC1788]
- 38     Domain Name Reply                       [RFC1788]
+
  39     SKIP                                    [Markson]
  40     Photuris                                [RFC2521]
  41     ICMP messages utilized by experimental  [RFC4065]

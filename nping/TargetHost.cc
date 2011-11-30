@@ -395,8 +395,12 @@ ICMPv4Header *TargetHost::getICMPv4Header(){
       myicmp4->setGatewayAddress(this->icmp4->redir_addr.getNextValue() );
     break;
 
+    case ICMP_INFO:
+    case ICMP_INFOREPLY:
     case ICMP_ECHO:
     case ICMP_ECHOREPLY:
+    case ICMP_DOMAINNAME:
+    case ICMP_DOMAINNAMEREPLY:
       myicmp4->setIdentifier(this->icmp4->id.getNextValue());
       myicmp4->setSequence(this->icmp4->seq.getNextValue());
     break;
@@ -427,10 +431,6 @@ ICMPv4Header *TargetHost::getICMPv4Header(){
       myicmp4->setOriginateTimestamp(this->icmp4->ts_orig.getNextValue());
       myicmp4->setReceiveTimestamp(this->icmp4->ts_rx.getNextValue());
       myicmp4->setTransmitTimestamp(this->icmp4->ts_tx.getNextValue());
-    break;
-
-    case ICMP_INFO:
-    case ICMP_INFOREPLY:
     break;
 
     case ICMP_MASK:
