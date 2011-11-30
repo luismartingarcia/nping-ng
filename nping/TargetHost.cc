@@ -114,6 +114,7 @@ void TargetHost::reset(){
   this->ip4=NULL;
   this->ip6=NULL;
   this->tcp=NULL;
+  this->udp=NULL;
   this->icmp4=NULL;
 } /* End of reset() */
 
@@ -217,6 +218,14 @@ int TargetHost::setTCP(TCPHeaderTemplate *hdr){
 } /* End of setTCP() */
 
 
+/* Associates the host with a UDP header template. */
+int TargetHost::setUDP(UDPHeaderTemplate *hdr){
+  assert(hdr!=NULL);
+  this->udp=hdr;
+  return OP_SUCCESS;
+} /* End of setUDP() */
+
+
 /* Associates the host with an ICMPv4 header template. */
 int TargetHost::setICMPv4(ICMPv4HeaderTemplate *hdr){
   assert(hdr!=NULL);
@@ -238,6 +247,7 @@ int TargetHost::getNextPacketBatch(vector<PacketElement *> &Packets){
   IPv6Header *myip6=NULL;
   NetworkLayerElement *myip=NULL;
   TCPHeader *mytcp=NULL;
+  UDPHeader *myudp=NULL;
   ICMPv4Header *myicmp4=NULL;
   u16 sum=0, aux=0;
 
@@ -279,6 +289,49 @@ int TargetHost::getNextPacketBatch(vector<PacketElement *> &Packets){
     }else if(this->tcp->csum.is_set()){
       /* This means the user set a specific value, not --badsum */
       mytcp->setSum(this->tcp->csum.getNextValue());
+    }
+    /* Once we have the packet ready, insert it into the tx queue */
+    Packets.push_back(myip);
+  }
+
+  /* Build an UDP packet */
+  if(this->udp!=NULL){
+
+    myudp=this->getUDPHeader();
+
+    if(this->ip4!=NULL){
+      myip=myip4=this->getIPv4Header("UDP");
+      myip4->setNextElement(myudp);
+      myip4->setTotalLength();
+      myip4->setSum();
+
+      /* Set a bad IP checksum when appropriate */
+      if(this->ip4->csum.getBehavior()==FIELD_TYPE_BADSUM){
+        /* Store the correct checksum and pick a different one */
+        sum=myip4->getSum();
+        while( (aux=get_random_u16())==sum );
+        myip4->setSum(aux);
+      }else if(this->ip4->csum.is_set()){
+        /* This means the user set a specific value, not --badsum-ip */
+        myip4->setSum(this->ip4->csum.getNextValue());
+      }
+    }else if(this->ip6!=NULL){
+      myip=myip6=this->getIPv6Header("UDP");
+      myip6->setNextElement(myudp);
+
+      myip6->setPayloadLength();
+    }
+
+    /* Set the UDP checksum (or a bad UDP checksum if appropriate) */
+    myudp->setSum();
+    if(this->udp->csum.getBehavior()==FIELD_TYPE_BADSUM){
+      /* Store the correct checksum and pick a different one */
+      sum=myudp->getSum();
+      while( (aux=get_random_u16())==sum );
+      myudp->setSum(aux);
+    }else if(this->udp->csum.is_set()){
+      /* This means the user set a specific value, not --badsum */
+      myudp->setSum(this->udp->csum.getNextValue());
     }
     /* Once we have the packet ready, insert it into the tx queue */
     Packets.push_back(myip);
@@ -378,6 +431,16 @@ TCPHeader *TargetHost::getTCPHeader(){
   mytcp->setWindow(this->tcp->win.getNextValue());
   mytcp->setUrgPointer(this->tcp->urp.getNextValue());
   return mytcp;
+} /* End of getTCPHeader() */
+
+
+UDPHeader *TargetHost::getUDPHeader(){
+  UDPHeader *myudp=NULL;
+  assert(this->udp!=NULL);
+  myudp=new UDPHeader();
+  myudp->setSourcePort(this->udp->sport.getNextValue());
+  myudp->setDestinationPort(this->udp->dport.getNextValue());
+  return myudp;
 } /* End of getTCPHeader() */
 
 

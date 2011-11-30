@@ -324,6 +324,7 @@ class NpingOps {
     NpingStats stats;                      /* Global statistics           */
     IPv4HeaderTemplate ip4;                /* Header field values for IPv4*/
     TCPHeaderTemplate tcp;                 /* Header field values for TCP */
+    UDPHeaderTemplate udp;                 /* Header field values for UDP */
     ICMPv4HeaderTemplate icmp4;            /* Header fields for ICMPv4    */
 
   public:

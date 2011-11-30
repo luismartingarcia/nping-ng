@@ -890,14 +890,14 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
     /* Use a bad checksum for protocols above the network layer */
     } else if (optcmp(long_options[option_index].name, "badsum") == 0) {
       o.tcp.csum.setBehavior(FIELD_TYPE_BADSUM);
-      //o.udp.csum.setBehavior(FIELD_TYPE_BADSUM);
+      o.udp.csum.setBehavior(FIELD_TYPE_BADSUM);
       o.icmp4.csum.setBehavior(FIELD_TYPE_BADSUM);
       //o.icmp6.csum.setBehavior(FIELD_TYPE_BADSUM);
       // TODO @todo Uncomment these when UDP and ICMPv6 are implemented
     } else if (optcmp(long_options[option_index].name, "csum") == 0 ){
       if(parse_u16(optarg, &aux16) == OP_SUCCESS){
         o.tcp.csum.setConstant(aux16);
-        //o.udp.csum.setConstant(aux16);
+        o.udp.csum.setConstant(aux16);
         o.icmp4.csum.setConstant(aux16);
         //o.icmp6.csum.setConstant(aux16);
         // TODO @todo Uncomment these when UDP and ICMPv6 are implemented
@@ -963,6 +963,7 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
         }else{
           o.setSourcePorts(portlist, auxint);
           o.tcp.sport.setDiscreteSet(portlist, (u32)auxint);
+          o.udp.sport.setDiscreteSet(portlist, (u32)auxint);
         }
     break; /* case 'g': */
 
@@ -974,6 +975,7 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
         }else{
           o.setTargetPorts(portlist, auxint);
           o.tcp.dport.setDiscreteSet(portlist, (u32)auxint);
+          o.udp.dport.setDiscreteSet(portlist, (u32)auxint);
         }
     break; /* case 'p': */
 

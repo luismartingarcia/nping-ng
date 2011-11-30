@@ -2058,7 +2058,8 @@ int NpingOps::setupTargetHosts(){
       }
       if(this->mode(DO_TCP))
         newhost->setTCP(&this->tcp);
-
+      if(this->mode(DO_UDP))
+        newhost->setUDP(&this->udp);
 
       /* We have all the info we need. Now, just add the new host to the list of
        * target hosts. */

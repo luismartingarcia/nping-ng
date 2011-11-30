@@ -120,6 +120,10 @@
 #define DEFAULT_TCP_URGENT_POINTER 0    /* Default urgent pointer */
 
 /* UDP */
+/* Note: Source and target ports for UDP are based on research by David     */
+/* Fifield http://www.bamsoftware.com/wiki/Nmap/EffectivenessOfPingProbes   */
+#define DEFAULT_UDP_TARGET_PORT 40125   /* Default UDP target port          */
+#define DEFAULT_UDP_SOURCE_PORT 53      /* Default UDP source port          */
 
 /* ICMPv4 */
 #define DEFAULT_ICMPv4_TYPE 8           /* Default msg type = Echo request  */
@@ -180,6 +184,19 @@ class TCPHeaderTemplate : public HeaderTemplate{
 
     TCPHeaderTemplate();
     ~TCPHeaderTemplate();
+    void reset();
+};
+
+
+class UDPHeaderTemplate : public HeaderTemplate{
+  public:
+    ProtoField_u16 sport;  /* Source port                 */
+    ProtoField_u16 dport;  /* Destination port            */
+    ProtoField_u16 len;    /* Length                      */
+    ProtoField_u16 csum;   /* Checksum                    */
+
+    UDPHeaderTemplate();
+    ~UDPHeaderTemplate();
     void reset();
 };
 

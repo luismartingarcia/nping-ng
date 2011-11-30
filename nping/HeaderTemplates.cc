@@ -234,6 +234,31 @@ void TCPHeaderTemplate::reset(){
 } /* End of reset() */
 
 
+/******************************************************************************
+ * UDPHeaderTemplate Class                                                    *
+ ******************************************************************************/
+
+UDPHeaderTemplate::UDPHeaderTemplate(){
+  this->reset();
+} /* End of UDPHeaderTemplate constructor */
+
+
+UDPHeaderTemplate::~UDPHeaderTemplate(){
+
+} /* End of UDPHeaderTemplate destructor */
+
+
+/* This method returns the object to its default state. The reset() method is
+ * very important because it initializes UDP header fields with default values
+ * that will affect the final packets that Nping produces. However, note that
+ * the values set here may be overridden by NpingOps if necessary. */
+void UDPHeaderTemplate::reset(){
+  /* Source Port. We chose an incremental random port number, higher  than 1024. */
+  this->sport.setConstant(DEFAULT_UDP_SOURCE_PORT);
+  /* Destination Port */
+  this->dport.setConstant(DEFAULT_UDP_TARGET_PORT);
+} /* End of reset() */
+
 
 /******************************************************************************
  * ICMPv4HeaderTemplate Class                                                    *

@@ -118,6 +118,7 @@ class TargetHost{
     IPv4HeaderTemplate *ip4; /* Header values for IPv4                                */
     IPv6HeaderTemplate *ip6; /* Header values for IPv6                                */
     TCPHeaderTemplate *tcp;  /* Header values for TCP                                 */
+    UDPHeaderTemplate *udp;  /* Header values for UDP                                 */
     ICMPv4HeaderTemplate *icmp4; /* Header values for ICMPv4                          */
 
     int net_distance;        /* If >=0, indicates how many hops away the target is    */
@@ -126,6 +127,7 @@ class TargetHost{
     IPv4Header *getIPv4Header(const char *next_proto);
     IPv6Header *getIPv6Header(const char *next_proto);
     TCPHeader *getTCPHeader();
+    UDPHeader *getUDPHeader();
     ICMPv4Header *getICMPv4Header();
 
   public:
@@ -156,6 +158,7 @@ class TargetHost{
     int setIPv4(IPv4HeaderTemplate *hdr);
     int setIPv6(IPv6HeaderTemplate *hdr);
     int setTCP(TCPHeaderTemplate *hdr);
+    int setUDP(UDPHeaderTemplate *hdr);
     int setICMPv4(ICMPv4HeaderTemplate *hdr);
 
     void reset();
