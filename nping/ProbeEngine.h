@@ -123,7 +123,7 @@ class ProbeEngine  {
 
     static char *bpf_filter(vector<TargetHost *> &Targets, NetworkInterface *target_interface);
     int setup_sniffer(vector<NetworkInterface *> &ifacelist, vector<const char *>bpf_filters);
-    int send_packet(TargetHost *tgt, PacketElement *pkt);
+    int send_packet(TargetHost *tgt, PacketElement *pkt, struct timeval *now);
 
 }; /* End of class ProbeEngine */
 

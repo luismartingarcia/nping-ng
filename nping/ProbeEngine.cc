@@ -212,6 +212,7 @@ int ProbeEngine::start(vector<TargetHost *> &Targets, vector<NetworkInterface *>
   struct timeval now, next_time;
   int wait_time=0;
   u16 total_ports=0;
+  u32 count=1;
 
   nping_print(DBG_1, "Starting Nping Probe Engine...");
 
@@ -245,35 +246,35 @@ int ProbeEngine::start(vector<TargetHost *> &Targets, vector<NetworkInterface *>
          * packets it wants to send to the supplied vector) */
         Targets[t]->getNextPacketBatch(Packets);
 
+        /* Determine when does the next packet transmission time start */
+        gettimeofday(&now, NULL);
+
         /* Here, schedule the immediate transmission of all the packets
          * provided by the TargetHosts. */
         nping_print(DBG_2, "Starting transmission of %d packets", (int)Packets.size());
         while(Packets.size()>0){
-            this->send_packet(Targets[t], Packets[0]);
+            this->send_packet(Targets[t], Packets[0], &now);
            /* Delete the packet we've just sent from the list so we don't send
             * it again the next time */
            Packets.erase(Packets.begin(), Packets.begin()+1);
         }
 
+        /* The first time there is no inter-packet delay */
+        TIMEVAL_MSEC_ADD(next_time, start_time, count*o.getDelay() );
+        if((wait_time=TIMEVAL_MSEC_SUBTRACT(next_time, now)-1) < 0){
+          nping_print(DBG_1, "Wait time < 0 ! (wait_time=%d)", wait_time);
+          wait_time=0;
+        }
+
+        /* Now schedule a dummy wait event so we don't send more packets
+         * until the inter-packet delay has passed */
+        nsock_timer_create(nsp, interpacket_delay_wait_handler, wait_time, NULL);
+
+        /* Now wait until all events have been dispatched */
+        nsock_loop(this->nsp, -1);
+
+        count++;
       }
-
-      /* Determine when does the next packet transmission time start */
-      gettimeofday(&now, NULL);
-
-      /* The first time there is no inter-packet delay */
-      TIMEVAL_MSEC_ADD(next_time, start_time, (r*total_ports + p)*o.getDelay() + o.getDelay() );
-      if((wait_time=TIMEVAL_MSEC_SUBTRACT(next_time, now)) < 0){
-        nping_print(DBG_1, "Wait time < 0 ! (wait_time=%d)", wait_time);
-        wait_time=0;
-      }
-
-      /* Now schedule a dummy wait event so we don't send more packets
-       * until the inter-packet delay has passed */
-      nsock_timer_create(nsp, interpacket_delay_wait_handler, wait_time, NULL);
-
-      /* Now wait until all events have been dispatched */
-      nsock_loop(this->nsp, -1);
-
     }
   }
 
@@ -368,8 +369,7 @@ char *ProbeEngine::bpf_filter(vector<TargetHost *> &Targets, NetworkInterface *t
 
 
 
-int ProbeEngine::send_packet(TargetHost *tgt, PacketElement *pkt){
-  struct timeval now;      /* For current time                      */
+int ProbeEngine::send_packet(TargetHost *tgt, PacketElement *pkt, struct timeval *now){
   eth_t *ethsd=NULL;       /* DNET Ethernet handler                 */
   struct sockaddr_in s4;   /* Target IPv4 address                   */
   struct sockaddr_in6 s6;  /* Target IPv6 address                   */
@@ -410,9 +410,8 @@ int ProbeEngine::send_packet(TargetHost *tgt, PacketElement *pkt){
     nping_fatal(QT_3, "%s(): Unknown protocol", __func__);
   }
 
-  gettimeofday(&now, NULL);
-  nping_print(VB_0|NO_NEWLINE,"SENT (%.4fs) ", ((double)TIMEVAL_MSEC_SUBTRACT(now, this->start_time)) / 1000);
-  pkt->print(stdout, 3);
+  nping_print(VB_0|NO_NEWLINE,"SENT (%.4fs) ", ((double)TIMEVAL_MSEC_SUBTRACT(*now, this->start_time)) / 1000);
+  pkt->print(stdout, 1);
   printf("\n");
   return OP_SUCCESS;
 } /* End of send_packet() */
