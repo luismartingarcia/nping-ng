@@ -149,6 +149,36 @@ void IPv4HeaderTemplate::reset(){
   // this->nh.setConstant() The Next header is unset on purpose.
 } /* End of reset() */
 
+
+/******************************************************************************
+ * IPv6HeaderTemplate Class                                                    *
+ ******************************************************************************/
+
+IPv6HeaderTemplate::IPv6HeaderTemplate(){
+  this->reset();
+} /* End of IPv6PHeaderTemplate constructor */
+
+
+IPv6HeaderTemplate::~IPv6HeaderTemplate(){
+
+} /* End of IPv6PHeaderTemplate destructor */
+
+
+/* This method returns the object to its default state. The reset() method is
+ * very important because it initializes IPv4 header fields with default values
+ * that will affect the final packets that Nping produces. However, note that
+ * the values set here may be overridden by NpingOps if necessary (when the
+ * user supplies his own values or when we have special restrictions) */
+void IPv6HeaderTemplate::reset(){
+  /* Traffic Class */
+  this->tclass.setConstant(DEFAULT_IPv6_TCLASS);
+  /* Flow Label */
+  this->flow.setConstant(DEFAULT_IPv6_FLOW);
+  /* Time To Live */
+  this->hlim.setConstant(DEFAULT_IPv6_HOPLIMIT);
+  // this->nh.setConstant() The Next header is unset on purpose.
+} /* End of reset() */
+
 /******************************************************************************
  * TCPHeaderTemplate Class                                                    *
  ******************************************************************************/

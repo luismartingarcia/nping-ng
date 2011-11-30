@@ -199,6 +199,14 @@ int TargetHost::setIPv4(IPv4HeaderTemplate *hdr){
 } /* End of setIPv4() */
 
 
+/* Associates the host with an IPv6 header template. */
+int TargetHost::setIPv6(IPv6HeaderTemplate *hdr){
+  assert(hdr!=NULL);
+  this->ip6=hdr;
+  return OP_SUCCESS;
+} /* End of setIPv6() */
+
+
 /* Associates the host with a TCP header template. */
 int TargetHost::setTCP(TCPHeaderTemplate *hdr){
   assert(hdr!=NULL);
@@ -224,15 +232,17 @@ bool TargetHost::done(){
 int TargetHost::getNextPacketBatch(vector<PacketElement *> &Packets){
   IPv4Header *myip4=NULL;
   IPv6Header *myip6=NULL;
+  NetworkLayerElement *myip=NULL;
   TCPHeader *mytcp=NULL;
   u16 sum=0, aux=0;
 
   if(this->tcp!=NULL){
+
+    mytcp=this->getTCPHeader();
+
     if(this->ip4!=NULL){
-      myip4=this->getIPv4Header("TCP");
-      mytcp=this->getTCPHeader();
+      myip=myip4=this->getIPv4Header("TCP");
       myip4->setNextElement(mytcp);
-      mytcp->setSum();
       myip4->setTotalLength();
       myip4->setSum();
 
@@ -246,21 +256,26 @@ int TargetHost::getNextPacketBatch(vector<PacketElement *> &Packets){
         /* This means the user set a specific value, not --badsum-ip */
         myip4->setSum(this->ip4->csum.getNextValue());
       }
+    }else if(this->ip6!=NULL){
+      myip=myip6=this->getIPv6Header("TCP");
+      myip6->setNextElement(mytcp);
 
-      /* Set a bad TCP checksum when appropriate */
-      if(this->tcp->csum.getBehavior()==FIELD_TYPE_BADSUM){
-        /* Store the correct checksum and pick a different one */
-        sum=mytcp->getSum();
-        while( (aux=get_random_u16())==sum );
-        mytcp->setSum(aux);
-      }else if(this->tcp->csum.is_set()){
-        /* This means the user set a specific value, not --badsum */
-        mytcp->setSum(this->tcp->csum.getNextValue());
-      }
+      myip6->setPayloadLength();
+    }
 
-      Packets.push_back(myip4);
-    }//else if(this->ip6!=NULL){
-    //}
+    /* Set the TCP checksum (or a bad TCP checksum if appropriate) */
+    mytcp->setSum();
+    if(this->tcp->csum.getBehavior()==FIELD_TYPE_BADSUM){
+      /* Store the correct checksum and pick a different one */
+      sum=mytcp->getSum();
+      while( (aux=get_random_u16())==sum );
+      mytcp->setSum(aux);
+    }else if(this->tcp->csum.is_set()){
+      /* This means the user set a specific value, not --badsum */
+      mytcp->setSum(this->tcp->csum.getNextValue());
+    }
+    /* Once we have the packet ready, insert it into the tx queue */
+    Packets.push_back(myip);
   }
 
   return OP_SUCCESS;
@@ -289,6 +304,24 @@ IPv4Header *TargetHost::getIPv4Header(const char *next_proto){
   }
   return myip4;
 } /* End of getIPv4Header() */
+
+
+IPv6Header *TargetHost::getIPv6Header(const char *next_proto){
+  IPv6Header *myip6=NULL;
+  assert(this->ip6!=NULL);
+  myip6=new IPv6Header();
+  myip6->setSourceAddress(this->source_addr->getIPv6Address());
+  myip6->setDestinationAddress(this->target_addr->getIPv6Address());
+  myip6->setHopLimit(this->ip6->hlim.getNextValue());
+  if(this->ip6->nh.is_set()){
+    myip6->setNextHeader(this->ip6->nh.getNextValue());
+  }else if(next_proto!=NULL){
+    myip6->setNextHeader(next_proto);
+  }else{
+    myip6->setNextHeader("TCP");
+  }
+  return myip6;
+} /* End of getIPv6Header() */
 
 
 TCPHeader *TargetHost::getTCPHeader(){

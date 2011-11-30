@@ -106,8 +106,10 @@
 #define DEFAULT_IPv4_FLAG_DF false      /* Default IPv4 Don't Fragment flag */
 #define DEFAULT_IPv4_FLAG_MF false      /* Default IPv4 More Fragments flag */
 
-
 /* IPv6 */
+#define DEFAULT_IPv6_TCLASS 0           /* Default IPv6 Traffic Class       */
+#define DEFAULT_IPv6_FLOW 0             /* Default IPv6 Flow Label          */
+#define DEFAULT_IPv6_HOPLIMIT 64        /* Default IPv6 Hop Limit           */
 
 /* TCP */
 #define DEFAULT_TCP_TARGET_PORT 80      /* Default target port              */
@@ -124,6 +126,7 @@
 #define DEFAULT_ICMPv4_CODE 0           /* Default message code             */
 
 /* ICMPv6 */
+
 
 class HeaderTemplate{
   public:
@@ -149,6 +152,18 @@ class IPv4HeaderTemplate : public HeaderTemplate{
     void reset();
 };
 
+
+class IPv6HeaderTemplate : public HeaderTemplate{
+  public:
+    ProtoField_u8 tclass;  /* Traffic Class               */
+    ProtoField_u32 flow ;  /* Flow Level                  */
+    ProtoField_u8 nh;      /* Next Header                 */
+    ProtoField_u8 hlim;    /* Hop Limit                   */
+
+    IPv6HeaderTemplate();
+    ~IPv6HeaderTemplate();
+    void reset();
+};
 
 
 class TCPHeaderTemplate : public HeaderTemplate{
