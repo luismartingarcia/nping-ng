@@ -118,6 +118,7 @@ class TargetHost{
     IPv4HeaderTemplate *ip4; /* Header values for IPv4                                */
     IPv6HeaderTemplate *ip6; /* Header values for IPv6                                */
     TCPHeaderTemplate *tcp;  /* Header values for TCP                                 */
+    ICMPv4HeaderTemplate *icmp4; /* Header values for ICMPv4                          */
 
     int net_distance;        /* If >=0, indicates how many hops away the target is    */
     NetworkInterface *iface; /* Info about the proper interface to reach target       */
@@ -154,6 +155,7 @@ class TargetHost{
     int setIPv4(IPv4HeaderTemplate *hdr);
     int setIPv6(IPv6HeaderTemplate *hdr);
     int setTCP(TCPHeaderTemplate *hdr);
+    int setICMPv4(ICMPv4HeaderTemplate *hdr);
 
     void reset();
     bool done();

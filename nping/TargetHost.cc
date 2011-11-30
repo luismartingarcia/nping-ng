@@ -215,6 +215,14 @@ int TargetHost::setTCP(TCPHeaderTemplate *hdr){
 } /* End of setTCP() */
 
 
+/* Associates the host with an ICMPv4 header template. */
+int TargetHost::setICMPv4(ICMPv4HeaderTemplate *hdr){
+  assert(hdr!=NULL);
+  this->icmp4=hdr;
+  return OP_SUCCESS;
+} /* End of setICMPv4() */
+
+
 bool TargetHost::done(){
   printf("done()\n");
   return false;
