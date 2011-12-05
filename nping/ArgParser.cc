@@ -252,6 +252,7 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
   {"ethertype", required_argument, 0, 0},
   {"ethtype", required_argument, 0, 0},
   {"ether-type", required_argument, 0, 0},
+  {"eth-type", required_argument, 0, 0},
 
   /* IPv4 */
   {"IPv4", no_argument, 0, '4'},
@@ -701,33 +702,38 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
 /* ETHERNET OPTIONS **********************************************************/
     /* Destination MAC address */
     } else if (optcmp(long_options[option_index].name, "dest-mac") == 0 ){
-        if ( parseMAC(optarg, auxmac) != OP_SUCCESS ){
-            nping_fatal(QT_3, "Invalid Ethernet Destination MAC address.");
-        }else{
-            o.setDestMAC(auxmac);
-        }
-        o.setSendPreference(PACKET_SEND_ETH);
+      if(parseMAC(optarg, auxmac) != OP_SUCCESS){
+        nping_fatal(QT_3, "Invalid Ethernet Destination MAC address.");
+      }else{
+        MACAddress myaddr;
+        myaddr.setAddress_bin(auxmac);
+        o.eth.dst.setConstant(myaddr);
+      }
+      o.setSendPreference(PACKET_SEND_ETH);
     /* Source MAC address */
     } else if (optcmp(long_options[option_index].name, "source-mac") == 0 ||
                optcmp(long_options[option_index].name, "spoof-mac") == 0 ){
-        if ( parseMAC(optarg, auxmac) != OP_SUCCESS ){
-            nping_fatal(QT_3, "Invalid Ethernet Source MAC address.");
-        }else{
-            o.setSourceMAC(auxmac);
-        }
-        o.setSendPreference(PACKET_SEND_ETH);
+      if(parseMAC(optarg, auxmac) != OP_SUCCESS){
+        nping_fatal(QT_3, "Invalid Ethernet Source MAC address.");
+      }else{
+        MACAddress myaddr;
+        myaddr.setAddress_bin(auxmac);
+        o.eth.src.setConstant(myaddr);
+      }
+      o.setSendPreference(PACKET_SEND_ETH);
     /* Ethernet type field */
     } else if (optcmp(long_options[option_index].name, "ethertype") == 0 ||
                optcmp(long_options[option_index].name, "ethtype") == 0 ||
+               optcmp(long_options[option_index].name, "eth-type") == 0 ||
                optcmp(long_options[option_index].name, "ether-type") == 0 ){
-        if ( parse_u16(optarg, &aux16) == OP_SUCCESS ){
-            o.setEtherType(aux16);
-        }else if ( atoEtherType(optarg, &aux16) == OP_SUCCESS ){
-            o.setEtherType(aux16);
-        }else{
-            nping_fatal(QT_3, "Invalid Ethernet Type.");
-        }
-        o.setSendPreference(PACKET_SEND_ETH);
+      if(parse_u16(optarg, &aux16) == OP_SUCCESS){
+        o.eth.type.setConstant(aux16);
+      }else if ( atoEtherType(optarg, &aux16) == OP_SUCCESS ){
+        o.eth.type.setConstant(aux16);
+      }else{
+        nping_fatal(QT_3, "Invalid Ethernet Type.");
+      }
+      o.setSendPreference(PACKET_SEND_ETH);
 
 
 /* IPv4 OPTIONS **************************************************************/
