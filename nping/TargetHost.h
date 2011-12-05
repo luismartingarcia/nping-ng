@@ -115,6 +115,7 @@ class TargetHost{
     MACAddress *source_mac;  /* Source MAC address for frames sent to target          */
     MACAddress *nxthop_mac;  /* Destination MAC address for frames sent to target     */
 
+    EthernetHeaderTemplate *eth; /* Header values for Ethernet                        */
     IPv4HeaderTemplate *ip4; /* Header values for IPv4                                */
     IPv6HeaderTemplate *ip6; /* Header values for IPv6                                */
     TCPHeaderTemplate *tcp;  /* Header values for TCP                                 */
@@ -157,6 +158,7 @@ class TargetHost{
     NetworkInterface *getInterface();
 
     /* Packet information */
+    int setEth(EthernetHeaderTemplate *hdr);
     int setIPv4(IPv4HeaderTemplate *hdr);
     int setIPv6(IPv6HeaderTemplate *hdr);
     int setTCP(TCPHeaderTemplate *hdr);

@@ -195,6 +195,15 @@ NetworkInterface *TargetHost::getInterface(){
 } /* End of getInterface() */
 
 
+/* Associates the host with an Ethernet header template. */
+int TargetHost::setEth(EthernetHeaderTemplate *hdr){
+  assert(hdr!=NULL);
+  this->eth=new EthernetHeaderTemplate();
+  *this->eth=*hdr;
+  return OP_SUCCESS;
+} /* End of setEth() */
+
+
 /* Associates the host with an IPv4 header template. */
 int TargetHost::setIPv4(IPv4HeaderTemplate *hdr){
   assert(hdr!=NULL);
