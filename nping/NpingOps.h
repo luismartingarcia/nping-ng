@@ -317,6 +317,7 @@ class NpingOps {
     TCPHeaderTemplate tcp;                 /* Header field values for TCP */
     UDPHeaderTemplate udp;                 /* Header field values for UDP */
     ICMPv4HeaderTemplate icmp4;            /* Header fields for ICMPv4    */
+    ICMPv6HeaderTemplate icmp6;            /* Header fields for ICMPv6    */
 
   public:
 
