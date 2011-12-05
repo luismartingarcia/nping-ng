@@ -1868,24 +1868,46 @@ int NpingOps::setupTargetHosts(){
 
       /* If we have determined that we should send at the Ethernet level and
        * we still don't have a next hop MAC address, we need to resolve it. */
-      if(do_eth && !this->eth.dst.is_set()){
-        /* First of all let's determine which IP address we need to use for
-         * the MAC resolution. If we are directly connected to the host
-         * then it's the host's address the one we are interested in. Otherwise
-         * we'll use the address of the default gateway */
-        IPAddress *address2resolve=NULL;;
-        if(newhost->getNetworkDistance()==DISTANCE_DIRECT){
-          address2resolve=newhost->getTargetAddress();
-        }else{
-          address2resolve=newhost->getNextHopAddress();
-        }
-        assert(address2resolve!=NULL);
+      if(do_eth){
+        /* Do not resolve it if the user passed a specific MAC address */
+        if(!this->eth.dst.is_set()){
+          /* First of all let's determine which IP address we need to use for
+           * the MAC resolution. If we are directly connected to the host
+           * then it's the host's address the one we are interested in. Otherwise
+           * we'll use the address of the default gateway */
+          IPAddress *address2resolve=NULL;;
+          if(newhost->getNetworkDistance()==DISTANCE_DIRECT){
+            address2resolve=newhost->getTargetAddress();
+          }else{
+            address2resolve=newhost->getNextHopAddress();
+          }
+          assert(address2resolve!=NULL);
 
-        /* Now do the actual ARP/ND resolution */
-        if(mac_resolve(address2resolve, newhost->getSourceAddress(),newhost->getInterface(), &destmac)!=OP_SUCCESS){
-          nping_warning(QT_1, "Failed to resolve MAC address for %s. Skipping target host %s", address2resolve->toString(),newhost->getTargetAddress()->toString());
-          continue;
+          /* Now do the actual ARP/ND resolution */
+          if(mac_resolve(address2resolve, newhost->getSourceAddress(),newhost->getInterface(), &destmac)!=OP_SUCCESS){
+            nping_warning(QT_1, "Failed to resolve MAC address for %s. Skipping target host %s", address2resolve->toString(),newhost->getTargetAddress()->toString());
+            continue;
+          }
         }
+        /* Now set up the eth info and associate it with the current host */
+        EthernetHeaderTemplate myeth;
+        /* Source MAC address */
+        if(this->eth.src.is_set()){
+          myeth.src=this->eth.src;
+        }else{
+          myeth.src=newhost->getInterface()->getAddress();
+        }
+        /* Destination MAC address */
+        if(this->eth.dst.is_set()){
+          myeth.dst=this->eth.dst;
+        }else{
+          myeth.dst=destmac; /* This was provided by mac_resolve() */
+        }
+        /* Ether type */
+        if(this->eth.type.is_set()){
+          myeth.type=this->eth.type;
+        }// Don't set it if the user didn't pass an explicit value
+        newhost->setEth(&myeth);
       }
 
       /* Now, tell the target host which packets it has to send. */
