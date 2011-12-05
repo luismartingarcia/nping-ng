@@ -1929,7 +1929,7 @@ int NpingOps::setupTargetHosts(){
     if(this->af()==AF_INET){
       errmsg=spec_to_addresses( this->target_specs[i], AF_INET, this->target_addresses, MAX_IPv4_NETMASK_ALLOWED);
     }else{
-      errmsg=spec_to_addresses( this->target_specs[i], AF_INET, this->target_addresses, MAX_IPv6_NETMASK_ALLOWED);
+      errmsg=spec_to_addresses( this->target_specs[i], AF_INET6, this->target_addresses, MAX_IPv6_NETMASK_ALLOWED);
     }
     if(errmsg!=NULL){
       nping_warning(QT_1, "WARNING: %s (%s)", errmsg, this->target_specs[i]);
