@@ -244,5 +244,29 @@ class ProtoField_inaddr : public ProtoField{
 };
 
 
+/*****************************************************************************
+ * ProtoField_mac Class                                                      *
+ *****************************************************************************/
+
+class ProtoField_mac : public ProtoField{
+  private:
+    MACAddress start_value;
+    MACAddress current_value;
+    MACAddress *discrete_set;
+    u32 discrete_set_len;
+    u32 current_set_element;
+
+  public:
+    ProtoField_mac();
+    ProtoField_mac(MACAddress startvalue);
+    ProtoField_mac(MACAddress *set, u32 set_len);
+    ~ProtoField_mac();
+    MACAddress getNextValue();
+    int setDiscreteSet(MACAddress *set, u32 set_len);
+    int setStartValue(MACAddress startvalue);
+    int setConstant(MACAddress val);
+
+};
+
 
 #endif /* __PROTOFIELD_H__ */

@@ -616,3 +616,118 @@ struct in_addr ProtoField_inaddr::getNextValue(){
   assert(false);
   return return_val;
 } /* End of getNextValue() */
+
+
+
+
+/*****************************************************************************
+ * ProtoField_mac Class                                                      *
+ *****************************************************************************/
+
+ProtoField_mac::ProtoField_mac(){
+  start_value.reset();
+  current_value.reset();
+} /* End of ProtoField_mac constructor */
+
+
+ProtoField_mac::ProtoField_mac(MACAddress startvalue){
+  this->setStartValue(startvalue);
+} /* End of ProtoField_mac constructor */
+
+
+ProtoField_mac::ProtoField_mac(MACAddress *set, u32 set_len){
+  this->setDiscreteSet(set, set_len);
+} /* End of ProtoField_mac constructor */
+
+
+ProtoField_mac::~ProtoField_mac(){
+
+} /* End of ProtoField_mac destructor */
+
+
+int ProtoField_mac::setStartValue(MACAddress startvalue){
+  this->start_value=startvalue;
+  this->current_value=startvalue;
+  this->discrete_set=NULL;
+  this->discrete_set_len=0;
+  this->current_set_element=0;
+  this->set=true;
+  return OP_SUCCESS;
+} /* End of setStartValue() */
+
+
+int ProtoField_mac::setDiscreteSet(MACAddress *set, u32 set_len){
+  assert(set!=NULL && set_len>0);
+  this->setBehavior(FIELD_TYPE_DISCRETE_SET);
+  this->discrete_set=set;
+  this->discrete_set_len=set_len;
+  this->current_set_element=0;
+  this->set=true;
+  return OP_SUCCESS;
+} /* End of setDiscreteSet() */
+
+
+/* Sets a constant value for the field. Note that this method overwrites the
+ * current field behavior, setting it to FIELD_TYPE_CONSTANT, */
+int ProtoField_mac::setConstant(MACAddress val){
+  this->setStartValue(val);
+  this->setBehavior(FIELD_TYPE_CONSTANT);
+  return OP_SUCCESS;
+} /* End of setConstant() */
+
+
+/* Note that if the behavior is set to FIELD_TYPE_INCREMENTAL, addresses are
+ * always incremented by one. In other words, if something other than 1 was
+ * set through a call to setMaxIncrements(), it will be ignored. */
+MACAddress ProtoField_mac::getNextValue(){
+  MACAddress return_val;
+  return_val.reset();
+  u8 auxmac[6];
+  switch(this->behavior){
+
+    case FIELD_TYPE_CONSTANT:
+      return this->start_value;
+    break;
+
+    case FIELD_TYPE_INCREMENTAL:
+      return_val=this->current_value;
+      if(max_increments>0 && increment_count>=max_increments){
+        this->current_value=this->start_value;
+        this->increment_count=0;
+      }else{
+        this->current_value.getAddress_bin(auxmac);
+        for(int i=5; i>=0; i--){
+          if(auxmac[i]<0xFF){
+            auxmac[i]=auxmac[i]+1;
+            break;
+          }else{
+            auxmac[i]=0;
+          }
+        }
+        this->current_value.setAddress_bin(auxmac);
+        this->increment_count++;
+      }
+      return return_val;
+    break;
+
+    case FIELD_TYPE_RANDOM:
+      for(int i=0; i<6; i++)
+          auxmac[i]=get_random_u8();
+      return_val.setAddress_bin(auxmac);
+      return return_val;
+    break;
+
+    case FIELD_TYPE_DISCRETE_SET:
+      assert(this->discrete_set!=NULL);
+      return_val = this->discrete_set[this->current_set_element];
+      if(this->current_set_element+1>=this->discrete_set_len){
+        this->current_set_element=0;
+      }else{
+        this->current_set_element++;
+      }
+      return return_val;
+    break;
+  }
+  assert(false);
+  return return_val;
+} /* End of getNextValue() */
