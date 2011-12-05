@@ -1909,12 +1909,15 @@ int NpingOps::setupTargetHosts(){
       /* Now, tell the target host which packets it has to send. */
       if(this->ipv4()){
         newhost->setIPv4(&this->ip4);
-        if(this->mode(DO_ICMP))
-           newhost->setICMPv4(&this->icmp4);
       }else{
         newhost->setIPv6(&this->ip6);
-        if(this->mode(DO_ICMP))
+      }
+      if(this->mode(DO_ICMP)){
+        if(this->ipv4()){
+          newhost->setICMPv4(&this->icmp4);
+        }else{
           newhost->setICMPv6(&this->icmp6);
+        }
       }
       if(this->mode(DO_TCP))
         newhost->setTCP(&this->tcp);
