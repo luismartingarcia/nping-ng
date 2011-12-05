@@ -202,7 +202,7 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
   {"csum", required_argument, 0, 0},
   {"badsum", no_argument, 0, 0},
 
-  /* ICMP */
+  /* ICMPv4 */
   {"icmp-type", required_argument, 0, 0},
   {"icmp-code", required_argument, 0, 0},
   {"icmp-id", required_argument, 0, 0},
@@ -216,6 +216,14 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
   {"icmp-trans-time", required_argument, 0, 0},
   {"icmp-mask", required_argument, 0, 0},
   /* TODO: Add relevant flags for different ICMP options */
+
+  /* ICMPv6 */
+  {"icmp6-type", required_argument, 0, 0},
+  {"icmp6-code", required_argument, 0, 0},
+  {"icmp6-id", required_argument, 0, 0},
+  {"icmp6-seq", required_argument, 0, 0},
+  {"icmp6-param-pointer", required_argument, 0, 0},
+  {"icmp6-mtu", required_argument, 0, 0},
 
   /* ARP/RARP */
   /* 1) ARP operation codes. */
@@ -460,7 +468,7 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
       else
         o.tcp.win.setConstant(aux16);
 
-/* ICMP OPTIONS **************************************************************/
+/* ICMPv4 OPTIONS ************************************************************/
     /* ICMP Type */
     } else if (optcmp(long_options[option_index].name, "icmp-type") == 0) {
       o.addMode(DO_ICMP);
@@ -573,6 +581,72 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
         }
       }
     /* TODO: Add more relevant flags for different ICMP options */
+
+
+
+/* ICMPv6 OPTIONS ************************************************************/
+    /* ICMP Type */
+    } else if (optcmp(long_options[option_index].name, "icmp6-type") == 0) {
+      o.addMode(DO_ICMP);
+      /* User may have supplied type as a number */
+      if(parse_u8(optarg, &aux8) == OP_SUCCESS){
+        o.icmp6.type.setConstant(aux8);
+      /* Or maybe the supplied arg is a string that we can recognize */
+      }else if(atoICMPv6Type(optarg, &aux8) == OP_SUCCESS){
+        o.icmp6.type.setConstant(aux8);
+      /* Looks like user supplied a bogus value */
+      }else{
+        nping_fatal(QT_3, "Invalid ICMPv6 Type. Value must be 0<=N<=255.");
+      }
+      /* Warn if ICMP Type is not RFC-compliant */
+      // TODO @todo implement the isICMPv6Type() function so we can dispaly the warning
+      //if( !isICMPv6Type(aux8) )
+      //  nping_warning(QT_1, "Warning: Specified ICMPv6 type (%d) is not RFC compliant.", aux8);
+    /* ICMP Code */
+    } else if (optcmp(long_options[option_index].name, "icmp6-code") == 0) {
+      o.addMode(DO_ICMP);
+      /* User may have supplied code as a number */
+      if(parse_u8(optarg, &aux8) == OP_SUCCESS){
+        o.icmp6.code.setConstant(aux8);
+      /* Or maybe the supplied arg is a string that we can recognize */
+      }else if(atoICMPv6Code(optarg, &aux8) == OP_SUCCESS){
+        o.icmp6.code.setConstant(aux8);
+      /* Looks like user supplied a bogus value */
+      }else{
+        nping_fatal(QT_3, "Invalid ICMPv6 Code. Value must be 0<=N<=255.");
+      }
+    /* ICMP Identification field */
+    } else if (optcmp(long_options[option_index].name, "icmp6-id") == 0) {
+      o.addMode(DO_ICMP);
+      if(parse_u16(optarg, &aux16) == OP_SUCCESS){
+        o.icmp6.id.setConstant(aux16);
+      }else{
+        nping_fatal(QT_3, "Invalid ICMPv6 Identifier. Value must be 0<=N<2^16.");
+      }
+    /* ICMP Sequence number */
+    } else if (optcmp(long_options[option_index].name, "icmp6-seq") == 0) {
+      o.addMode(DO_ICMP);
+      if(parse_u16(optarg, &aux16) == OP_SUCCESS){
+        o.icmp6.seq.setConstant(aux16);
+      }else{
+        nping_fatal(QT_3, "Invalid ICMPv6 Sequence number. Value must be 0<=N<2^16.");
+      }
+    /* ICMPv6 parameter problem pointer */
+    } else if (optcmp(long_options[option_index].name, "icmp6-param-pointer") == 0) {
+      o.addMode(DO_ICMP);
+      if(parse_u32(optarg, &aux32) == OP_SUCCESS){
+        o.icmp6.pointer.setConstant(aux32);
+      }else{
+        nping_fatal(QT_3, "Invalid ICMPv6 Parameter Problem poitner. Value must be 0<=N<2^32.");
+      }
+    /* ICMP Packet Too Big MTU */
+    } else if (optcmp(long_options[option_index].name, "icmp6-mtu") == 0) {
+      o.addMode(DO_ICMP);
+      if(parse_u32(optarg, &aux32) == OP_SUCCESS){
+        o.icmp6.mtu.setConstant(aux32);
+      }else{
+        nping_fatal(QT_3, "Invalid ICMPv6 Packet Too Big MTU. Value must be 0<=N<2^32.");
+      }
 
 /* ARP/RARP OPTIONS **********************************************************/
     /* Operation code */
@@ -1674,6 +1748,199 @@ int ArgParser::atoICMPCode(char *opt, u8 *code){
  return OP_SUCCESS;
 } /* End of atoICMPCode() */
 
+
+
+
+typedef struct icmpcodes_t{
+  unsigned char code;
+  const char *str;
+}icmpcodes_t;
+
+
+int ArgParser::atoICMPv6Type(const char *opt, unsigned char *type){
+  if(opt==NULL || type==NULL)
+    return OP_FAILURE;
+
+  icmpcodes_t codelist[91]={{ICMPv6_UNREACH, "destination-unreachable"},
+                           {ICMPv6_UNREACH, "dest-unr"},
+                           {ICMPv6_UNREACH, "du"},
+                           {ICMPv6_PKTTOOBIG, "packet-too-big"},
+                           {ICMPv6_PKTTOOBIG, "pack-big"},
+                           {ICMPv6_PKTTOOBIG, "pb"},
+                           {ICMPv6_TIMXCEED, "time-exceeded"},
+                           {ICMPv6_TIMXCEED, "time-exc"},
+                           {ICMPv6_TIMXCEED, "te"},
+                           {ICMPv6_PARAMPROB, "parameter-problem"},
+                           {ICMPv6_PARAMPROB, "para-pro"},
+                           {ICMPv6_PARAMPROB, "pp"},
+                           {ICMPv6_ECHO, "echo-request"},
+                           {ICMPv6_ECHO, "echo"},
+                           {ICMPv6_ECHO, "e"},
+                           {ICMPv6_ECHOREPLY, "echo-reply"},
+                           {ICMPv6_ECHOREPLY, "echo-rep"},
+                           {ICMPv6_ECHOREPLY, "er"},
+                           {ICMPv6_GRPMEMBQUERY, "group-membership-query"},
+                           {ICMPv6_GRPMEMBQUERY, "grp-q"},
+                           {ICMPv6_GRPMEMBQUERY, "gmq"},
+                           {ICMPv6_GRPMEMBREP, "group-membership-report"},
+                           {ICMPv6_GRPMEMBREP, "grp-r"},
+                           {ICMPv6_GRPMEMBREP, "gmr"},
+                           {ICMPv6_GRPMEMBRED, "group-membership-reduction"},
+                           {ICMPv6_GRPMEMBRED, "grp-rd"},
+                           {ICMPv6_GRPMEMBRED, "gmrd"},
+                           {ICMPv6_ROUTERSOLICIT, "router-solicitation"},
+                           {ICMPv6_ROUTERSOLICIT, "rout-sol"},
+                           {ICMPv6_ROUTERSOLICIT, "rs"},
+                           {ICMPv6_ROUTERADVERT, "router-advertisement"},
+                           {ICMPv6_ROUTERADVERT, "rout-adv"},
+                           {ICMPv6_ROUTERADVERT, "ra"},
+                           {ICMPv6_NGHBRSOLICIT, "neighbor-solicitation"},
+                           {ICMPv6_NGHBRSOLICIT, "neig-sol"},
+                           {ICMPv6_NGHBRSOLICIT, "ns"},
+                           {ICMPv6_NGHBRADVERT, "neighbor-advertisement"},
+                           {ICMPv6_NGHBRADVERT, "neig-adv"},
+                           {ICMPv6_NGHBRADVERT, "na"},
+                           {ICMPv6_REDIRECT, "redirect"},
+                           {ICMPv6_REDIRECT, "redir"},
+                           {ICMPv6_REDIRECT, "r"},
+                           {ICMPv6_RTRRENUM, "router-renumbering"},
+                           {ICMPv6_RTRRENUM, "rout-ren"},
+                           {ICMPv6_RTRRENUM, "rr"},
+                           {ICMPv6_NODEINFOQUERY, "node-info-query"},
+                           {ICMPv6_NODEINFOQUERY, "node-que"},
+                           {ICMPv6_NODEINFOQUERY, "niq"},
+                           {ICMPv6_NODEINFORESP, "node-info-response"},
+                           {ICMPv6_NODEINFORESP, "node-res"},
+                           {ICMPv6_NODEINFORESP, "nir"},
+                           {ICMPv6_INVNGHBRSOLICIT, "inverse-neighbor-solicitation"},
+                           {ICMPv6_INVNGHBRSOLICIT, "inv-neig-sol"},
+                           {ICMPv6_INVNGHBRSOLICIT, "ins"},
+                           {ICMPv6_INVNGHBRADVERT, "inverse-neighbor-advert"},
+                           {ICMPv6_INVNGHBRADVERT, "inv-neig-adv"},
+                           {ICMPv6_INVNGHBRADVERT, "ina"},
+                           {ICMPv6_MLDV2, "multicast-listener-report"},
+                           {ICMPv6_MLDV2, "mld2"},
+                           {ICMPv6_MLDV2, "m2"},
+                           {ICMPv6_AGENTDISCOVREQ, "agent-discovery-request"},
+                           {ICMPv6_AGENTDISCOVREQ, "agen-req"},
+                           {ICMPv6_AGENTDISCOVREQ, "ad"},
+                           {ICMPv6_AGENTDISCOVREPLY, "agent-discovery-reply"},
+                           {ICMPv6_AGENTDISCOVREPLY, "agen-rep"},
+                           {ICMPv6_AGENTDISCOVREPLY, "adr"},
+                           {ICMPv6_MOBPREFIXSOLICIT, "mobile-prefix-solicitation"},
+                           {ICMPv6_MOBPREFIXSOLICIT, "mobi-pre"},
+                           {ICMPv6_MOBPREFIXSOLICIT, "mps"},
+                           {ICMPv6_MOBPREFIXADVERT, "mobile-prefix-advertisement"},
+                           {ICMPv6_MOBPREFIXADVERT, "mobi-adv"},
+                           {ICMPv6_MOBPREFIXADVERT, "mpa"},
+                           {ICMPv6_CERTPATHSOLICIT, "certificate-path-solicitation"},
+                           {ICMPv6_CERTPATHSOLICIT, "cert-sol"},
+                           {ICMPv6_CERTPATHSOLICIT, "cps"},
+                           {ICMPv6_CERTPATHADVERT, "certificate-path-advertisement"},
+                           {ICMPv6_CERTPATHADVERT, "cert-adv"},
+                           {ICMPv6_CERTPATHADVERT, "cpa"},
+                           {ICMPv6_EXPMOBILITY, "experimental-mobility"},
+                           {ICMPv6_EXPMOBILITY, "expe-mob"},
+                           {ICMPv6_EXPMOBILITY, "em"},
+                           {ICMPv6_MRDADVERT, "multicast-router-avertisement"},
+                           {ICMPv6_MRDADVERT, "mrou-adv"},
+                           {ICMPv6_MRDADVERT, "mra"},
+                           {ICMPv6_MRDSOLICIT, "multicast-router-solicitation"},
+                           {ICMPv6_MRDSOLICIT, "mrou-sol"},
+                           {ICMPv6_MRDSOLICIT, "mrs"},
+                           {ICMPv6_MRDTERMINATE, "multicast-router-termination"},
+                           {ICMPv6_MRDTERMINATE, "mrou-ter"},
+                           {ICMPv6_MRDTERMINATE, "mrt"},
+                           {ICMPv6_FMIPV6, "fmipv6"},
+                          };
+  for (int i=0; i<91; i++){
+    if(!strcasecmp(codelist[i].str, opt)){
+      *type=codelist[i].code;
+      return OP_SUCCESS;
+    }
+  }
+  return OP_FAILURE;
+} /* End of atoICMPv6Type() */
+
+
+int ArgParser::atoICMPv6Code(const char *opt, unsigned char *code){
+  if(opt==NULL || code==NULL)
+    return OP_FAILURE;
+
+  icmpcodes_t codelist[91]={{ICMPv6_UNREACH_NO_ROUTE, "no-route"},
+                           {ICMPv6_UNREACH_NO_ROUTE, "rout"},
+                           {ICMPv6_UNREACH_NO_ROUTE, "nr"},
+                           {ICMPv6_UNREACH_PROHIBITED, "communication-prohibited"},
+                           {ICMPv6_UNREACH_PROHIBITED, "comm-pro"},
+                           {ICMPv6_UNREACH_PROHIBITED, "cp"},
+                           {ICMPv6_UNREACH_BEYOND_SCOPE, "beyond-scope"},
+                           {ICMPv6_UNREACH_BEYOND_SCOPE, "beyo-sco"},
+                           {ICMPv6_UNREACH_BEYOND_SCOPE, "bs"},
+                           {ICMPv6_UNREACH_ADDR_UNREACH, "address-unreachable"},
+                           {ICMPv6_UNREACH_ADDR_UNREACH, "addr-unr"},
+                           {ICMPv6_UNREACH_ADDR_UNREACH, "au"},
+                           {ICMPv6_UNREACH_PORT_UNREACH, "port-unreachable"},
+                           {ICMPv6_UNREACH_PORT_UNREACH, "port-unr"},
+                           {ICMPv6_UNREACH_PORT_UNREACH, "pu"},
+                           {ICMPv6_UNREACH_SRC_ADDR_FAILED, "source-address-failed"},
+                           {ICMPv6_UNREACH_SRC_ADDR_FAILED, "saddr-fai"},
+                           {ICMPv6_UNREACH_SRC_ADDR_FAILED, "saf"},
+                           {ICMPv6_UNREACH_REJECT_ROUTE, "reject-route"},
+                           {ICMPv6_UNREACH_REJECT_ROUTE, "reje-rou"},
+                           {ICMPv6_UNREACH_REJECT_ROUTE, "rr"},
+                           {ICMPv6_TIMXCEED_HOP_EXCEEDED, "hops-exceeded"},
+                           {ICMPv6_TIMXCEED_HOP_EXCEEDED, "hops-exc"},
+                           {ICMPv6_TIMXCEED_HOP_EXCEEDED, "he"},
+                           {ICMPv6_TIMXCEED_REASS_EXCEEDED, "reassembly-exceeded"},
+                           {ICMPv6_TIMXCEED_REASS_EXCEEDED, "reas-exc"},
+                           {ICMPv6_TIMXCEED_REASS_EXCEEDED, "re"},
+                           {ICMPv6_PARAMPROB_FIELD, "bad-field"},
+                           {ICMPv6_PARAMPROB_FIELD, "bad-fie"},
+                           {ICMPv6_PARAMPROB_FIELD, "bf"},
+                           {ICMPv6_PARAMPROB_NEXT_HDR, "unknown-header"},
+                           {ICMPv6_PARAMPROB_NEXT_HDR, "unkn-hea"},
+                           {ICMPv6_PARAMPROB_NEXT_HDR, "uh"},
+                           {ICMPv6_PARAMPROB_OPTION, "unknown-option"},
+                           {ICMPv6_PARAMPROB_OPTION, "unkn-opt"},
+                           {ICMPv6_PARAMPROB_OPTION, "up"},
+                           {ICMPv6_RTRRENUM_COMMAND, "renumbering-command"},
+                           {ICMPv6_RTRRENUM_COMMAND, "renu-com"},
+                           {ICMPv6_RTRRENUM_COMMAND, "rc"},
+                           {ICMPv6_RTRRENUM_RESULT, "renumbering-result"},
+                           {ICMPv6_RTRRENUM_RESULT, "renu-res"},
+                           {ICMPv6_RTRRENUM_RESULT, "rrr"},
+                           {ICMPv6_RTRRENUM_SEQ_RESET, "sequence-reset"},
+                           {ICMPv6_RTRRENUM_SEQ_RESET, "sequ-res"},
+                           {ICMPv6_RTRRENUM_SEQ_RESET, "sr"},
+                           {ICMPv6_NODEINFOQUERY_IPv6ADDR, "ipv6-address"},
+                           {ICMPv6_NODEINFOQUERY_IPv6ADDR, "ipv6-add"},
+                           {ICMPv6_NODEINFOQUERY_IPv6ADDR, "6a"},
+                           {ICMPv6_NODEINFOQUERY_NAME, "name"},
+                           {ICMPv6_NODEINFOQUERY_NAME, "n"},
+                           {ICMPv6_NODEINFOQUERY_IPv4ADDR, "ipv4-address"},
+                           {ICMPv6_NODEINFOQUERY_IPv4ADDR, "ipv4-add"},
+                           {ICMPv6_NODEINFOQUERY_IPv4ADDR, "4a"},
+                           {ICMPv6_NODEINFORESP_SUCCESS, "success"},
+                           {ICMPv6_NODEINFORESP_SUCCESS, "succ"},
+                           {ICMPv6_NODEINFORESP_SUCCESS, "s"},
+                           {ICMPv6_NODEINFORESP_REFUSED, "responder-refuses"},
+                           {ICMPv6_NODEINFORESP_REFUSED, "resp-ref"},
+                           {ICMPv6_NODEINFORESP_REFUSED, "rrf"},
+                           {ICMPv6_NODEINFORESP_UNKNOWN, "qtype-unknown"},
+                           {ICMPv6_NODEINFORESP_UNKNOWN, "qtyp-unk"},
+                           {ICMPv6_NODEINFORESP_UNKNOWN, "qu"},
+                           {0, NULL}, /* STOP element */
+                          };
+
+
+  for(int i=0; codelist[i].str!=NULL; i++){
+    if(!strcasecmp(codelist[i].str, opt)){
+      *code=codelist[i].code;
+      return OP_SUCCESS;
+    }
+  }
+  return OP_FAILURE;
+} /* End of atoICMPv6Code() */
 
 
 /* Same as atoICMPCode() but for ARP operation codes */

@@ -136,6 +136,8 @@ class ArgParser {
     int parseAdvertEntry(char *str, struct in_addr *addr, u32 *pref);
     int atoICMPType(char *opt, u8 *type);
     int atoICMPCode(char *opt, u8 *code);
+    int atoICMPv6Type(const char *opt, unsigned char *type);
+    int atoICMPv6Code(const char *opt, unsigned char *code);
     int atoARPOpCode(char *opt, u16 *code);
     int atoEtherType(char *opt, u16 *type);
     int parseICMPTimestamp(char *optarg, u32 *dst);
