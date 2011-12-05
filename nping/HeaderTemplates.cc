@@ -287,3 +287,30 @@ void ICMPv4HeaderTemplate::reset(){
   this->seq.setStartValue(0);
 
 } /* End of reset() */
+
+
+/******************************************************************************
+ * ICMPv6HeaderTemplate Class                                                 *
+ ******************************************************************************/
+
+ICMPv6HeaderTemplate::ICMPv6HeaderTemplate(){
+  this->reset();
+} /* End of ICMPv6HeaderTemplate constructor */
+
+
+ICMPv6HeaderTemplate::~ICMPv6HeaderTemplate(){
+
+} /* End of ICMPv6HeaderTemplate destructor */
+
+
+/* This method returns the object to its default state. The reset() method is
+ * very important because it initializes ICMP header fields with default values
+ * that will affect the final packets that Nping produces. However, note that
+ * the values set here may be overridden by NpingOps if necessary */
+void ICMPv6HeaderTemplate::reset(){
+  this->type.setConstant(DEFAULT_ICMPv6_TYPE);
+  this->code.setConstant(DEFAULT_ICMPv6_CODE);
+  this->id.setConstant(get_random_u16());
+  this->seq.setBehavior(FIELD_TYPE_INCREMENTAL);
+  this->seq.setStartValue(0);
+} /* End of reset() */

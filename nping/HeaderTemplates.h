@@ -130,7 +130,8 @@
 #define DEFAULT_ICMPv4_CODE 0           /* Default message code             */
 
 /* ICMPv6 */
-
+#define DEFAULT_ICMPv6_TYPE 128         /* Default msg type = Echo request  */
+#define DEFAULT_ICMPv6_CODE 0           /* Default message code             */
 
 class HeaderTemplate{
   public:
@@ -242,6 +243,50 @@ class ICMPv4HeaderTemplate : public HeaderTemplate{
 
     ICMPv4HeaderTemplate();
     ~ICMPv4HeaderTemplate();
+    void reset();
+};
+
+
+class ICMPv6HeaderTemplate : public HeaderTemplate{
+  public:
+
+    /* Common ICMP fields */
+    ProtoField_u8 type;              /* ICMP message type          */
+    ProtoField_u8 code;              /* ICMP message code          */
+    ProtoField_u16 csum;             /* Checksum                   */
+
+    /* Echo requests/replies */
+    ProtoField_u16 id;               /* Identifier                 */
+    ProtoField_u16 seq;              /* Sequence number            */
+
+    /* Packet too big */
+    ProtoField_u32 mtu;              /* MTU that caused the error  */
+
+    /* Parameter problem */
+    ProtoField_u32 pointer;          /* Offset to the error        */
+
+    /* Router advertisements */
+    ProtoField_u8 ra_hlim;          /* Offset to the error           */
+    ProtoField_bool ra_M;           /* Managed Address Config Flag   */
+    ProtoField_bool ra_O;           /* Other Configuration Flag      */
+    ProtoField_bool ra_H;           /* Mobile Home Agent Flag        */
+    ProtoField_bool ra_Prf;         /* Router Selection Preferences  */
+    ProtoField_bool ra_P;           /* Neighbor Discovery Proxy Flag */
+    ProtoField_bool ra_R1;          /* Reserved flag                 */
+    ProtoField_bool ra_R2;          /* Reserved flag                 */
+    ProtoField_u16 ra_lifetime;     /* Router lifetime               */
+    ProtoField_u32 ra_reachtime;    /* Reachable time                */
+    ProtoField_u32 ra_retrtime;     /* Retrans time                  */
+
+    /* Neighbor advertisement */
+    ProtoField_bool na_R;           /* Router flag                   */
+    ProtoField_bool na_S;           /* Solicited flag                */
+    ProtoField_bool na_O;           /* Override flag                 */
+    //ProtoField_in6addr na_addr;     /* Target address                */
+
+
+    ICMPv6HeaderTemplate();
+    ~ICMPv6HeaderTemplate();
     void reset();
 };
 
