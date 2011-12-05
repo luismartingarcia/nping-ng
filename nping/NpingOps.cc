@@ -1999,7 +1999,7 @@ int NpingOps::setupTargetHosts(){
         if(this->mode(DO_ICMP))
            newhost->setICMPv4(&this->icmp4);
       }else{
-        //newhost->setIPv6(&this->ip6);
+        newhost->setIPv6(&this->ip6);
         //if(this->mode(DO_ICMP))
         //   newhost->setICMPv6(&this->icmp6);
       }
