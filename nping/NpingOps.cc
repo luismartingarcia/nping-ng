@@ -200,7 +200,6 @@ NpingOps::NpingOps() {
     /* IP Protocol */
     family=AF_INET;
 
-    /* IPv4 */
     mtu=0;
     mtu_set=false;
 
@@ -212,12 +211,6 @@ NpingOps::NpingOps() {
 
     spoof_addr=NULL;
 
-    /* IPv6 */
-    ipv6_tclass=0;
-    ipv6_tclass_set=false;
-
-    ipv6_flowlabel=0;
-    ipv6_flowlabel_set=false;
 
     /* TCP / UDP */
     target_ports=NULL;
@@ -887,7 +880,7 @@ int NpingOps::getRole(){
 
 
 /******************************************************************************
- * Internet Protocol  Version 4                                               *
+ * Internet Protocol                                                          *
  ******************************************************************************/
 
 /** Sets Maximum Transmission Unit length. Supplied parameter must be a positive
@@ -959,7 +952,6 @@ IPAddress *NpingOps::getSpoofAddress(){
 } /* End of getSpoofAddress() */
 
 
-
 /** @warning  This method makes a copy of the supplied buffer. That copy will
  *  be free()ed by the NpingOps destructor.                                  */
 int NpingOps::setIPOptions(char *txt){
@@ -979,51 +971,6 @@ char *NpingOps::getIPOptions(){
 bool NpingOps::issetIPOptions(){
   return this->ip_options_set;
 } /* End of issetIPOptions() */
-
-
-/******************************************************************************
- * Internet Protocol  Version 6                                               *
- ******************************************************************************/
-/** Sets TrafficClass.
- *  @return OP_SUCCESS on success and OP_FAILURE in case of error.           */
-int NpingOps::setTrafficClass(u8 val){
-  this->ipv6_tclass=val;
-  this->ipv6_tclass_set=true;
-  return OP_SUCCESS;
-} /* End of setTrafficClass() */
-
-
-/** Returns value of attribute ipv6_tclass */
-u8 NpingOps::getTrafficClass(){
-  return this->ipv6_tclass;
-} /* End of getTrafficClass() */
-
-
-/* Returns true if option has been set */
-bool NpingOps::issetTrafficClass(){
-  return this->ipv6_tclass_set;
-} /* End of issetTrafficClass() */
-
-
-/** Sets FlowLabel.
- *  @return OP_SUCCESS on success and OP_FAILURE in case of error.           */
-int NpingOps::setFlowLabel(u32 val){
-  this->ipv6_flowlabel=val;
-  this->ipv6_flowlabel_set=true;
-  return OP_SUCCESS;
-} /* End of setFlowLabel() */
-
-
-/** Returns value of attribute ipv6_flowlabel */
-u32 NpingOps::getFlowLabel(){
-  return this->ipv6_flowlabel;
-} /* End of getFlowLabel() */
-
-
-/* Returns true if option has been set */
-bool NpingOps::issetFlowLabel(){
-  return this->ipv6_flowlabel_set;
-} /* End of issetFlowLabel() */
 
 
 /******************************************************************************
@@ -1774,10 +1721,10 @@ char *NpingOps::select_network_iface(){
 
 int NpingOps::setDefaultHeaderValues(){
   if(this->ipv6()){ /* IPv6 */
-    if(!this->issetTrafficClass())
-        this->ipv6_tclass=DEFAULT_IPv6_TRAFFIC_CLASS;
-    if(!this->issetFlowLabel())
-        this->ipv6_flowlabel=(get_random_u32() % 1048575);
+//    if(!this->issetTrafficClass())
+//        this->ipv6_tclass=DEFAULT_IPv6_TRAFFIC_CLASS;
+//    if(!this->issetFlowLabel())
+//        this->ipv6_flowlabel=(get_random_u32() % 1048575);
   }else{ /* IPv4 */
 
   }

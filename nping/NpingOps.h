@@ -247,26 +247,16 @@ class NpingOps {
 
     /* IP Protocol */
     u8 family;                /* IP version to be used in all packets  */
-
-    /* IPv4 */
     u32 mtu;                  /* Custom MTU len (for IP fragmentation) */
     bool mtu_set;
     char *ip_options;         /* IP Options                            */
     bool ip_options_set;
     IPAddress *spoof_addr;    /* Spoofed source IP address             */
 
-    /* IPv6 */
-    u8 ipv6_tclass;           /* Traffic Class                         */
-    bool ipv6_tclass_set;
-    u32 ipv6_flowlabel;       /* Flow Label                            */
-    bool ipv6_flowlabel_set;
-
     /* TCP / UDP */
-
     u16 *target_ports;        /* Will point to an array of ports       */
     int tportcount;           /* Total number of target ports          */
     bool target_ports_set;
-
     u16 *source_ports;        /* Source port for TCP/UPD packets       */
     int sportcount;           /* Total number of source ports          */
     bool source_ports_set;
@@ -323,6 +313,7 @@ class NpingOps {
     vector<NetworkInterface *> interfaces; /* List of relevant net ifaces */
     NpingStats stats;                      /* Global statistics           */
     IPv4HeaderTemplate ip4;                /* Header field values for IPv4*/
+    IPv6HeaderTemplate ip6;                /* Header field values for IPv6*/
     TCPHeaderTemplate tcp;                 /* Header field values for TCP */
     UDPHeaderTemplate udp;                 /* Header field values for UDP */
     ICMPv4HeaderTemplate icmp4;            /* Header fields for ICMPv4    */

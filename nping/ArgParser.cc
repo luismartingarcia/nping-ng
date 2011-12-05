@@ -763,22 +763,24 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
     /* IPv6 Traffic class */
     } else if (optcmp(long_options[option_index].name, "traffic-class") == 0 ||
                optcmp(long_options[option_index].name, "tc") == 0 ){
-        if ( parse_u8(optarg, &aux8) == OP_SUCCESS )
-           o.setTrafficClass(aux8);
-        else
-            nping_fatal(QT_3,"IPv6 Traffic Class must be a number between 0 and 255 (inclusive)");
+      if(parse_u8(optarg, &aux8) == OP_SUCCESS){
+        o.ip6.tclass.setConstant(aux8);
+      }else{
+        nping_fatal(QT_3,"IPv6 Traffic Class must be a number between 0 and 255 (inclusive)");
+      }
     /* IPv6 Flow label */
     } else if (optcmp(long_options[option_index].name, "flow") == 0 ){
-		if( meansRandom(optarg) ){
-            o.setFlowLabel( get_random_u32()%1048575 ); /* Mod 2^20 so it doesn't exceed 20bits */
-        }else if ( parse_u32(optarg, &aux32) == OP_SUCCESS ){
-            if( aux32>1048575 )
-				nping_fatal(QT_3, "IPv6 Flow Label cannot be greater than 1048575 ");
-            else
-                o.setFlowLabel(aux32);
+      if(meansRandom(optarg)){
+        o.ip6.flow.setConstant(get_random_u32()%1048575); /* Mod 2^20 so it doesn't exceed 20bits */
+      }else if(parse_u32(optarg, &aux32) == OP_SUCCESS){
+        if(aux32>1048575){
+	  nping_fatal(QT_3, "IPv6 Flow Label cannot be greater than 1048575 ");
         }else{
-            nping_fatal(QT_3,"IPv6 Flow Label must be a number between 0 and 1048575");
+          o.ip6.flow.setConstant(aux32);
         }
+      }else{
+        nping_fatal(QT_3,"IPv6 Flow Label must be a number between 0 and 1048575");
+      }
 
 
 /* PACKET PAYLOAD OPTIONS  ***************************************************/

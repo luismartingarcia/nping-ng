@@ -275,7 +275,6 @@ int TargetHost::getNextPacketBatch(vector<PacketElement *> &Packets){
     }else if(this->ip6!=NULL){
       myip=myip6=this->getIPv6Header("TCP");
       myip6->setNextElement(mytcp);
-
       myip6->setPayloadLength();
     }
 
@@ -318,7 +317,6 @@ int TargetHost::getNextPacketBatch(vector<PacketElement *> &Packets){
     }else if(this->ip6!=NULL){
       myip=myip6=this->getIPv6Header("UDP");
       myip6->setNextElement(myudp);
-
       myip6->setPayloadLength();
     }
 
