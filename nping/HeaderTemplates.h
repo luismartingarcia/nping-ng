@@ -140,6 +140,18 @@ class HeaderTemplate{
 };
 
 
+class EthernetHeaderTemplate : public HeaderTemplate{
+  public:
+    ProtoField_mac dst;   /* Destination address         */
+    ProtoField_mac src;   /* Source address              */
+    ProtoField_u16 type;  /* Ether type                  */
+
+    EthernetHeaderTemplate();
+    ~EthernetHeaderTemplate();
+    void reset();
+};
+
+
 class IPv4HeaderTemplate : public HeaderTemplate{
   public:
     ProtoField_u8 tos;    /* Type of Service             */

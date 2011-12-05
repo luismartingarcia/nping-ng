@@ -104,7 +104,27 @@ HeaderTemplate::~HeaderTemplate(){
 } /* End of HeaderTemplate destructor */
 
 
+/******************************************************************************
+ * EthernetHeaderTemplate Class                                               *
+ ******************************************************************************/
 
+EthernetHeaderTemplate::EthernetHeaderTemplate(){
+  this->reset();
+} /* End of EthernetHeaderTemplate constructor */
+
+
+EthernetHeaderTemplate::~EthernetHeaderTemplate(){
+
+} /* End of EthernetHeaderTemplate destructor */
+
+
+/* This method returns the object to its default state. The reset() method is
+ * very important because it initializes Ethernet header fields with default values
+ * that will affect the final packets that Nping produces. However, note that
+ * the values set here may be overridden by NpingOps if necessary. */
+void EthernetHeaderTemplate::reset(){
+  // "src", "dst" and "type" are not set on purpose.
+} /* End of reset() */
 
 
 /******************************************************************************
