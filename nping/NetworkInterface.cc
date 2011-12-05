@@ -119,6 +119,24 @@ const char *NetworkInterface::getName(){
 } /* End of getName() */
 
 
+/* Returns the type of the interface. Returned type will be one of:
+ * devt_ethernet, devt_loopback, devt_p2p, devt_other. Those types are
+ * defined in libnetutil. */
+int NetworkInterface::getType(){
+  return this->iface.device_type;
+} /* End of getType() */
+
+
+/* Returns the MAC address of the device. None that if the interface type
+ * is not devt_ethernet, the returned result is unspecified. Therefore, the
+ * caller must ensure that the device is an Ethernet interface before calling
+ * this method.*/
+MACAddress NetworkInterface::getAddress(){
+  MACAddress mac;
+  mac.setAddress_bin(this->iface.mac);
+  return mac;
+} /* End of getAddress() */
+
 /* This provides a minor optimization for ProbeEngine. If we know how many
  * hosts are associated with a given interface, we can easily decide if we
  * can build a BPF filter that mentions host addresses explicitly or we

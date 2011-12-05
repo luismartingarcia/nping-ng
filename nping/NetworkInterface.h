@@ -108,6 +108,8 @@ class NetworkInterface{
     void reset();
 
     const char *getName();
+    int getType();
+    MACAddress getAddress();
     int addAssociatedHost();
     u32 associatedHosts();
 };
