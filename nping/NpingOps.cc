@@ -1243,6 +1243,11 @@ bool NpingOps::issetARPTargetProtoAddr(){
 } /* End of issetARPTargetProtoAddr() */
 
 
+
+/******************************************************************************
+ *  Echo mode                                                                 *
+ ******************************************************************************/
+
 /** Sets EchoPort.
  *  @return OP_SUCCESS on success and OP_FAILURE in case of error.           */
 int NpingOps::setEchoPort(u16 val){
