@@ -158,11 +158,7 @@ NpingOps::NpingOps() {
     rounds=DEFAULT_PACKET_ROUNDS;
     rounds_set=false;
 
-    sendpref=0;
-    sendpref_set=false;
-
-    send_eth=false;
-    send_eth_set=false;
+    sendpref=PACKET_SEND_NOPREF;
 
     delay=DEFAULT_DELAY;
     delay_set=false;
@@ -551,21 +547,12 @@ bool NpingOps::issetRounds(){
 
 /** Sets attribute sendpref which defines user's preference for packet
  *  sending. Supplied parameter must be an integer with one of these values:
- *  PACKET_SEND_NOPREF, PACKET_SEND_ETH_WEAK, PACKET_SEND_ETH_STRONG,
- *  PACKET_SEND_ETH, PACKET_SEND_IP_WEAK, PACKET_SEND_IP_STRONG, PACKET_SEND_IP
- *  @return OP_SUCCESS on success and OP_FAILURE in case of error.           */
+ *  PACKET_SEND_NOPREF, PACKET_SEND_ETH or PACKET_SEND_IP.
+ *  @return OP_SUCCESS. */
 int NpingOps::setSendPreference(int v){
-   if( v!=PACKET_SEND_NOPREF && v!=PACKET_SEND_ETH_WEAK &&
-       v!=PACKET_SEND_ETH_STRONG && v!=PACKET_SEND_ETH &&
-       v!=PACKET_SEND_IP_WEAK && v!=PACKET_SEND_IP_STRONG &&
-       v!=PACKET_SEND_IP ){
-        nping_fatal(QT_3,"setSendPreference(): Invalid value supplied\n");
-        return OP_FAILURE;
-    }else{
-        sendpref=v;
-    }
-    this->sendpref_set=true;
-    return OP_SUCCESS;
+  assert(v==PACKET_SEND_NOPREF || v==PACKET_SEND_ETH || v==PACKET_SEND_IP );
+  this->sendpref=v;
+  return OP_SUCCESS;
 } /* End of setSendPreference() */
 
 
@@ -573,59 +560,6 @@ int NpingOps::setSendPreference(int v){
 int NpingOps::getSendPreference(){
   return this->sendpref;
 } /* End of getSendPreference() */
-
-
-/* Returns true if option has been set */
-bool NpingOps::issetSendPreference(){
-  return this->sendpref_set;
-} /* End of issetSendPreference() */
-
-
-/* Returns true if send preference is Ethernet */
-bool NpingOps::sendPreferenceEthernet(){
-  if ( this->getSendPreference()==PACKET_SEND_ETH_WEAK )
-    return true;
-  else if (this->getSendPreference()==PACKET_SEND_ETH_STRONG)
-    return true;
-  else if (this->getSendPreference()==PACKET_SEND_ETH )
-    return true;
-  else
-    return false;
-} /* End of sendPreferenceEthernet() */
-
-
-/* Returns true if send preference is Ethernet */
-bool NpingOps::sendPreferenceIP(){
-  if ( this->getSendPreference()==PACKET_SEND_IP_WEAK )
-    return true;
-  else if (this->getSendPreference()==PACKET_SEND_IP_STRONG)
-    return true;
-  else if (this->getSendPreference()==PACKET_SEND_IP )
-    return true;
-  else
-    return false;
-} /* End of sendPreferenceIP() */
-
-
-/** Sets SendEth.
- *  @return OP_SUCCESS on success and OP_FAILURE in case of error.           */
-int NpingOps::setSendEth(bool val){
-  this->send_eth=val;
-  this->send_eth_set=true;
-  return OP_SUCCESS;
-} /* End of setSendEth() */
-
-
-/** Returns value of attribute send_eth */
-bool NpingOps::sendEth(){
-  return this->send_eth;
-} /* End of getSendEth() */
-
-
-/* Returns true if option has been set */
-bool NpingOps::issetSendEth(){
-  return this->send_eth_set;
-} /* End of issetSendEth() */
 
 
 /** Sets inter-probe delay. Supplied parameter is assumed to be in milliseconds
@@ -1399,8 +1333,6 @@ if (this->havePcap()==false){
 
  if( this->mode(DO_TCP_CONNECT) || this->mode(DO_UDP_UNPRIV) )
     nping_print(DBG_2,"Nping will send packets in unprivileged mode using regular system calls");
- else
-    nping_print(DBG_2,"Nping will send packets at %s",  this->sendEth() ? "raw ethernet level" : "raw IP level" );
 
 /** ECHO MODE ************************************************************/
 
@@ -1830,6 +1762,8 @@ int NpingOps::setupTargetHosts(){
   struct route_nfo route;
   IPAddress *auxaddr;
   bool iface_found=false;
+  bool do_eth=false;
+  MACAddress destmac;
 
   /* Store the spoof address if we have it */
   if(this->spoof_addr!=NULL){
@@ -1904,6 +1838,55 @@ int NpingOps::setupTargetHosts(){
         newhost->setInterface(newiface);
         this->interfaces.push_back(newiface);
         nping_print(DBG_4, "New interface required: %s", route.ii.devname);
+      }
+
+      /* Now let's see if we need to do address resolution on the target */
+      do_eth=false;
+      if(this->getSendPreference()==PACKET_SEND_NOPREF){
+        /* For IPv6 we always try to send at the Ethernet level because many
+         * systems impose big limitations on raw IPv6 sockets. We want to be
+         * able to produce our own IPv6 headers and injecting packets at
+         * the Ethernet level is the best way to do that.
+         *
+         * If the target is IPv4 then we don't need to make our life more
+         * difficult resolving mac addresses, we just send through a raw
+         * socket. */
+        if(this->target_addresses[i]->getVersion()==AF_INET6){
+          /* Of course, the network interface must be Ethernet.*/
+          if(newhost->getInterface()->getType()==devt_ethernet)
+            do_eth=true;
+        }
+      /* If the user explicitly requested Ethernet, go for it... */
+      }else if(this->getSendPreference()==PACKET_SEND_ETH){
+        /* ...unless the device is not Ethernet*/
+        if(newhost->getInterface()->getType()!=devt_ethernet){
+          nping_fatal(QT_3, "Ethernet requested for a host that is only reachable through a non-Ethernet network interface (%s).", newhost->getInterface()->getName());
+        }else{
+          do_eth=true;
+        }
+      }
+
+      /* If we have determined that we should send at the Ethernet level and
+       * we still don't have a next hop MAC address, we need to resolve it. */
+      if(do_eth){
+
+        /* First of all let's determine which IP address we need to use for
+         * the MAC resolution. If we are directly connected to the host
+         * then it's the host's address the one we are interested in. Otherwise
+         * we'll use the address of the default gateway */
+        IPAddress *address2resolve=NULL;;
+        if(newhost->getNetworkDistance()==DISTANCE_DIRECT){
+          address2resolve=newhost->getTargetAddress();
+        }else{
+          address2resolve=newhost->getNextHopAddress();
+        }
+        assert(address2resolve!=NULL);
+
+        /* Now do the actual ARP/ND resolution */
+        if(mac_resolve(address2resolve, newhost->getSourceAddress(),newhost->getInterface(), &destmac)!=OP_SUCCESS){
+          nping_warning(QT_1, "Failed to resolve MAC address for %s. Skipping target host %s", address2resolve->toString(),newhost->getTargetAddress()->toString());
+          continue;
+        }
       }
 
       /* Now, tell the target host which packets it has to send. */
