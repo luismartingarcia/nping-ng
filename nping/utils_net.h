@@ -138,6 +138,7 @@
 #include "nping.h"
 #include <vector>
 using std::vector;
+#include "NetworkInterface.h"
 
 
 u16 sockaddr2port(struct sockaddr_storage *ss);
@@ -211,5 +212,6 @@ route6_t *route_dst_ipv6_linux(const struct sockaddr_storage *const dst);
 const char *spec_to_addresses(const char *target_expr, int af, vector<IPAddress *> &addrlist, u8 max_netmask);
 const char *spec_to_ports(const char *origexpr, u16 **list, int *count);
 const char *getpts_aux(const char *origexpr, int nested, u8 *porttbl);
+int mac_resolve(IPAddress *tgt_addr, IPAddress *src_addr, NetworkInterface *iface, MACAddress *result);
 
 #endif /* UTILS_NET_H */

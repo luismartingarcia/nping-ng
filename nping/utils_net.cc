@@ -2146,3 +2146,60 @@ const char *getpts_aux(const char *origexpr, int nested, u8 *porttbl) {
   return NULL;
 } /* End of getpts_aux() */
 
+
+/* Tries to resolve the MAC address of an IP address.
+ * @param tgt_addr is the IP address of the host whose MAC we want to obtain.
+ * @param src_addr is the source IP address used to communicate with tgt_addr
+ * @param iface is the network interface to be used for the resolution
+ * @param result is where the resolved address will be stored.
+ * @return OP_SUCCESS if a MAC address for tgt_addr was found.
+ * @return OP_FAILURE if the resolution was not successful. */
+int mac_resolve(IPAddress *tgt_addr, IPAddress *src_addr, NetworkInterface *iface, MACAddress *result){
+  struct sockaddr_storage tgt_ss, src_ss;
+  arp_t *a=NULL;
+  struct arp_entry ae;
+  u8 auxmac[6]={0,0,0,0,0,0};
+  assert(tgt_addr!=NULL && src_addr!=NULL && iface!=NULL && result!=NULL);
+  tgt_addr->getAddress(&tgt_ss);
+  src_addr->getAddress(&src_ss);
+
+  /* First of all, let's see if we already have an entry in libnetutil's MAC cache. */
+  if(mac_cache_get(&tgt_ss, auxmac)) {
+    result->setAddress_bin(auxmac);
+    return OP_SUCCESS;
+  }
+
+  /* Let's see if the address is in the system's cache (only for IPv4). */
+  if(tgt_addr->getVersion()==AF_INET){
+    a=arp_open();
+    addr_ston((sockaddr *)&tgt_ss, &ae.arp_pa);
+    if(arp_get(a, &ae)==0){
+      mac_cache_set(&tgt_ss, ae.arp_ha.addr_eth.data);
+      result->setAddress_bin(ae.arp_ha.addr_eth.data);
+      arp_close(a);
+      return OP_SUCCESS;
+    }
+    arp_close(a);
+  }else{
+    // TODO: Find a way to check the system's Neighbor Discovery cache.
+  }
+
+  /* It looks like we have to use ARP or ND to resolve the address. */
+  if(tgt_addr->getVersion()==AF_INET){
+    if(doArp(iface->getName(), iface->getAddress().getAddress_bin(),
+              &src_ss, &tgt_ss, auxmac, NULL)) {
+      mac_cache_set(&tgt_ss, auxmac);
+      result->setAddress_bin(auxmac);
+      return OP_SUCCESS;
+    }
+  }else if(tgt_addr->getVersion()==AF_INET6){
+    if (doND(iface->getName(), iface->getAddress().getAddress_bin(),
+              &src_ss, &tgt_ss, auxmac, NULL)) {
+      mac_cache_set(&tgt_ss, auxmac);
+      result->setAddress_bin(auxmac);
+      return OP_SUCCESS;
+    }
+  }
+
+  return OP_FAILURE;
+} /* End of mac_resolve() */
