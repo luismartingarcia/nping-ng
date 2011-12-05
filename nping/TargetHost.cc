@@ -197,7 +197,8 @@ NetworkInterface *TargetHost::getInterface(){
 /* Associates the host with an IPv4 header template. */
 int TargetHost::setIPv4(IPv4HeaderTemplate *hdr){
   assert(hdr!=NULL);
-  this->ip4=hdr;
+  this->ip4=new IPv4HeaderTemplate();
+  *this->ip4=*hdr;
   return OP_SUCCESS;
 } /* End of setIPv4() */
 
@@ -205,7 +206,8 @@ int TargetHost::setIPv4(IPv4HeaderTemplate *hdr){
 /* Associates the host with an IPv6 header template. */
 int TargetHost::setIPv6(IPv6HeaderTemplate *hdr){
   assert(hdr!=NULL);
-  this->ip6=hdr;
+  this->ip6=new IPv6HeaderTemplate();
+  *this->ip6=*hdr;
   return OP_SUCCESS;
 } /* End of setIPv6() */
 
@@ -213,7 +215,8 @@ int TargetHost::setIPv6(IPv6HeaderTemplate *hdr){
 /* Associates the host with a TCP header template. */
 int TargetHost::setTCP(TCPHeaderTemplate *hdr){
   assert(hdr!=NULL);
-  this->tcp=hdr;
+  this->tcp=new TCPHeaderTemplate();
+  *this->tcp=*hdr;
   return OP_SUCCESS;
 } /* End of setTCP() */
 
@@ -221,7 +224,8 @@ int TargetHost::setTCP(TCPHeaderTemplate *hdr){
 /* Associates the host with a UDP header template. */
 int TargetHost::setUDP(UDPHeaderTemplate *hdr){
   assert(hdr!=NULL);
-  this->udp=hdr;
+  this->udp=new UDPHeaderTemplate();
+  *this->udp=*hdr;
   return OP_SUCCESS;
 } /* End of setUDP() */
 
@@ -229,7 +233,8 @@ int TargetHost::setUDP(UDPHeaderTemplate *hdr){
 /* Associates the host with an ICMPv4 header template. */
 int TargetHost::setICMPv4(ICMPv4HeaderTemplate *hdr){
   assert(hdr!=NULL);
-  this->icmp4=hdr;
+  this->icmp4=new ICMPv4HeaderTemplate();
+  *this->icmp4=*hdr;
   return OP_SUCCESS;
 } /* End of setICMPv4() */
 
