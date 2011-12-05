@@ -209,8 +209,8 @@ int ProbeEngine::start(vector<TargetHost *> &Targets, vector<NetworkInterface *>
   const char *filter = NULL;
   vector<const char *>bpf_filters;
   vector<PacketElement *> Packets;
-  struct timeval now, next_time;
-  int wait_time=0;
+  struct timeval now, now2, next_time;
+  int wait_time=0, time_deviation=0;
   u16 total_ports=0;
   u32 count=1;
 
@@ -246,12 +246,10 @@ int ProbeEngine::start(vector<TargetHost *> &Targets, vector<NetworkInterface *>
          * packets it wants to send to the supplied vector) */
         Targets[t]->getNextPacketBatch(Packets);
 
-        /* Determine when does the next packet transmission time start */
-        gettimeofday(&now, NULL);
-
         /* Here, schedule the immediate transmission of all the packets
          * provided by the TargetHosts. */
         nping_print(DBG_2, "Starting transmission of %d packets", (int)Packets.size());
+        gettimeofday(&now, NULL);
         while(Packets.size()>0){
             this->send_packet(Targets[t], Packets[0], &now);
            /* Delete the packet we've just sent from the list so we don't send
@@ -259,9 +257,9 @@ int ProbeEngine::start(vector<TargetHost *> &Targets, vector<NetworkInterface *>
            Packets.erase(Packets.begin(), Packets.begin()+1);
         }
 
-        /* The first time there is no inter-packet delay */
+        /* Determine how long do we have to wait until we send the next pkt */
         TIMEVAL_MSEC_ADD(next_time, start_time, count*o.getDelay() );
-        if((wait_time=TIMEVAL_MSEC_SUBTRACT(next_time, now)-1) < 0){
+        if((wait_time=TIMEVAL_MSEC_SUBTRACT(next_time, now)-time_deviation) < 0){
           nping_print(DBG_1, "Wait time < 0 ! (wait_time=%d)", wait_time);
           wait_time=0;
         }
@@ -273,6 +271,13 @@ int ProbeEngine::start(vector<TargetHost *> &Targets, vector<NetworkInterface *>
         /* Now wait until all events have been dispatched */
         nsock_loop(this->nsp, -1);
 
+        /* Let's see what time it is now so we can determine if we got the
+         * wait_time right. If we didn't, we compute the time deviation and
+         * apply it in the next iteration. */
+        gettimeofday(&now2, NULL);
+        if((time_deviation=TIMEVAL_MSEC_SUBTRACT(now2, now) - wait_time)<0){
+          time_deviation=0;
+        }
         count++;
       }
     }
