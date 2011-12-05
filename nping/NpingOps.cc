@@ -1868,8 +1868,7 @@ int NpingOps::setupTargetHosts(){
 
       /* If we have determined that we should send at the Ethernet level and
        * we still don't have a next hop MAC address, we need to resolve it. */
-      if(do_eth){
-
+      if(do_eth && !this->eth.dst.is_set()){
         /* First of all let's determine which IP address we need to use for
          * the MAC resolution. If we are directly connected to the host
          * then it's the host's address the one we are interested in. Otherwise
