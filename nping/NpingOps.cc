@@ -154,6 +154,8 @@ NpingOps::NpingOps() {
     show_sent_pkts=true;
     show_sent_pkts_set=false;
 
+    show_eth=false;
+
     /* Operation and Performance */
     rounds=DEFAULT_PACKET_ROUNDS;
     rounds_set=false;
@@ -512,6 +514,20 @@ bool NpingOps::showSentPackets(){
 bool NpingOps::issetShowSentPackets(){
   return this->show_sent_pkts_set;
 } /* End of issetShowSentPackets() */
+
+
+/** Control whether ethernet frames are displayed or not.
+ *  @return OP_SUCCESS on success and OP_FAILURE in case of error.           */
+int NpingOps::setShowEth(bool val){
+  this->show_eth=val;
+  return OP_SUCCESS;
+} /* End of setShowEth() */
+
+
+/** Returns true if the ethernet headers need to be printed.  */
+bool NpingOps::showEth(){
+  return this->show_eth;
+} /* End of showEth() */
 
 
 
