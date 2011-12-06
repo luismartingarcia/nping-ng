@@ -1911,7 +1911,7 @@ int NpingOps::setupTargetHosts(){
       }
 
       /* Now, tell the target host which packets it has to send. */
-      if(this->ipv4()){
+      if(this->target_addresses[i]->getVersion()==AF_INET){
         newhost->setIPv4(&this->ip4);
       }else{
         newhost->setIPv6(&this->ip6);
