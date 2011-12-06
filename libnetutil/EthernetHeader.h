@@ -186,7 +186,7 @@ class EthernetHeader : public DataLinkLayerElement {
         int setSrcMAC(const u8 *m);
         const u8 *getSrcMAC() const;
 
-        int setDstMAC(u8 *m);
+        int setDstMAC(const u8 *m);
         const u8 *getDstMAC() const;
 
         int setEtherType(u16 val);

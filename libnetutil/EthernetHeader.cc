@@ -255,7 +255,7 @@ const u8* EthernetHeader::getSrcMAC() const {
 
 /** Sets Destination MAC address
  *  @warning Supplied buffer must contain at least 6 bytes */
-int EthernetHeader::setDstMAC(u8 *m){
+int EthernetHeader::setDstMAC(const u8 *m){
   if(m==NULL)
     netutil_fatal("EthernetHeader::setDstMAC(u8 *): NULL value supplied ");
   memcpy(h.eth_dmac, m, 6);
