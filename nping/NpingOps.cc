@@ -1772,11 +1772,19 @@ int NpingOps::setupTargetHosts(){
 
   /* Turn each target spec into an array of addresses */
   for(u32 i=0; i<this->target_specs.size(); i++){
-    assert(this->af()==AF_INET || this->af()==AF_INET6);
-    if(this->af()==AF_INET){
+    assert(this->af()==AF_INET || this->af()==AF_INET6 || this->af()==AF_UNSPEC);
+    /* We always use spec_to_addresses() but we call it in different ways depending
+     * on the address family that we want to use. */
+    if(starts_with(this->target_specs[i], "ipv4://")){
+      errmsg=spec_to_addresses( this->target_specs[i]+strlen("ipv4://"), AF_INET, this->target_addresses, MAX_IPv4_NETMASK_ALLOWED);
+    }else if(starts_with(this->target_specs[i], "ipv6://")){
+      errmsg=spec_to_addresses( this->target_specs[i]+strlen("ipv6://"), AF_INET6, this->target_addresses, MAX_IPv6_NETMASK_ALLOWED);
+    }else if(this->af()==AF_INET){
       errmsg=spec_to_addresses( this->target_specs[i], AF_INET, this->target_addresses, MAX_IPv4_NETMASK_ALLOWED);
-    }else{
+    }else if(this->af()==AF_INET6){
       errmsg=spec_to_addresses( this->target_specs[i], AF_INET6, this->target_addresses, MAX_IPv6_NETMASK_ALLOWED);
+    }else{ // AF_UNSPEC
+      errmsg=spec_to_addresses(this->target_specs[i], AF_UNSPEC, this->target_addresses, 0);
     }
     if(errmsg!=NULL){
       nping_warning(QT_1, "WARNING: %s (%s)", errmsg, this->target_specs[i]);
