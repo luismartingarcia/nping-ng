@@ -91,6 +91,7 @@
  ***************************************************************************/
 
 #include "TargetHost.h"
+#include "output.h"
 
 TargetHost::TargetHost(){
   this->reset();
@@ -274,14 +275,24 @@ int TargetHost::getNextPacketBatch(vector<PacketElement *> &Packets){
   UDPHeader *myudp=NULL;
   ICMPv4Header *myicmp4=NULL;
   ICMPv6Header *myicmp6=NULL;
+  int ip_version=AF_UNSPEC;
   u16 sum=0, aux=0;
+
+  /* First of all, determine which IP version this host uses */
+  if(this->ip4!=NULL){
+    ip_version=AF_INET;
+  }else if(this->ip6!=NULL){
+    ip_version=AF_INET6;
+  }else{
+    nping_fatal(QT_3, "%s(): No IP version set.",__func__);
+  }
 
   /* Build a TCP packet */
   if(this->tcp!=NULL){
 
     mytcp=this->getTCPHeader();
 
-    if(this->ip4!=NULL){
+    if(ip_version==AF_INET){
       myip=myip4=this->getIPv4Header("TCP");
       myip4->setNextElement(mytcp);
       myip4->setTotalLength();
@@ -297,7 +308,7 @@ int TargetHost::getNextPacketBatch(vector<PacketElement *> &Packets){
         /* This means the user set a specific value, not --badsum-ip */
         myip4->setSum(this->ip4->csum.getNextValue());
       }
-    }else if(this->ip6!=NULL){
+    }else if(ip_version==AF_INET6){
       myip=myip6=this->getIPv6Header("TCP");
       myip6->setNextElement(mytcp);
       myip6->setPayloadLength();
@@ -323,7 +334,7 @@ int TargetHost::getNextPacketBatch(vector<PacketElement *> &Packets){
 
     myudp=this->getUDPHeader();
 
-    if(this->ip4!=NULL){
+    if(ip_version==AF_INET){
       myip=myip4=this->getIPv4Header("UDP");
       myip4->setNextElement(myudp);
       myip4->setTotalLength();
@@ -339,7 +350,7 @@ int TargetHost::getNextPacketBatch(vector<PacketElement *> &Packets){
         /* This means the user set a specific value, not --badsum-ip */
         myip4->setSum(this->ip4->csum.getNextValue());
       }
-    }else if(this->ip6!=NULL){
+    }else if(ip_version==AF_INET6){
       myip=myip6=this->getIPv6Header("UDP");
       myip6->setNextElement(myudp);
       myip6->setPayloadLength();
@@ -362,7 +373,7 @@ int TargetHost::getNextPacketBatch(vector<PacketElement *> &Packets){
 
   /* Build an ICMPv4 packet */
   if(this->icmp4!=NULL){
-
+    assert(ip_version==AF_INET);
     myicmp4=this->getICMPv4Header();
     myip4=this->getIPv4Header("ICMP");
     myip4->setNextElement(myicmp4);
@@ -397,7 +408,7 @@ int TargetHost::getNextPacketBatch(vector<PacketElement *> &Packets){
 
   /* Build an ICMPv6 packet */
   if(this->icmp6!=NULL){
-
+    assert(ip_version==AF_INET6);
     myicmp6=this->getICMPv6Header();
     myip6=this->getIPv6Header("ICMPv6");
     myip6->setNextElement(myicmp6);
