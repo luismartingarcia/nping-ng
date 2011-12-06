@@ -1987,7 +1987,7 @@ const char *spec_to_addresses(const char *target_expr, int af, vector<IPAddress 
     }
 
   /* IPv6 */
-  }else{
+  }else if(af==AF_INET6) {
     /* For IPv6, only hostnames or single addresses are accepted */
     base_address=new IPAddress();
     if( base_address->setIPv6Address(hostexp) != OP_SUCCESS ){
@@ -1997,6 +1997,28 @@ const char *spec_to_addresses(const char *target_expr, int af, vector<IPAddress 
       /* We got the host's IPv6 address! Now we insert it into the address list */
       addrlist.push_back(base_address);
       return NULL;
+    }
+  /* No address family specified. */
+  }else if(af==AF_UNSPEC){
+    /* If the address is an IPv4 address in dot-decimal notations, treat it as such. */
+    if(IPAddress::isIPv4Address(hostexp)){
+      return spec_to_addresses(target_expr, AF_INET, addrlist, 32);
+    /* Maybe it's an IPv6 address like 2600:1337::1 */
+    }else if(IPAddress::isIPv6Address(hostexp)){
+      return spec_to_addresses(target_expr, AF_INET6, addrlist, 128);
+    /* It looks like we have a hostname. In this case, we'll let the OS decide
+     * which IP version to use. */
+    }else{
+      struct sockaddr_storage ss;
+      size_t sslen;
+      if(IPAddress::resolve(hostexp, &ss, &sslen, AF_UNSPEC)==OP_SUCCESS){
+        base_address=new IPAddress();
+        base_address->setAddress(ss);
+        addrlist.push_back(base_address);
+        return NULL;
+      }else{
+        return "Failed to resolve supplied AF_UNSPEC IP address.";
+      }
     }
   }
   return NULL;
