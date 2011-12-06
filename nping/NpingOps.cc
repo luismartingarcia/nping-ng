@@ -530,6 +530,18 @@ bool NpingOps::showEth(){
 } /* End of showEth() */
 
 
+/* Returns the level of detail to use when printing packets. The returned
+ * value is suitable to be passed to the print() function of any PacketElement
+ * instance. */
+int NpingOps::getDetailLevel(){
+  if(this->vb>=VB_2)
+    return HIGH_DETAIL;
+  else if(this->vb==VB_1)
+    return MEDIUM_DETAIL;
+  else
+    return LOW_DETAIL;
+} /* End of getDetailLevel() */
+
 
 /******************************************************************************
  *  Operation and Performance                                                 *

@@ -347,6 +347,8 @@ class NpingOps {
     int setShowEth(bool val);
     bool showEth();
 
+    int getDetailLevel();
+
     /* Operation and Performance */
     int setDelay(long t);
     long getDelay();
