@@ -268,6 +268,7 @@ int TargetHost::setICMPv6(ICMPv6HeaderTemplate *hdr){
  * so the actual transmission rate must be handled externally. This method
  * return OP_SUCCESS on success and OP_FAILURE in case of error. */
 int TargetHost::getNextPacketBatch(vector<PacketElement *> &Packets){
+  EthernetHeader *myeth=NULL;
   IPv4Header *myip4=NULL;
   IPv6Header *myip6=NULL;
   NetworkLayerElement *myip=NULL;
@@ -328,8 +329,15 @@ int TargetHost::getNextPacketBatch(vector<PacketElement *> &Packets){
       /* This means the user set a specific value, not --badsum */
       mytcp->setSum(this->tcp->csum.getNextValue());
     }
-    /* Once we have the packet ready, insert it into the tx queue */
-    Packets.push_back(myip);
+    /* Now that we have the full packet, prepend it with an Ethernet header if
+     * appropriate and insert it into the tx queue. */
+    if(this->eth!=NULL){
+      myeth=getEthernetHeader(eth_type);
+      myeth->setNextElement(myip);
+      Packets.push_back(myeth);
+    }else{
+      Packets.push_back(myip);
+    }
   }
 
   /* Build an UDP packet */
@@ -370,8 +378,16 @@ int TargetHost::getNextPacketBatch(vector<PacketElement *> &Packets){
       /* This means the user set a specific value, not --badsum */
       myudp->setSum(this->udp->csum.getNextValue());
     }
-    /* Once we have the packet ready, insert it into the tx queue */
-    Packets.push_back(myip);
+
+    /* Now that we have the full packet, prepend it with an Ethernet header if
+     * appropriate and insert it into the tx queue. */
+    if(this->eth!=NULL){
+      myeth=getEthernetHeader(eth_type);
+      myeth->setNextElement(myip);
+      Packets.push_back(myeth);
+    }else{
+      Packets.push_back(myip);
+    }
   }
 
   /* Build an ICMPv4 packet */
@@ -405,8 +421,15 @@ int TargetHost::getNextPacketBatch(vector<PacketElement *> &Packets){
       /* This means the user set a specific value, not --badsum */
       myicmp4->setSum(this->icmp4->csum.getNextValue());
     }
-    /* Once we have the packet ready, insert it into the tx queue */
-    Packets.push_back(myip4);
+    /* Now that we have the full packet, prepend it with an Ethernet header if
+     * appropriate and insert it into the tx queue. */
+    if(this->eth!=NULL){
+      myeth=getEthernetHeader(eth_type);
+      myeth->setNextElement(myip4);
+      Packets.push_back(myeth);
+    }else{
+      Packets.push_back(myip4);
+    }
   }
 
   /* Build an ICMPv6 packet */
@@ -428,8 +451,15 @@ int TargetHost::getNextPacketBatch(vector<PacketElement *> &Packets){
       /* This means the user set a specific value, not --badsum */
       myicmp6->setSum(this->icmp6->csum.getNextValue());
     }
-    /* Once we have the packet ready, insert it into the tx queue */
-    Packets.push_back(myip6);
+    /* Now that we have the full packet, prepend it with an Ethernet header if
+     * appropriate and insert it into the tx queue. */
+    if(this->eth!=NULL){
+      myeth=getEthernetHeader(eth_type);
+      myeth->setNextElement(myip6);
+      Packets.push_back(myeth);
+    }else{
+      Packets.push_back(myip6);
+    }
   }
 
   return OP_SUCCESS;
