@@ -276,13 +276,16 @@ int TargetHost::getNextPacketBatch(vector<PacketElement *> &Packets){
   ICMPv4Header *myicmp4=NULL;
   ICMPv6Header *myicmp6=NULL;
   int ip_version=AF_UNSPEC;
+  u16 eth_type=0;
   u16 sum=0, aux=0;
 
   /* First of all, determine which IP version this host uses */
   if(this->ip4!=NULL){
     ip_version=AF_INET;
+    eth_type=ETHTYPE_IPV4;
   }else if(this->ip6!=NULL){
     ip_version=AF_INET6;
+    eth_type=ETHTYPE_IPV6;
   }else{
     nping_fatal(QT_3, "%s(): No IP version set.",__func__);
   }
