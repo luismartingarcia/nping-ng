@@ -155,6 +155,7 @@ int parse_u8(const char *str, u8 *dstbuff);
 int parse_u16(const char *str, u16 *dstbuff);
 int parse_u32(const char *str, u32 *dstbuff);
 int print_hexdump(int level, const u8 *cp, u32 length);
+bool starts_with(const char *string, const char *start);
 
 #endif /* UTILS_H */
 

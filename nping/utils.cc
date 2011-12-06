@@ -507,3 +507,13 @@ int print_hexdump(int level, const u8 *cp, u32 length){
   free(str);
   return OP_SUCCESS;
 } /* End of print_hexdump() */
+
+
+/** @warning This function is NOT case sensitive */
+bool starts_with(const char *string, const char *start){
+  assert(string!=NULL && start!=NULL);
+  if(!strncasecmp(string, start, strlen(start)))
+    return true;
+  else
+    return false;
+} /* End of starts_with() */
