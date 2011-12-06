@@ -1925,7 +1925,7 @@ int NpingOps::setupTargetHosts(){
         newhost->setIPv6(&this->ip6);
       }
       if(this->mode(DO_ICMP)){
-        if(this->ipv4()){
+        if(this->target_addresses[i]->getVersion()==AF_INET){
           newhost->setICMPv4(&this->icmp4);
         }else{
           newhost->setICMPv6(&this->icmp6);
