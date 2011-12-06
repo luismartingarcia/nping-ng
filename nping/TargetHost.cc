@@ -422,6 +422,25 @@ int TargetHost::getNextPacketBatch(vector<PacketElement *> &Packets){
 } /* End of getNextPacketBatch() */
 
 
+
+/* @param eth_type is significant only if this->eth->type has not been set. */
+EthernetHeader *TargetHost::getEthernetHeader(u16 eth_type){
+  EthernetHeader *myeth=NULL;
+  MACAddress auxmac;
+  assert(this->eth!=NULL);
+  myeth=new EthernetHeader();
+  auxmac=this->eth->src.getNextValue();
+  myeth->setSrcMAC(auxmac.getAddress_bin());
+  auxmac=this->eth->dst.getNextValue();
+  myeth->setDstMAC(auxmac.getAddress_bin());
+  if(this->eth->type.is_set())
+    myeth->setEtherType(this->eth->type.getNextValue());
+  else
+    myeth->setEtherType(eth_type);
+  return myeth;
+} /* End of getEthernetHeader() */
+
+
 IPv4Header *TargetHost::getIPv4Header(const char *next_proto){
   IPv4Header *myip4=NULL;
   assert(this->ip4!=NULL);
