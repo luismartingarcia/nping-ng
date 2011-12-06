@@ -410,7 +410,7 @@ int ProbeEngine::send_packet(TargetHost *tgt, PacketElement *pkt, struct timeval
     }
     send_ip_packet_sd(this->rawsd4, &s4, pktbuff, pkt->getLen() );
   }else if(pkt->protocol_id()==HEADER_TYPE_IPv6){
-
+    // TODO @todo finish this!
   }else{
     nping_fatal(QT_3, "%s(): Unknown protocol", __func__);
   }
