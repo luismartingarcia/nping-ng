@@ -267,7 +267,11 @@ int TargetHost::setICMPv6(ICMPv6HeaderTemplate *hdr){
  * call. The inserted packets are meant to be sent straight away, or whenever
  * the caller wants, but note that TargetHosts do not keep timing information
  * so the actual transmission rate must be handled externally. This method
- * return OP_SUCCESS on success and OP_FAILURE in case of error. */
+ * return OP_SUCCESS on success and OP_FAILURE in case of error.
+ *
+ * Note that the caller MUST NEVER attempt to free() the packets returned by
+ * this method. TargetHosts keep track of all packets they produce and will
+ * handle memory allocation themselves. */
 int TargetHost::getNextPacketBatch(vector<PacketElement *> &Packets){
   EthernetHeader *myeth=NULL;
   IPv4Header *myip4=NULL;
@@ -336,8 +340,10 @@ int TargetHost::getNextPacketBatch(vector<PacketElement *> &Packets){
       myeth=getEthernetHeader(eth_type);
       myeth->setNextElement(myip);
       Packets.push_back(myeth);
+      this->store_packet(myeth);
     }else{
       Packets.push_back(myip);
+      this->store_packet(myip);
     }
   }
 
@@ -386,8 +392,10 @@ int TargetHost::getNextPacketBatch(vector<PacketElement *> &Packets){
       myeth=getEthernetHeader(eth_type);
       myeth->setNextElement(myip);
       Packets.push_back(myeth);
+      this->store_packet(myeth);
     }else{
       Packets.push_back(myip);
+      this->store_packet(myip);
     }
   }
 
@@ -428,8 +436,10 @@ int TargetHost::getNextPacketBatch(vector<PacketElement *> &Packets){
       myeth=getEthernetHeader(eth_type);
       myeth->setNextElement(myip4);
       Packets.push_back(myeth);
+      this->store_packet(myeth);
     }else{
       Packets.push_back(myip4);
+      this->store_packet(myip4);
     }
   }
 
@@ -458,8 +468,10 @@ int TargetHost::getNextPacketBatch(vector<PacketElement *> &Packets){
       myeth=getEthernetHeader(eth_type);
       myeth->setNextElement(myip6);
       Packets.push_back(myeth);
+      this->store_packet(myeth);
     }else{
       Packets.push_back(myip6);
+      this->store_packet(myip6);
     }
   }
 
@@ -695,3 +707,20 @@ ICMPv6Header *TargetHost::getICMPv6Header(){
 
   return myicmp6;
 } /* End of getICMPv6Header() */
+
+
+/* This method stores a chain of PacketElements inside the object. In particular,
+ * the supplied pointer is stored in the TargetHost::sent_pkts vector. Note that
+ * then MAX_STORED_PACKETS_PER_HOST is exceeded, the oldest packet in the list
+ * will be removed (and its elements will be freed). /*/
+int TargetHost::store_packet(PacketElement *pkt){
+  assert(pkt!=NULL);
+  /* Check if we have reached the maximum number of packets we are allowed to
+   * store. In that case, delete the oldest one.*/
+  if(this->sent_pkts.size()>=MAX_STORED_PACKETS_PER_HOST){
+    PacketParser::freePacketChain(this->sent_pkts[0]);
+    this->sent_pkts.erase(this->sent_pkts.begin(), this->sent_pkts.begin()+1);
+  }
+  this->sent_pkts.push_back(pkt);
+  return OP_SUCCESS;
+} /* End of store_packet() */

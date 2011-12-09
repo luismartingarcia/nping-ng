@@ -104,6 +104,14 @@ using namespace std;
 #define DISTANCE_UNKONWN -1   /* We don't know how far the host is. */
 #define DISTANCE_DIRECT   0   /* The host is directly connected.    */
 
+/* Maximum number of sent packets that a host stores internally. This value
+ * directly affects the ability of a host to determine whether a received
+ * packet is a response to a packet that it produced earlier. When the
+ * inter-packet delay is something crazy like 1ms and the RTT is high, we may
+ * not be able to correlate packets. Increasing the value for this define may
+ * help. */
+#define MAX_STORED_PACKETS_PER_HOST 1024
+
 class TargetHost{
 
   private:
@@ -126,6 +134,8 @@ class TargetHost{
     int net_distance;        /* If >=0, indicates how many hops away the target is    */
     NetworkInterface *iface; /* Info about the proper interface to reach target       */
 
+    vector<PacketElement *> sent_pkts; /* List of transmitted packets */
+
     EthernetHeader *getEthernetHeader(u16 eth_type);
     IPv4Header *getIPv4Header(const char *next_proto);
     IPv6Header *getIPv6Header(const char *next_proto);
@@ -133,6 +143,7 @@ class TargetHost{
     UDPHeader *getUDPHeader();
     ICMPv4Header *getICMPv4Header();
     ICMPv6Header *getICMPv6Header();
+    int store_packet(PacketElement *pkt);
 
   public:
     TargetHost();
