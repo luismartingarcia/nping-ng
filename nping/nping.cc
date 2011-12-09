@@ -145,6 +145,7 @@ using namespace std;
 NpingOps o;
 //EchoClient ec;
 //EchoServer es;
+ProbeEngine prob; /* Probe Mode Engine               */
 
 int do_safe_checks();
 void test_stuff();
@@ -160,7 +161,6 @@ int main(int argc, char *argv[] ){
   time_t now;       /* Stores current time             */
   char tbuf[128];   /* Stores current time as a string */
   ArgParser a;      /* Command line argument parser    */
-  ProbeEngine prob; /* Probe Mode Engine               ŝ*/
 
   /* Get current time */
   now = time(NULL);
