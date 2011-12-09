@@ -415,14 +415,16 @@ int ProbeEngine::send_packet(TargetHost *tgt, PacketElement *pkt, struct timeval
     nping_fatal(QT_3, "%s(): Unknown protocol", __func__);
   }
 
-  nping_print(VB_0|NO_NEWLINE,"SENT (%.4fs) ", ((double)TIMEVAL_MSEC_SUBTRACT(*now, this->start_time)) / 1000);
-
-  if(o.showEth()==false && pkt->protocol_id()==HEADER_TYPE_ETHERNET){
-    pkt->getNextElement()->print(stdout, o.getDetailLevel());
-  }else{
-    pkt->print(stdout, o.getDetailLevel());
+  /* Finally, print the packet we've just sent */
+  if(o.showSentPackets()){
+    nping_print(VB_0|NO_NEWLINE,"SENT (%.4fs) ", ((double)TIMEVAL_MSEC_SUBTRACT(*now, this->start_time)) / 1000);
+    if(o.showEth()==false && pkt->protocol_id()==HEADER_TYPE_ETHERNET){
+      pkt->getNextElement()->print(stdout, o.getDetailLevel());
+    }else{
+      pkt->print(stdout, o.getDetailLevel());
+    }
+    printf("\n");
   }
-  printf("\n");
   return OP_SUCCESS;
 } /* End of send_packet() */
 
