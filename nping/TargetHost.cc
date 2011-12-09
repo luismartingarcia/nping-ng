@@ -724,3 +724,19 @@ int TargetHost::store_packet(PacketElement *pkt){
   this->sent_pkts.push_back(pkt);
   return OP_SUCCESS;
 } /* End of store_packet() */
+
+
+int TargetHost::is_response(PacketElement *pkt_rcvd){
+  assert(pkt_rcvd!=NULL);
+
+  for(size_t i=0; i<this->sent_pkts.size(); i++){
+    /* If we found the probe that matches the answer, then we remove the
+     * probe from our list so we don't process it again next time. */
+    if(PacketParser::is_response(this->sent_pkts[i], pkt_rcvd)){
+      PacketParser::freePacketChain(this->sent_pkts[i]);
+      this->sent_pkts.erase(this->sent_pkts.begin()+i, this->sent_pkts.begin()+i+1);
+      // TODO: @todo Here update internal stats!
+    }
+  }
+  return false;
+} /* End of is_response() */

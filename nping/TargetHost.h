@@ -180,6 +180,7 @@ class TargetHost{
 
     void reset();
     int getNextPacketBatch(vector<PacketElement *> &Packets);
+    int is_response(PacketElement *pkt_rcvd);
 
 };
 
