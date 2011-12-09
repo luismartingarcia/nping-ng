@@ -97,7 +97,7 @@
 #include "NpingOps.h"
 
 extern NpingOps o;
-
+extern ProbeEngine prob;
 
 ProbeEngine::ProbeEngine() {
   this->reset();
@@ -234,6 +234,11 @@ int ProbeEngine::start(vector<TargetHost *> &Targets, vector<NetworkInterface *>
 
   /* Init the time counters */
   gettimeofday(&this->start_time, NULL);
+
+  /* Schedule the first pcap read event (one for each interface we use) */
+  for(size_t i=0; i<this->pcap_iods.size(); i++){
+    nsock_pcap_read_packet(this->nsp, this->pcap_iods[i], packet_capture_handler_wrapper, -1, NULL);
+  }
 
   /* Do the Probe Mode rounds! */
   for(unsigned int r=0; r<o.getRounds(); r++){
@@ -429,6 +434,74 @@ int ProbeEngine::send_packet(TargetHost *tgt, PacketElement *pkt, struct timeval
 } /* End of send_packet() */
 
 
+/* This method is the handler for PCAP_READ events. In other words, every time
+ * nsock captures a packet from the wire, this method is called. In it, we
+ * parse the captured packet and decide if it corresponds to a reply to one of
+ * the probes we've already sent. If it does, the contents are printed out and
+ * the statistics are updated. */
+int ProbeEngine::packet_capture_handler(nsock_pool nsp, nsock_event nse, void *arg){
+  nsock_iod nsi = nse_iod(nse);
+  enum nse_status status = nse_status(nse);
+  enum nse_type type = nse_type(nse);
+  const u8 *rcvd_pkt = NULL;                /* Points to the captured packet */
+  size_t rcvd_pkt_len = 0;                  /* Lenght of the captured packet */
+  struct timeval pcaptime;                  /* Time the packet was captured  */
+  struct timeval now;
+  gettimeofday(&now, NULL);
+  PacketElement *pkt=NULL;
+
+  if (status == NSE_STATUS_SUCCESS) {
+    switch(type) {
+
+      case NSE_TYPE_PCAP_READ:
+
+        /* Schedule a new pcap read operation */
+        nsock_pcap_read_packet(nsp, nsi, packet_capture_handler_wrapper, -1, NULL);
+
+        /* Get captured packet */
+        nse_readpcap(nse, NULL, NULL, &rcvd_pkt, &rcvd_pkt_len, NULL, &pcaptime);
+
+        /* Here, we convert the raw hex buffer into a nice chain of PacketElement
+         * objects. */
+        if((pkt=PacketParser::split(rcvd_pkt, rcvd_pkt_len, false))!=NULL){
+            /* Now let's lee if the captured packet is a response to a probe
+             * we've sent before. What we do is iterate over the list of
+             * target hosts and ask each of those hosts to check if that's the
+             * case. */
+            for(size_t i=0; i<o.target_hosts.size(); i++){
+                if(o.target_hosts[i]->is_response(pkt)){
+                  nping_print(VB_0|NO_NEWLINE,"RCVD (%.4fs) ", ((double)TIMEVAL_MSEC_SUBTRACT(now, this->start_time)) / 1000);
+                  pkt->print(stdout, o.getDetailLevel());
+                  printf("\n");
+                  // TODO: @todo Here update general stats. (the is_response()
+                  // call already updates the host's internal stats.
+                }
+            }
+        }
+      break;
+
+      default:
+       nping_fatal(QT_3, "Unexpected Nsock event in %s()",__func__);
+      break;
+
+    } /* switch(type) */
+
+  } else if (status == NSE_STATUS_EOF) {
+    nping_print(DBG_4,"response_reception_handler(): EOF\n");
+  } else if (status == NSE_STATUS_ERROR) {
+    nping_print(DBG_4, "%s(): %s failed: %s\n", __func__, nse_type2str(type), strerror(socket_errno()));
+  } else if (status == NSE_STATUS_TIMEOUT) {
+    nping_print(DBG_4, "%s(): %s timeout: %s\n", __func__, nse_type2str(type), strerror(socket_errno()));
+  } else if (status == NSE_STATUS_CANCELLED) {
+    nping_print(DBG_4, "%s(): %s canceled: %s\n", __func__, nse_type2str(type), strerror(socket_errno()));
+  } else if (status == NSE_STATUS_KILL) {
+    nping_print(DBG_4, "%s(): %s killed: %s\n", __func__, nse_type2str(type), strerror(socket_errno()));
+  } else {
+    nping_print(DBG_4, "%s(): Unknown status code %d\n", __func__, status);
+  }
+  return OP_SUCCESS;
+} /* End of packet_capture_handler() */
+
 
 /******************************************************************************
  * Nsock handlers and handler wrappers.                                       *
@@ -445,3 +518,14 @@ void interpacket_delay_wait_handler(nsock_pool nsp, nsock_event nse, void *arg){
   nsock_loop_quit(nsp);
   return;
 } /* End of interpacket_delay_wait_handler() */
+
+
+
+/* This handler is a wrapper for the ProbeEngine::packet_capture_handler()
+ * method. We need this because C++ does not allow to use class methods as
+ * callback functions for things like signal() or the Nsock lib. */
+void packet_capture_handler_wrapper(nsock_pool nsp, nsock_event nse, void *arg){
+  nping_print(DBG_4, "%s()", __func__);
+  prob.packet_capture_handler(nsp, nse, arg);
+  return;
+} /* End of packet_capture_handler_wrapper() */

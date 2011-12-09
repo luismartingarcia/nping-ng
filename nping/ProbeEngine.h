@@ -124,12 +124,14 @@ class ProbeEngine  {
     static char *bpf_filter(vector<TargetHost *> &Targets, NetworkInterface *target_interface);
     int setup_sniffer(vector<NetworkInterface *> &ifacelist, vector<const char *>bpf_filters);
     int send_packet(TargetHost *tgt, PacketElement *pkt, struct timeval *now);
+    int packet_capture_handler(nsock_pool nsp, nsock_event nse, void *arg);
 
 }; /* End of class ProbeEngine */
 
 
 /* Handlers and handler wrappers */
 void interpacket_delay_wait_handler(nsock_pool nsp, nsock_event nse, void *arg);
+void packet_capture_handler_wrapper(nsock_pool nsp, nsock_event nse, void *arg);
 
 #endif /* __PROBE_ENGINE_H__ */
 
