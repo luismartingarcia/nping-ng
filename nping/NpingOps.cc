@@ -1807,6 +1807,10 @@ int NpingOps::setupTargetHosts(){
       errmsg=spec_to_addresses( this->target_specs[i]+strlen("ipv4://"), AF_INET, this->target_addresses, MAX_IPv4_NETMASK_ALLOWED);
     }else if(starts_with(this->target_specs[i], "ipv6://")){
       errmsg=spec_to_addresses( this->target_specs[i]+strlen("ipv6://"), AF_INET6, this->target_addresses, MAX_IPv6_NETMASK_ALLOWED);
+    }else if(IPAddress::isIPv4Address(this->target_specs[i])){
+      errmsg=spec_to_addresses( this->target_specs[i], AF_INET, this->target_addresses, MAX_IPv4_NETMASK_ALLOWED);
+    }else if(IPAddress::isIPv6Address(this->target_specs[i])){
+      errmsg=spec_to_addresses( this->target_specs[i], AF_INET6, this->target_addresses, MAX_IPv6_NETMASK_ALLOWED);
     }else if(this->af()==AF_INET){
       errmsg=spec_to_addresses( this->target_specs[i], AF_INET, this->target_addresses, MAX_IPv4_NETMASK_ALLOWED);
     }else if(this->af()==AF_INET6){
