@@ -736,6 +736,7 @@ int TargetHost::is_response(PacketElement *pkt_rcvd){
       PacketParser::freePacketChain(this->sent_pkts[i]);
       this->sent_pkts.erase(this->sent_pkts.begin()+i, this->sent_pkts.begin()+i+1);
       // TODO: @todo Here update internal stats!
+      return true;
     }
   }
   return false;
