@@ -123,9 +123,8 @@
 #define __ECHOCLIENT_H__ 1
 
 #include "nping.h"
-#include "NpingTarget.h"
+#include "TargetHost.h"
 #include "NEPContext.h"
-#include "ProbeMode.h"
 
 #define ECHO_CONNECT_TIMEOUT (10*1000) /* 10 Seconds */
 #define ECHO_READ_TIMEOUT    (10*1000)
@@ -146,12 +145,11 @@ class EchoClient  {
         struct sockaddr_in6 srvaddr6; /**< Server's IPv6 address */
         int af;                       /**< Address family (AF_INET or AF_INET6)*/
         NEPContext ctx;
-        ProbeMode probe;
         u8 lasthdr[MAX_NEP_PACKET_LENGTH];
         size_t readbytes;
 
         /* Methods */
-        int nep_connect(NpingTarget *target, u16 port);
+        int nep_connect(TargetHost *target, u16 port);
         int nep_handshake();
         int nep_send_packet_spec();
         int nep_recv_ready();
@@ -164,14 +162,14 @@ class EchoClient  {
         int parse_error(u8 *pkt, size_t pktlen);
 
         int generate_hs_client(EchoHeader *h);
-        int generate_packet_spec(EchoHeader *h);
+        int generate_packet_spec(EchoHeader *h, int spec_proto);
 
     public:
 
         EchoClient();
         ~EchoClient();
         void reset();
-        int start(NpingTarget *target, u16 port);
+        int start(TargetHost *target, u16 port);
         int cleanup();
         int nep_echoed_packet_handler(nsock_pool nsp, nsock_event nse, void *arg);
         int nep_recv_std_header_handler(nsock_pool nsp, nsock_event nse, void *arg);

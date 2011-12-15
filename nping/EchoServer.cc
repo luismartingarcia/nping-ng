@@ -266,7 +266,11 @@ int EchoServer::nep_listen_socket(){
         nping_warning(QT_3, "Failed to set SO_REUSEADDR on master socket.");
 
     memset(&server_addr6, 0, sizeof(struct sockaddr_in6));
-    server_addr6.sin6_addr = (o.spoofSource()) ? o.getIPv6SourceAddress() : in6addr_any;
+    if(o.getSpoofAddress()!=NULL){
+      server_addr6.sin6_addr=o.getSpoofAddress()->getIPv6Address();
+    }else{
+      server_addr6.sin6_addr=in6addr_any;
+    }
     server_addr6.sin6_family = AF_INET6;
     server_addr6.sin6_port = htons(port);
     server_addr6.sin6_flowinfo = 0;
@@ -277,7 +281,7 @@ int EchoServer::nep_listen_socket(){
     if( bind(master_sd, (struct sockaddr *)&server_addr6, sizeof(server_addr6)) != 0 ){
         nping_warning(QT_3, "Failed to bind to source address %s. Trying to bind to port %d...", IPAddress::toString(server_addr6.sin6_addr), port);
         /* If the bind failed for the supplied address, just try again with in6addr_any */
-        if( o.spoofSource() ){
+        if(o.getSpoofAddress()!=NULL){
             server_addr6.sin6_addr = in6addr_any;
             if( bind(master_sd, (struct sockaddr *)&server_addr6, sizeof(server_addr6)) != 0 ){
                 nping_fatal(QT_3, "Could not bind to port %d (%s).", port, strerror(errno));
@@ -306,7 +310,12 @@ int EchoServer::nep_listen_socket(){
     memset(&server_addr4, 0, sizeof(struct sockaddr_in));
     server_addr4.sin_family = AF_INET;
     server_addr4.sin_port = htons(port);
-    server_addr4.sin_addr.s_addr = (o.spoofSource()) ? o.getIPv4SourceAddress().s_addr : INADDR_ANY;
+    if(o.getSpoofAddress()!=NULL){
+      server_addr4.sin_addr = o.getSpoofAddress()->getIPv4Address();
+    }else{
+      server_addr4.sin_addr.s_addr=INADDR_ANY;
+    }
+
 #ifdef HAVE_SOCKADDR_IN_SIN_LEN
     server_addr4.sin_len = sizeof(struct sockaddr_in);
 #endif
@@ -315,7 +324,7 @@ int EchoServer::nep_listen_socket(){
     if( bind(master_sd, (struct sockaddr *)&server_addr4, sizeof(server_addr4)) != 0 ){
         nping_warning(QT_3, "Failed to bind to source address %s. Trying to bind to port %d...", IPAddress::toString(server_addr4.sin_addr), port);
         /* If the bind failed for the supplied address, just try again with in6addr_any */
-        if( o.spoofSource() ){
+        if(o.getSpoofAddress()!=NULL){
             server_addr4.sin_addr.s_addr=INADDR_ANY;
             if( bind(master_sd, (struct sockaddr *)&server_addr4, sizeof(server_addr4)) != 0 ){
                 nping_fatal(QT_3, "Could not bind to port %d (%s).", port, strerror(errno));
@@ -1442,6 +1451,7 @@ int EchoServer::start() {
   clientid_t *idpnt=NULL;          /**< For new client assigned identifiers  */
   NEPContext ctx;                  /**< Context for the new client           */
   EchoHeader h;
+  char filterstring[512];
   int rc;
 
   /* Create a new nsock pool */
@@ -1462,8 +1472,8 @@ int EchoServer::start() {
   /* Open pcap */
   nping_print(DBG_2,"Opening pcap device %s", o.getDevice());
   Strncpy(pcapdev, o.getDevice(), sizeof(pcapdev));
-  rc = nsock_pcap_open(nsp, pcap_nsi, pcapdev, MAX_ECHOED_PACKET_LEN, 1,
-                       ProbeMode::getBPFFilterString());
+  sprintf(filterstring, "ip and ( not (tcp and (dst port %d or src port %d) ) )", o.getEchoPort(), o.getEchoPort() );
+  rc=nsock_pcap_open(nsp, pcap_nsi, pcapdev, MAX_ECHOED_PACKET_LEN, 1, filterstring);
   if (rc)
     nping_fatal(QT_3, "Error opening capture device %s\n", o.getDevice());
   else

@@ -65,11 +65,11 @@ DESTDIR =
 TARGET = nping
 
 
-export SRCS = ArgParser.cc common.cc common_modified.cc nping.cc NpingOps.cc utils.cc utils_net.cc output.cc stats.cc EchoHeader.cc NEPContext.cc Crypto.cc ProbeEngine.cc TargetHost.cc NetworkInterface.cc ProtoField.cc HeaderTemplates.cc
+export SRCS = ArgParser.cc common.cc common_modified.cc nping.cc NpingOps.cc utils.cc utils_net.cc output.cc stats.cc EchoHeader.cc EchoClient.cc EchoServer.cc NEPContext.cc Crypto.cc ProbeEngine.cc TargetHost.cc NetworkInterface.cc ProtoField.cc HeaderTemplates.cc
 
-export HDRS = ArgParser.h nping_config.h common.h common_modified.h nping.h NpingOps.h global_structures.h output.h utils.h utils_net.h stats.h EchoHeader.h NEPContext.h Crypto.h ProbeEngine.h TargetHost.h NetworkInterface.h ProtoField.h HeaderTemplates.h
+export HDRS = ArgParser.h nping_config.h common.h common_modified.h nping.h NpingOps.h global_structures.h output.h utils.h utils_net.h stats.h EchoHeader.h EchoClient.h EchoServer.h NEPContext.h Crypto.h ProbeEngine.h TargetHost.h NetworkInterface.h ProtoField.h HeaderTemplates.h
 
-OBJS = ArgParser.o common.o common_modified.o nping.o NpingOps.o utils.o utils_net.o output.o stats.o EchoHeader.o NEPContext.o Crypto.o ProbeEngine.o TargetHost.o NetworkInterface.o ProtoField.o HeaderTemplates.o
+OBJS = ArgParser.o common.o common_modified.o nping.o NpingOps.o utils.o utils_net.o output.o stats.o EchoHeader.o EchoClient.o EchoServer.o NEPContext.o Crypto.o ProbeEngine.o TargetHost.o NetworkInterface.o ProtoField.o HeaderTemplates.o
 
 export DOCS2DIST = leet-nping-ascii-art.txt nping.1 nping-man.html
 

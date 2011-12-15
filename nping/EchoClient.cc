@@ -128,9 +128,11 @@
 #include "NpingOps.h"
 #include "nsock.h"
 #include "Crypto.h"
+#include "ProbeEngine.h"
 
 extern NpingOps o;
 extern EchoClient ec;
+extern ProbeEngine prob;
 
 
 EchoClient::EchoClient() {
@@ -155,7 +157,7 @@ void EchoClient::reset() {
 
 /** Closes current connection and destroys Nsock handlers */
 int EchoClient::cleanup(){
-  this->probe.cleanup();
+  prob.cleanup();
   return OP_SUCCESS;
 } /* End of cleanup() */
 
@@ -164,16 +166,16 @@ int EchoClient::cleanup(){
   * a TCP connection with the server, performs the NEP authentication handshake,
   * sends the appropriate packet specs and handles raw packet transmission and
   * NEP_ECHO reception and display. */
-int EchoClient::start(NpingTarget *target, u16 port){
+int EchoClient::start(TargetHost *target, u16 port){
   nping_print(DBG_4, "%s(%p, %u)", __func__, target, port);
 
   /* Init Nsock in the probe engine */
-  if( this->probe.init_nsock() != OP_SUCCESS ){
+  if( prob.init_nsock() != OP_SUCCESS ){
     nping_warning(QT_2, "Couldn't initialize Nsock.");
     return OP_FAILURE;
   }else{
     /* Extract the nsock pool handler and store it here */
-    this->nsp=this->probe.getNsockPool();
+    this->nsp=prob.getNsockPool();
     this->nsi=nsi_new(this->nsp, NULL);
   }
 
@@ -205,7 +207,7 @@ int EchoClient::start(NpingTarget *target, u16 port){
   nsock_readbytes(this->nsp, this->nsi, recv_std_header_handler, NSOCK_INFINITE, NULL, STD_NEP_HEADER_LEN);
 
   /* Start the probe mode engine */
-  probe.start();
+  prob.start(o.target_hosts, o.interfaces);
 
   return OP_SUCCESS;
 } /* End of start() */
@@ -215,22 +217,24 @@ int EchoClient::start(NpingTarget *target, u16 port){
   * returns OP_SUCCESS. OP_FAILURE is returned when it was impossible to
   * connect to the remote host (this can be because the server rejected the
   * connection or because the connect() timed out). */
-int EchoClient::nep_connect(NpingTarget *target, u16 port){
+int EchoClient::nep_connect(TargetHost *target, u16 port){
   nping_print(DBG_4, "%s(%p, %u)", __func__, target, port);
   struct sockaddr_storage ss;
   struct sockaddr_storage src;
-  size_t ss_len;
+  IPAddress *dst_ip=NULL;
+  IPAddress *src_ip=NULL;
   struct sockaddr_in *s4=(struct sockaddr_in *)&ss;
   struct sockaddr_in6 *s6=(struct sockaddr_in6 *)&ss;
   enum nsock_loopstatus loopstatus;
-
-  if(target==NULL)
-    nping_fatal(QT_3, "nep_connect(): NULL parameter supplied.");
-  else
-    target->getTargetSockAddr(&ss, &ss_len);
+  assert(target!=NULL);
+  dst_ip=target->getTargetAddress();
+  src_ip=target->getSourceAddress();
+  assert(dst_ip!=NULL && src_ip!=NULL);
+  dst_ip->getAddress(&ss);
+  src_ip->getAddress(&src);
 
   /* AF_INET6 */
-  if( s6->sin6_family==AF_INET6 ){
+  if(dst_ip->getVersion()==AF_INET6){
     this->af=AF_INET6;
     this->srvaddr6.sin6_family = AF_INET6;
     this->srvaddr6.sin6_port = htons(port);
@@ -241,7 +245,7 @@ int EchoClient::nep_connect(NpingTarget *target, u16 port){
     #endif
 
    /* Try to bind the IOD to the IP address supplied by the user */
-   nsi_set_localaddr(this->nsi, o.getSourceSockAddr(&src), sizeof(sockaddr_in6));
+   nsi_set_localaddr(this->nsi, &src, sizeof(sockaddr_in6));
 
    /* Schedule a connect event */
    nsock_connect_tcp(this->nsp, this->nsi, connect_done_handler, ECHO_CONNECT_TIMEOUT,
@@ -258,7 +262,7 @@ int EchoClient::nep_connect(NpingTarget *target, u16 port){
 #endif
 
    /* Try to bind the IOD to the IP address supplied by the user */
-   nsi_set_localaddr(this->nsi, o.getSourceSockAddr(&src), sizeof(sockaddr_in));
+   nsi_set_localaddr(this->nsi, &src, sizeof(sockaddr_in));
 
    /* Schedule a connect event */
    nsock_connect_tcp(this->nsp, this->nsi, connect_done_handler, ECHO_CONNECT_TIMEOUT,
@@ -325,8 +329,18 @@ int EchoClient::nep_send_packet_spec(){
   enum nsock_loopstatus loopstatus;
   EchoHeader h;
 
-  if (this->generate_packet_spec(&h)!=OP_SUCCESS)
-    return OP_FAILURE;
+  if(o.mode(DO_TCP)){
+    if (this->generate_packet_spec(&h, PSPEC_PROTO_TCP)!=OP_SUCCESS)
+      return OP_FAILURE;
+  }else if(o.mode(DO_ICMP)){
+    if (this->generate_packet_spec(&h, PSPEC_PROTO_ICMP)!=OP_SUCCESS)
+      return OP_FAILURE;
+  }else if(o.mode(DO_UDP)){
+    if (this->generate_packet_spec(&h, PSPEC_PROTO_TCP)!=OP_SUCCESS)
+      return OP_FAILURE;
+  }else{
+    nping_fatal(QT_3, "ERROR: Expected TCP, UDP or ICMP in Echo Mode.");
+  }
 
    /* Send NEP_PACKET_SPEC message */
   nsock_write(this->nsp, this->nsi, write_done_handler, ECHO_WRITE_TIMEOUT, NULL, (const char*)h.getBinaryBuffer(),  h.getLen());
@@ -716,9 +730,9 @@ int EchoClient::generate_hs_client(EchoHeader *h){
 
 /** Generates a NEP_PACKET_SPEC message. On success it returns OP_SUCCESS.
   * OP_FAILURE is returned in case of error. */
-int EchoClient::generate_packet_spec(EchoHeader *h){
+int EchoClient::generate_packet_spec(EchoHeader *h, int spec_proto){
   nping_print(DBG_4, "%s()", __func__);
-  int ports=-1;
+  u16 ports=0;
   u8 nxthdr=0;
   u8 aux8=0;
   u16 aux16=0;
@@ -732,64 +746,68 @@ int EchoClient::generate_packet_spec(EchoHeader *h){
   h->setMessageType(TYPE_NEP_PACKET_SPEC);
   h->setSequenceNumber( this->ctx.getNextClientSequence() );
   h->setTimestamp();
-  h->setIPVersion( o.getIPVersion()==AF_INET6 ? 0x06: 0x04 );
-  h->setPacketCount( (o.getPacketCount()>0xFFFF) ? 0xFFFF : o.getPacketCount() );
+  h->setIPVersion( o.target_hosts[0]->getTargetAddress()->getVersion()==AF_INET6 ? 0x06: 0x04 );
+  h->setPacketCount( (o.getRounds()>0xFFFF) ? 0xFFFF : o.getRounds() );
 
   /** Insert packet field specifiers */
   if(o.ipv6()){ /* AF_INET6 */
     /* Traffic class */
-    aux8=o.getTrafficClass();
+    aux8=o.ip6.tclass.getNextValue();
     h->addFieldSpec(PSPEC_IPv6_TCLASS, (u8*)&aux8);
     /* Flow label */
-    aux32=htonl(o.getFlowLabel());
+    aux32=htonl(o.ip6.flow.getNextValue());
     h->addFieldSpec(PSPEC_IPv6_FLOW, (u8*)&aux32);
   }else{ /* AF_INET */
     /* IP Identification */
-    aux16=htons(o.getIdentification());
+    aux16=o.ip4.id.getNextValue();
     h->addFieldSpec(PSPEC_IPv4_ID, (u8*)&aux16);
     /* Type of Service */
-    aux8=o.getTOS();
+    aux8=o.ip4.tos.getNextValue();
     h->addFieldSpec(PSPEC_IPv4_TOS, (u8*)&aux8);
     /* Fragment Offset */
     /** @todo Implement this. Nping does not currently offer --fragoff */
   }
 
-  switch( o.getMode() ){
+  switch(spec_proto){
 
-      case TCP:
+      case PSPEC_PROTO_TCP:
           nxthdr=6;
           h->setProtocol(PSPEC_PROTO_TCP);
           /* Source TCP Port */
-          aux16=htons(o.getSourcePort());
-          h->addFieldSpec(PSPEC_TCP_SPORT, (u8*)&aux16);
+          if((p16=o.getSourcePorts(&ports))!=NULL && ports==1 ){
+              aux16=htons(*p16);
+                h->addFieldSpec(PSPEC_TCP_SPORT, (u8*)&aux16);
+          }
           /* Destination TCP Port */
           if( (p16=o.getTargetPorts(&ports))!=NULL && ports==1 ){
               aux16=htons(*p16);
                 h->addFieldSpec(PSPEC_TCP_DPORT, (u8*)&aux16);
           }
           /* Sequence number */
-          aux32=htonl(o.getTCPSequence());
+          aux32=htonl(o.tcp.seq.getNextValue());
           h->addFieldSpec(PSPEC_TCP_SEQ, (u8*)&aux32);
           /* Acknowledgment */
-          aux32=htonl(o.getTCPAck());
+          aux32=htonl(o.tcp.ack.getNextValue());
           h->addFieldSpec(PSPEC_TCP_ACK, (u8*)&aux32);
           /* Flags */
-          aux8=o.getTCPFlags();
+          aux8=o.tcp.flags.getNextValue();
           h->addFieldSpec(PSPEC_TCP_FLAGS, (u8*)&aux8);
           /* Window size */
-          aux16=htons(o.getTCPWindow());
+          aux16=htons(o.tcp.win.getNextValue());
           h->addFieldSpec(PSPEC_TCP_WIN, (u8*)&aux16);
           /* Urgent pointer */
           /** @todo Implement this. Nping does not currently offer --urp */
       break;
 
-      case UDP:
+      case PSPEC_PROTO_UDP:
           nxthdr=17;
           h->setProtocol(PSPEC_PROTO_UDP);
           /* Source UDP Port */
-          aux16=htons(o.getSourcePort());
-          h->addFieldSpec(PSPEC_UDP_SPORT, (u8*)&aux16);
-          /* Destination TCP Port */
+          if((p16=o.getSourcePorts(&ports))!=NULL && ports==1 ){
+              aux16=htons(*p16);
+                h->addFieldSpec(PSPEC_UDP_SPORT, (u8*)&aux16);
+          }
+          /* Destination UDP Port */
           if( (p16=o.getTargetPorts(&ports))!=NULL && ports==1 ){
               aux16=htons(*p16);
               h->addFieldSpec(PSPEC_UDP_DPORT, (u8*)&aux16);
@@ -799,20 +817,17 @@ int EchoClient::generate_packet_spec(EchoHeader *h){
           h->addFieldSpec(PSPEC_UDP_LEN, (u8*)&aux16);
       break;
 
-      case ICMP:
+      case PSPEC_PROTO_ICMP:
           nxthdr=1;
           h->setProtocol(PSPEC_PROTO_ICMP);
-          aux8=o.getICMPType();
+          aux8=o.icmp4.type.getNextValue();
           h->addFieldSpec(PSPEC_ICMP_TYPE, (u8*)&aux8);
-          aux8=o.getICMPCode();
+          aux8=o.icmp4.code.getNextValue();
           h->addFieldSpec(PSPEC_ICMP_CODE, (u8*)&aux8);
       break;
 
-      case UDP_UNPRIV:
-      case TCP_CONNECT:
-      case ARP:
       default:
-          nping_fatal(QT_3, "%s packets are not supported in Echo Mode", o.mode2Ascii(o.getMode()) );
+          nping_fatal(QT_3, "Echo mode only supports TCP, UDP and ICMP.");
       break;
   }
   /* Next protocol number */
@@ -821,7 +836,7 @@ int EchoClient::generate_packet_spec(EchoHeader *h){
   else
     h->addFieldSpec(PSPEC_IPv6_NHDR, (u8*)&nxthdr);
 
-  if( o.issetPayloadBuffer() && o.getPayloadLen()>0){
+  if( o.getPayloadBuffer()!=NULL && o.getPayloadLen()>0){
     h->addFieldSpec(PSPEC_PAYLOAD_MAGIC, (u8*)o.getPayloadBuffer(), MIN(o.getPayloadLen(), NEP_PAYLOADMAGIC_MAX_BYTES));
   }
   /* Done inserting packet field specifiers, now finish the packet */

@@ -143,8 +143,8 @@
 #endif
 using namespace std;
 NpingOps o;
-//EchoClient ec;
-//EchoServer es;
+EchoClient ec;
+EchoServer es;
 ProbeEngine prob; /* Probe Mode Engine               */
 
 int do_safe_checks();
@@ -219,17 +219,15 @@ int main(int argc, char *argv[] ){
         break;
 
         case ROLE_CLIENT:
-            //t=o.targets.getNextTarget();
-            //o.targets.rewind();
-            //ec.start(t, o.getEchoPort() );
-            //ec.cleanup();
+            ec.start(o.target_hosts[0], o.getEchoPort() );
+            ec.cleanup();
         break;
 
         case ROLE_SERVER:
-            //o.stats.startClocks();
-            //es.start();
-            //es.cleanup();
-            //o.stats.stopClocks();
+            o.stats.startClocks();
+            es.start();
+            es.cleanup();
+            o.stats.stopClocks();
         break;
 
         default:
