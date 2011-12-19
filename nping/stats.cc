@@ -235,9 +235,13 @@ void PacketStats::reset(){
   this->udp[INDEX_RCVD]=0;
   this->udp[INDEX_ECHO]=0;
 
-  this->icmp[INDEX_SENT]=0;
-  this->icmp[INDEX_RCVD]=0;
-  this->icmp[INDEX_ECHO]=0;
+  this->icmp4[INDEX_SENT]=0;
+  this->icmp4[INDEX_RCVD]=0;
+  this->icmp4[INDEX_ECHO]=0;
+
+  this->icmp6[INDEX_SENT]=0;
+  this->icmp6[INDEX_RCVD]=0;
+  this->icmp6[INDEX_ECHO]=0;
 
   this->arp[INDEX_SENT]=0;
   this->arp[INDEX_RCVD]=0;
@@ -260,32 +264,68 @@ void PacketStats::reset(){
 } /* End of reset() */
 
 
-/** Updates packet and byte count for transmitted packets. */
-int PacketStats::addSentPacket(u32 len){
-  this->packets[INDEX_SENT]++;
-  this->bytes[INDEX_SENT]+=len;
+/** Updates packet and byte count for sent/received/echoed packets. This
+  * method is meant to be used internally. Use the update_sent(), update_rcvd()
+  * and update_echo() instead. */
+int PacketStats::update_packet_count(int index, int ip_version, int proto, u32 pkt_len){
+  assert(index==INDEX_SENT || index==INDEX_RCVD || index==INDEX_ECHO);
+
+  /* General packet and byte count */
+  this->packets[index]++;
+  this->bytes[index]+=pkt_len;
+
+  /* IP stats */
+  switch(ip_version){
+    case AF_INET:
+      this->ip4[index]++;
+    break;
+    case AF_INET6:
+      this->ip6[index]++;
+    break;
+  }
+  /* Stats for protocols above IP */
+  switch(proto){
+    case HEADER_TYPE_ICMPv4:
+      this->icmp4[index]++;
+    break;
+    case HEADER_TYPE_ICMPv6:
+      this->icmp6[index]++;
+    break;
+    case HEADER_TYPE_TCP:
+      this->tcp[index]++;
+    break;
+    case HEADER_TYPE_UDP:
+      this->udp[index]++;
+    break;
+    case HEADER_TYPE_ARP:
+      this->arp[index]++;
+    break;
+  }
+
   return OP_SUCCESS;
-} /* End of addSentPacket() */
+} /* End of update_packet_count() */
 
 
-/** Updates packet and byte count for received packets. */
-int PacketStats::addRecvPacket(u32 len){
-  this->packets[INDEX_RCVD]++;
-  this->bytes[INDEX_RCVD]+=len;
-  return OP_SUCCESS;
-} /* End of addRecvPacket() */
+/* Update the stats for tranmitted packets */
+int PacketStats::update_sent(int ip_version, int proto, u32 pkt_len){
+  return this->update_packet_count(INDEX_SENT, ip_version, proto, pkt_len);
+} /* End of update_sent() */
 
 
-/** Updates packet and byte count for echoed packets. */
-int PacketStats::addEchoedPacket(u32 len){
-  this->packets[INDEX_ECHO]++;
-  this->bytes[INDEX_ECHO]+=len;
-  return OP_SUCCESS;
-} /* End of addEchoedPacket() */
+/* Update the stats for received packets */
+int PacketStats::update_rcvd(int ip_version, int proto, u32 pkt_len){
+  return this->update_packet_count(INDEX_RCVD, ip_version, proto, pkt_len);
+} /* End of update_rcvd() */
+
+
+/* Update the stats for echoed packets (echo mode). */
+int PacketStats::update_echo(int ip_version, int proto, u32 pkt_len){
+  return this->update_packet_count(INDEX_ECHO, ip_version, proto, pkt_len);
+} /* End of update_echo() */
 
 
 /** Updates count for echo clients served by the echo server. */
-int PacketStats::addEchoClientServed(){
+int PacketStats::update_clients_served(){
   this->echo_clients_served++;
   return OP_SUCCESS;
 } /* End of addEchoClientServed() */

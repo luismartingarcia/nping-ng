@@ -211,7 +211,8 @@ class PacketStats {
     u64_t bytes[3];
     u64_t tcp[3];
     u64_t udp[3];
-    u64_t icmp[3];
+    u64_t icmp4[3];
+    u64_t icmp6[3];
     u64_t arp[3];
     u64_t ip4[3];
     u64_t ip6[3];
@@ -223,16 +224,18 @@ class PacketStats {
     NpingTimer rx_timer;  /* Timer for packet reception.            */
     NpingTimer run_timer; /* Timer to measure Nping execution time. */
 
+    int update_packet_count(int index, int ip_version, int proto, u32 pkt_len);
+
  public:
     PacketStats();
     ~PacketStats();
 
     void reset();
 
-    int addSentPacket(u32 len);
-    int addRecvPacket(u32 len);
-    int addEchoedPacket(u32 len);
-    int addEchoClientServed();
+    int update_sent(int ip_version, int proto, u32 pkt_len);
+    int update_rcvd(int ip_version, int proto, u32 pkt_len);
+    int update_echo(int ip_version, int proto, u32 pkt_len);
+    int update_clients_served();
 
     int startClocks();
     int stopClocks();

@@ -394,7 +394,10 @@ int EchoClient::nep_recv_echo(u8 *packet, size_t packetlen){
     nping_print(VB_0, "Error displaying received NEP_ECHO message)");
     return OP_FAILURE;
   }
-  o.stats.addEchoedPacket(pktlen);
+
+  /* TODO @todo Here find a way to determine which IP and upper layer proto
+   * the packet has so we can update the stats properly. */
+  o.stats.update_echo(0,0,pktlen);
 
   /* Guess the time the packet was captured. We do this computing the RTT
    * between the last sent packet and the received echo packet. We assume

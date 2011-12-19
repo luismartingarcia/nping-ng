@@ -900,7 +900,9 @@ int EchoServer::nep_capture_handler(nsock_pool nsp, nsock_event nse, void *param
   nping_print(DBG_3, "Captured %lu bytes", (unsigned long)packetlen);
 
   /* Update Rx stats */
-  o.stats.addRecvPacket(packetlen);
+  /* TODO @todo Here find a way to determine which IP and upper layer proto
+   * the packet has so we can update the stats properly. */
+  o.stats.update_rcvd(0,0,packetlen);
 
   /* Try to match received packet with a connected client. */
   if( (clnt=this->nep_match_packet(packet, packetlen)) == CLIENT_NOT_FOUND ){
@@ -925,7 +927,9 @@ int EchoServer::nep_capture_handler(nsock_pool nsp, nsock_event nse, void *param
   if( ctx->ready() ){
       this->generate_echo(&pkt_out, packet, packetlen, ctx);
       nsock_write(nsp, clnt_iod, echo_handler, NSOCK_INFINITE, NULL, (const char *)pkt_out.getBinaryBuffer(), pkt_out.getLen());
-      o.stats.addEchoedPacket(packetlen);
+      /* TODO @todo Here find a way to determine which IP and upper layer proto
+       * the packet has so we can update the stats properly. */
+      o.stats.update_echo(0,0,packetlen);
   }
   return OP_SUCCESS;
 } /* End of nep_capture_handler() */
@@ -1069,7 +1073,7 @@ int EchoServer::nep_packetspec_handler(nsock_pool nsp, nsock_event nse, void *pa
 
   /* At this point, we consider the NEP session fully established and therefore
    * we update the count of served clients */
-  o.stats.addEchoClientServed();
+  o.stats.update_clients_served();
 
   return OP_SUCCESS;
 } /* End of nep_packetspec_handler() */
