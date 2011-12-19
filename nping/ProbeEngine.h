@@ -101,6 +101,26 @@
 #include "utils.h"
 using namespace std;
 
+/* DEFAULT_MAX__DESCRIPTORS. is a hardcoded value for the maximum number of
+ * opened descriptors in the current system. Nping tries to determine that
+ * limit at run time, but sometimes it can't and the limit defaults to
+ * DEFAULT_MAX_DESCRIPTORS. */
+#ifndef MACOSX
+    #define DEFAULT_MAX_DESCRIPTORS 1024
+#else
+    #define DEFAULT_MAX_DESCRIPTORS 256
+#endif
+
+/* When requesting a large number of descriptors from the system (TCP-connect
+ * mode and UDP unprivileged mode), this is the number of descriptors that need
+ * to be reserved for things like stdin, stdout, echo mode sockets, data files,
+ * etc. */
+#define RESERVED_DESCRIPTORS 8
+
+/* Default timeout for UDP socket nsock_read() operations */
+#define DEFAULT_UDP_READ_TIMEOUT_MS  1000
+
+
 class ProbeEngine  {
 
   private:
@@ -110,6 +130,9 @@ class ProbeEngine  {
     struct timeval start_time;   /* Time at which the engine was started    */
     int rawsd4;                  /* Raw socket descriptor for IPv4          */
     int rawsd6;                  /* Raw socket descriptor for IPv6          */
+    nsock_iod *fds;              /* IODs for multiple parallel connections  */
+    int max_iods;                /* Number of IODS in "fds"                 */
+    u32 packetno;                /* Packets sent from this handler.         */
 
   public:
 
@@ -124,7 +147,9 @@ class ProbeEngine  {
     static char *bpf_filter(vector<TargetHost *> &Targets, NetworkInterface *target_interface);
     int setup_sniffer(vector<NetworkInterface *> &ifacelist, vector<const char *>bpf_filters);
     int send_packet(TargetHost *tgt, PacketElement *pkt, struct timeval *now);
+    int do_tcp_connect(TargetHost *tgt, u16 tport, struct timeval *now);
     int packet_capture_handler(nsock_pool nsp, nsock_event nse, void *arg);
+    int tcpconnect_handler(nsock_pool nsp, nsock_event nse, void *arg);
 
 }; /* End of class ProbeEngine */
 
@@ -132,6 +157,7 @@ class ProbeEngine  {
 /* Handlers and handler wrappers */
 void interpacket_delay_wait_handler(nsock_pool nsp, nsock_event nse, void *arg);
 void packet_capture_handler_wrapper(nsock_pool nsp, nsock_event nse, void *arg);
+void tcpconnect_handler_wrapper(nsock_pool nsp, nsock_event nse, void *arg);
 
 #endif /* __PROBE_ENGINE_H__ */
 

@@ -114,6 +114,9 @@ void ProbeEngine::reset() {
   memset(&start_time, 0, sizeof(struct timeval));
   this->rawsd4=-1;
   this->rawsd6=-1;
+  this->fds=NULL;
+  this->max_iods=0;
+  this->packetno=0;
 } /* End of reset() */
 
 
@@ -247,19 +250,33 @@ int ProbeEngine::start(vector<TargetHost *> &Targets, vector<NetworkInterface *>
 
       for(unsigned int t = 0; t < Targets.size(); t++){
 
-        /* Obtain a list of packets to send (each TargetHost adds whatever
-         * packets it wants to send to the supplied vector) */
-        Targets[t]->getNextPacketBatch(Packets);
+        /* There are two possibilities.
+         *   1: we are in some unprivileged mode in which we have to issue TCP
+         *      connects or send UDP datagrams using regular system calls
+         *
+         *   2: We need to produce and send raw packets.
+         */
+        if(o.mode(DO_TCP_CONNECT) || o.mode(DO_UDP_UNPRIV)){
+          gettimeofday(&now, NULL);
+          if(o.mode(DO_TCP_CONNECT)) // TODO: @todo set the target port right!!
+            do_tcp_connect(Targets[t], 80, &now);
+          //if(o.mode(DO_UDP_UNPRIV))
+            //do_udp_unpriv(Targets[t], 80, &now);
+        }else{
+          /* Obtain a list of packets to send (each TargetHost adds whatever
+           * packets it wants to send to the supplied vector) */
+          Targets[t]->getNextPacketBatch(Packets);
 
-        /* Here, schedule the immediate transmission of all the packets
-         * provided by the TargetHosts. */
-        nping_print(DBG_2, "Starting transmission of %d packets", (int)Packets.size());
-        gettimeofday(&now, NULL);
-        while(Packets.size()>0){
-            this->send_packet(Targets[t], Packets[0], &now);
-           /* Delete the packet we've just sent from the list so we don't send
-            * it again the next time */
-           Packets.erase(Packets.begin(), Packets.begin()+1);
+          /* Here, schedule the immediate transmission of all the packets
+           * provided by the TargetHosts. */
+          nping_print(DBG_2, "Starting transmission of %d packets", (int)Packets.size());
+          gettimeofday(&now, NULL);
+          while(Packets.size()>0){
+              this->send_packet(Targets[t], Packets[0], &now);
+             /* Delete the packet we've just sent from the list so we don't send
+              * it again the next time */
+             Packets.erase(Packets.begin(), Packets.begin()+1);
+          }
         }
 
         /* Determine how long do we have to wait until we send the next pkt */
@@ -439,6 +456,81 @@ int ProbeEngine::send_packet(TargetHost *tgt, PacketElement *pkt, struct timeval
 } /* End of send_packet() */
 
 
+
+
+
+int ProbeEngine::do_tcp_connect(TargetHost *tgt, u16 tport, struct timeval *now){
+  struct sockaddr_storage ss;      /* Source address */
+  struct sockaddr_storage to;      /* Destination address                     */
+  size_t sslen=0;                  /* Destination address length              */
+
+  /* Initializations */
+  memset(&to, 0, sizeof(struct sockaddr_storage));
+
+  assert(tgt!=NULL);
+  tgt->getTargetAddress()->getAddress(&to);
+
+ /* Try to determine the max number of opened descriptors. If the limit is
+   * less than than we need, try to increase it. */
+  if(fds==NULL){
+    max_iods=get_max_open_descriptors()-RESERVED_DESCRIPTORS;
+    if( o.getTotalProbes() > max_iods ){
+        max_iods=set_max_open_descriptors( o.getTotalProbes() )-RESERVED_DESCRIPTORS;
+    }
+    /* If we couldn't determine the limit, just use a predefined value */
+    if(max_iods<=0)
+        max_iods=DEFAULT_MAX_DESCRIPTORS-RESERVED_DESCRIPTORS;
+    /* Allocate space for nsock_iods */
+    if( (fds=(nsock_iod *)calloc(max_iods, sizeof(nsock_iod)))==NULL ){
+        /* If we can't allocate for that many descriptors, reduce our requirements */
+        max_iods=DEFAULT_MAX_DESCRIPTORS-RESERVED_DESCRIPTORS;
+        if( (fds=(nsock_iod *)calloc(max_iods, sizeof(nsock_iod)))==NULL ){
+            nping_fatal(QT_3, "ProbeMode::probe_tcpconnect_event_handler(): Not enough memory");
+        }
+    }
+    nping_print(DBG_7, "%d descriptors needed, %d available", o.getTotalProbes(), max_iods);
+  }
+
+  /* Determine the size of the sockaddr */
+  if( tgt->getTargetAddress()->getVersion()==AF_INET6 ){
+    sslen=sizeof(struct sockaddr_in6);
+  }else{
+    sslen=sizeof(struct sockaddr_in);
+  }
+  /* We need to keep many IODs open in parallel but we don't allocate
+   * millions, just as many as the OS let us (max number of open files).
+   * If we run out of them, we just start overwriting the oldest one.
+   * If we don't have a response by that time we probably aren't gonna
+   * get any, so it shouldn't be a big problem. */
+  if( packetno>(u32)max_iods ){
+    nsi_delete(fds[packetno%max_iods], NSOCK_PENDING_SILENT);
+  }
+  /* Create new IOD for connects */
+  if ((fds[packetno%max_iods] = nsi_new(nsp, NULL)) == NULL)
+    nping_fatal(QT_3, "tcpconnect_event_handler(): Failed to create new nsock_iod.\n");
+  /* Set socket source address. This allows setting things like custom source port */
+  tgt->getSourceAddress()->getAddress(&ss);
+  /* TODO: Set sin_port or sin6_port here! */
+  nsi_set_localaddr(fds[packetno%max_iods], &ss, sslen);
+  /*Set socket options for REUSEADDR*/
+  //setsockopt(nsi_getsd(fds[packetno%max_iods]),SOL_SOCKET,SO_REUSEADDR,&optval,sizeof(optval));
+
+  nsock_connect_tcp(nsp, fds[packetno%max_iods], tcpconnect_handler_wrapper, 100000, tgt, (struct sockaddr *)&to, sslen, tport);
+  if( o.showSentPackets() ){
+
+    nping_print(VB_0,"SENT (%.4fs) Starting TCP Handshake > %s:%d", ((double)TIMEVAL_MSEC_SUBTRACT(*now, this->start_time)) / 1000, tgt->getTargetAddress()->toString() , tport);
+
+    //    nping_print(VB_0,"SENT (%.4fs) Starting TCP Handshake > %s:%d", o.stats.elapsedRuntime(NULL), mypacket->target->getTargetIPstr(), mypacket->dstport);
+  }
+packetno++;
+//o.stats.addSentPacket(80); /* Estimation Src>Dst 1 TCP SYN && TCP ACK */
+//mypacket->target->setProbeSentTCP(0, mypacket->dstport);
+
+return OP_SUCCESS;
+} /* End of do_tcp_connect() */
+
+
+
 /* This method is the handler for PCAP_READ events. In other words, every time
  * nsock captures a packet from the wire, this method is called. In it, we
  * parse the captured packet and decide if it corresponds to a reply to one of
@@ -508,6 +600,137 @@ int ProbeEngine::packet_capture_handler(nsock_pool nsp, nsock_event nse, void *a
 } /* End of packet_capture_handler() */
 
 
+
+int ProbeEngine::tcpconnect_handler(nsock_pool nsp, nsock_event nse, void *mydata) {
+  nsock_iod nsi;                   /* Current nsock IO descriptor.            */
+  enum nse_status status;          /* Current nsock event status.             */
+  enum nse_type type;              /* Current nsock event type.               */
+  struct timeval now;              /* Current time                            */
+  struct sockaddr_storage to;      /* Stores destination address for Tx.      */
+  struct sockaddr_storage peer;    /* Stores source address for Rx.           */
+  struct sockaddr_in *peer4=NULL;  /*   |_ Sockaddr for IPv4.                 */
+  struct sockaddr_in6 *peer6=NULL; /*   |_ Sockaddr for IPv6.                 */
+  int family=0;                    /* Hill hold Rx address family.            */
+  char ipstring[128];              /* To print IP Addresses.                  */
+  u16 peerport=0;                  /* To hold peer's port number.             */
+  TargetHost *tgt=NULL;            /* TargetHost associated with connection.  */
+  u8 *recvbuff=NULL;               /* Data reception buffer.                  */
+  int recvbytes=0;                 /* Received bytes                          */
+
+  /* Initializations */
+  nsi = nse_iod(nse);
+  status = nse_status(nse);
+  type = nse_type(nse);
+  tgt=(TargetHost *) mydata;
+  peer4=(struct sockaddr_in *)&peer;
+  peer6=(struct sockaddr_in6 *)&peer;
+  memset(&to, 0, sizeof(struct sockaddr_storage));
+  memset(&peer, 0, sizeof(struct sockaddr_storage));
+  gettimeofday(&now, NULL);
+  assert(tgt!=NULL);
+
+  nping_print(DBG_4, "%s(): Received callback of type %s with status %s",  __func__, nse_type2str(type), nse_status2str(status));
+
+  if (status == NSE_STATUS_SUCCESS ) {
+
+    /* First of all, ask Nsock to give us some info about the event we've been
+     * delivered. We mainly want to know which port was the one the target
+     * responded to. We already know which target is it because Nsock passes
+     * a pointer to the TargetHost for which the event was scheduled. However,
+     * Nsock also provides that so we use it. */
+    nsi_getlastcommunicationinfo(nsi, NULL, &family, NULL, (struct sockaddr*)&peer, sizeof(struct sockaddr_storage) );
+    if(family==AF_INET6){
+      inet_ntop(AF_INET6, &peer6->sin6_addr, ipstring, sizeof(ipstring));
+      peerport=ntohs(peer6->sin6_port);
+    }else{
+      inet_ntop(AF_INET, &peer4->sin_addr, ipstring, sizeof(ipstring));
+      peerport=ntohs(peer4->sin_port);
+    }
+
+    switch(type) {
+      /* TCP Handshake was completed successfully */
+      case NSE_TYPE_CONNECT:
+
+        nping_print(VB_0,"RECV (%.4fs) Handshake with %s:%d completed", ((double)TIMEVAL_MSEC_SUBTRACT(now, this->start_time)) / 1000, ipstring, peerport);
+        // TODO @todo Update statistics here!
+
+        /* Schedule a read operation so we can determine if the target is
+         * sending any data back to us. */
+        nsock_read(nsp, nsi, tcpconnect_handler_wrapper, 10000, tgt);
+
+        /* If the user specified a payload, inject it into the connection we've
+         * just established. */
+        if(o.getPayloadBuffer()!=NULL){
+          nsock_write(nsp, nsi, tcpconnect_handler_wrapper, 10000, tgt, (const char *)o.getPayloadBuffer(), o.getPayloadLen());
+        }
+
+      break;
+
+      case NSE_TYPE_WRITE:
+        nping_print(VB_0, "DATA (%.4fs) %d byte%s sent to %s:%d", ((double)TIMEVAL_MSEC_SUBTRACT(now, this->start_time)) / 1000, o.getPayloadLen(), o.getPayloadLen()!=1 ? "s" : "", ipstring, peerport);
+        if(o.getVerbosity()>=VB_3 && o.getPayloadBuffer()!=NULL)
+            luis_hdump((char *)o.getPayloadBuffer(), o.getPayloadLen()); // TODO @todo Find print_hexdump() and use it!
+        // TODO @todo Update statistics here!
+      break;
+
+      case NSE_TYPE_READ:
+
+        /* We schedule another read operation, just in case the target sends
+         * more data later. */
+        nsock_read(nsp, nsi, tcpconnect_handler_wrapper, 10000, tgt);
+
+        /* Now let's see how much data it sent. */
+        if((recvbuff=(u8 *)nse_readbuf(nse, &recvbytes))!=NULL){
+          nping_print(VB_0, "DATA (%.4fs) %d byte%s received from %s:%d", ((double)TIMEVAL_MSEC_SUBTRACT(now, this->start_time)) / 1000, recvbytes, recvbytes!=1 ? "s" : "", ipstring, peerport);
+          if(o.getVerbosity()>=VB_3)
+            luis_hdump((char *)recvbuff, recvbytes); // TODO @todo Find print_hexdump() and use it!
+          // TODO @todo Update statistics here!
+        }
+      break;
+
+      default:
+        nping_fatal(QT_3, "Unexpected Nsock event in %s()",__func__);
+      break;
+    } /* switch(type) */
+  }else if(status == NSE_STATUS_EOF){
+    nping_print(DBG_4, "%s(): Unexpected behavior: Got EOF. Please report this bug.\n", __func__);
+  }else if(status == NSE_STATUS_ERROR){
+    /* In my tests with Nping and Wireshark, I've seen that we get NSE_STATUS_ERROR
+     * whenever we start a TCP handshake but our peer sends a TCP RST packet back
+     * denying the connection. So in this case, we inform the user (as opposed
+     * to saying nothing, that's what we do when we don't get responses, e.g:
+     * when trying to connect to filtered ports). This is not 100% accurate
+     * because there may be other reasons why ge get NSE_STATUS_ERROR so that's
+     * why we say "Possible TCP RST received". */
+    if(type==NSE_TYPE_CONNECT){
+      nsi_getlastcommunicationinfo(nsi, NULL, &family, NULL, (struct sockaddr*)&peer, sizeof(struct sockaddr_storage) );
+      if(family==AF_INET6){
+        inet_ntop(AF_INET6, &peer6->sin6_addr, ipstring, sizeof(ipstring));
+        peerport=ntohs(peer6->sin6_port);
+      }else{
+        inet_ntop(AF_INET, &peer4->sin_addr, ipstring, sizeof(ipstring));
+        peerport=ntohs(peer4->sin_port);
+      }
+      nping_print(VB_0,"RECV (%.4fs) Possible TCP RST received from %s:%d --> %s", ((double)TIMEVAL_MSEC_SUBTRACT(now, this->start_time)) / 1000,ipstring, peerport, strerror(nse_errorcode(nse)) );
+     }else{
+        nping_warning(QT_2,"ERR: (%.4fs) %s to %s:%d failed: %s", ((double)TIMEVAL_MSEC_SUBTRACT(now, this->start_time)) / 1000, nse_type2str(type), ipstring, peerport, strerror(socket_errno()));
+     }
+  }else if(status == NSE_STATUS_TIMEOUT){
+    nping_print(DBG_4, "%s(): %s timeout: %s\n", __func__, nse_type2str(type), strerror(socket_errno()));
+  }else if(status == NSE_STATUS_CANCELLED){
+    nping_print(DBG_4, "%s(): %s canceled: %s", __func__, nse_type2str(type), strerror(socket_errno()));
+  }else if(status == NSE_STATUS_KILL){
+    nping_print(DBG_4, "%s(): %s killed: %s", __func__, nse_type2str(type), strerror(socket_errno()));
+  }else{
+    nping_warning(QT_2, "%s(): Unknown status code %d. Please report this bug.", __func__, status);
+  }
+ return OP_SUCCESS;
+} /* End of tcpconnect_handler() */
+
+
+
+
+
 /******************************************************************************
  * Nsock handlers and handler wrappers.                                       *
  ******************************************************************************/
@@ -534,3 +757,13 @@ void packet_capture_handler_wrapper(nsock_pool nsp, nsock_event nse, void *arg){
   prob.packet_capture_handler(nsp, nse, arg);
   return;
 } /* End of packet_capture_handler_wrapper() */
+
+
+/* This handler is a wrapper for the ProbeEngine::tcpconnect_handler()
+ * method. We need this because C++ does not allow to use class methods as
+ * callback functions for things like signal() or the Nsock lib. */
+void tcpconnect_handler_wrapper(nsock_pool nsp, nsock_event nse, void *arg){
+  nping_print(DBG_4, "%s()", __func__);
+  prob.tcpconnect_handler(nsp, nse, arg);
+  return;
+} /* End of tcpconnect_handler_wrapper() */
