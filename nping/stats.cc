@@ -208,17 +208,17 @@ bool NpingTimer::timeval_set(const struct timeval *tv) {
 /* Implementation of NpingStats class.                                       */
 /*****************************************************************************/
 
-NpingStats::NpingStats(){
+PacketStats::PacketStats(){
   this->reset();
 }
 
 
-NpingStats::~NpingStats(){
+PacketStats::~PacketStats(){
 
 }
 
 
-void NpingStats::reset(){
+void PacketStats::reset(){
   this->packets[INDEX_SENT]=0;
   this->packets[INDEX_RCVD]=0;
   this->packets[INDEX_ECHO]=0;
@@ -261,7 +261,7 @@ void NpingStats::reset(){
 
 
 /** Updates packet and byte count for transmitted packets. */
-int NpingStats::addSentPacket(u32 len){
+int PacketStats::addSentPacket(u32 len){
   this->packets[INDEX_SENT]++;
   this->bytes[INDEX_SENT]+=len;
   return OP_SUCCESS;
@@ -269,7 +269,7 @@ int NpingStats::addSentPacket(u32 len){
 
 
 /** Updates packet and byte count for received packets. */
-int NpingStats::addRecvPacket(u32 len){
+int PacketStats::addRecvPacket(u32 len){
   this->packets[INDEX_RCVD]++;
   this->bytes[INDEX_RCVD]+=len;
   return OP_SUCCESS;
@@ -277,7 +277,7 @@ int NpingStats::addRecvPacket(u32 len){
 
 
 /** Updates packet and byte count for echoed packets. */
-int NpingStats::addEchoedPacket(u32 len){
+int PacketStats::addEchoedPacket(u32 len){
   this->packets[INDEX_ECHO]++;
   this->bytes[INDEX_ECHO]+=len;
   return OP_SUCCESS;
@@ -285,111 +285,111 @@ int NpingStats::addEchoedPacket(u32 len){
 
 
 /** Updates count for echo clients served by the echo server. */
-int NpingStats::addEchoClientServed(){
+int PacketStats::addEchoClientServed(){
   this->echo_clients_served++;
   return OP_SUCCESS;
 } /* End of addEchoClientServed() */
 
 
-int NpingStats::startClocks(){
+int PacketStats::startClocks(){
   this->startTxClock();
   this->startRxClock();
   return OP_SUCCESS;
 }
 
 
-int NpingStats::stopClocks(){
+int PacketStats::stopClocks(){
   this->stopTxClock();
   this->stopRxClock();
   return OP_SUCCESS;
 }
 
 
-int NpingStats::startTxClock(){
+int PacketStats::startTxClock(){
   this->tx_timer.start();
   return OP_SUCCESS;
 }
 
 
-int NpingStats::stopTxClock(){
+int PacketStats::stopTxClock(){
   this->tx_timer.stop();
   return OP_SUCCESS;
 }
 
-int NpingStats::startRxClock(){
+int PacketStats::startRxClock(){
   this->rx_timer.start();
   return OP_SUCCESS;
 }
 
 
-int NpingStats::stopRxClock(){
+int PacketStats::stopRxClock(){
   this->rx_timer.stop();
   return OP_SUCCESS;
 }
 
 
-int NpingStats::startRuntime(){
+int PacketStats::startRuntime(){
   this->run_timer.start();
   return OP_SUCCESS;
 }
 
 
-int NpingStats::stopRuntime(){
+int PacketStats::stopRuntime(){
   this->run_timer.start();
   return OP_SUCCESS;
 }
 
 
-double NpingStats::elapsedTx(){
+double PacketStats::elapsedTx(){
   return this->tx_timer.elapsed();
 }
 
 
-double NpingStats::elapsedRx(){
+double PacketStats::elapsedRx(){
   return this->rx_timer.elapsed();
 }
 
 
-double NpingStats::elapsedRuntime(struct timeval *now){
+double PacketStats::elapsedRuntime(struct timeval *now){
   return this->run_timer.elapsed(now);
 }
 
 
-u64_t NpingStats::getSentPackets(){
+u64_t PacketStats::getSentPackets(){
   return this->packets[INDEX_SENT];
 } /* End of getSentPackets() */
 
 
-u64_t NpingStats::getSentBytes(){
+u64_t PacketStats::getSentBytes(){
   return this->bytes[INDEX_SENT];
 } /* End of getSentBytes() */
 
 
-u64_t NpingStats::getRecvPackets(){
+u64_t PacketStats::getRecvPackets(){
   return this->packets[INDEX_RCVD];
 } /* End of getRecvPackets() */
 
 
-u64_t NpingStats::getRecvBytes(){
+u64_t PacketStats::getRecvBytes(){
   return this->bytes[INDEX_RCVD];
 } /* End of getRecvBytes() */
 
 
-u64_t NpingStats::getEchoedPackets(){
+u64_t PacketStats::getEchoedPackets(){
   return this->packets[INDEX_ECHO];
 } /* End of getEchoedPackets() */
 
 
-u64_t NpingStats::getEchoedBytes(){
+u64_t PacketStats::getEchoedBytes(){
   return this->bytes[INDEX_ECHO];
 } /* End of getEchoedBytes() */
 
-u32 NpingStats::getEchoClientsServed(){
+u32 PacketStats::getEchoClientsServed(){
   return this->echo_clients_served;
 } /* End of getEchoClientsServed() */
 
 
-u64_t NpingStats::getLostPackets(){
+u64_t PacketStats::getLostPackets(){
   if(this->packets[INDEX_SENT] <= this->packets[INDEX_RCVD])
     return 0;
   else
@@ -397,7 +397,7 @@ u64_t NpingStats::getLostPackets(){
 } /* End of getLostPackets() */
 
 
-double NpingStats::getLostPacketPercentage(){
+double PacketStats::getLostPacketPercentage(){
   u32 pkt_rcvd=this->packets[INDEX_RCVD];
   u32 pkt_sent=this->packets[INDEX_SENT];
   u32 pkt_lost=(pkt_rcvd>=pkt_sent) ? 0 : (u32)(pkt_sent-pkt_rcvd);
@@ -411,12 +411,12 @@ double NpingStats::getLostPacketPercentage(){
 } /* End of getLostPacketPercentage() */
 
 
-double NpingStats::getLostPacketPercentage100(){
+double PacketStats::getLostPacketPercentage100(){
   return this->getLostPacketPercentage()*100;
 } /* End of getLostPacketPercentage100() */
 
 
-u64_t NpingStats::getUnmatchedPackets(){
+u64_t PacketStats::getUnmatchedPackets(){
   if(this->packets[INDEX_RCVD] <= this->packets[INDEX_ECHO])
     return 0;
   else
@@ -424,7 +424,7 @@ u64_t NpingStats::getUnmatchedPackets(){
 } /* End of getUnmatchedPackets() */
 
 
-double NpingStats::getUnmatchedPacketPercentage(){
+double PacketStats::getUnmatchedPacketPercentage(){
   u32 pkt_captured=this->packets[INDEX_RCVD];
   u32 pkt_echoed=this->packets[INDEX_ECHO];
   u32 pkt_unmatched=(pkt_captured<=pkt_echoed) ? 0 : (u32)(pkt_captured-pkt_echoed);
@@ -435,12 +435,12 @@ double NpingStats::getUnmatchedPacketPercentage(){
 } /* End of getUnmatchedPacketPercentage() */
 
 
-double NpingStats::getUnmatchedPacketPercentage100(){
+double PacketStats::getUnmatchedPacketPercentage100(){
   return this->getUnmatchedPacketPercentage()*100;
 } /* End of getUnmatchedPacketPercentage100() */
 
 
-double NpingStats::getOverallTxPacketRate(){
+double PacketStats::getOverallTxPacketRate(){
   double elapsed = this->tx_timer.elapsed();
   if(elapsed <= 0.0)
     return 0.0;
@@ -449,7 +449,7 @@ double NpingStats::getOverallTxPacketRate(){
 }
 
 
-double NpingStats::getOverallTxByteRate(){
+double PacketStats::getOverallTxByteRate(){
   double elapsed = this->tx_timer.elapsed();
   if(elapsed <= 0.0)
     return 0.0;
@@ -458,7 +458,7 @@ double NpingStats::getOverallTxByteRate(){
 }
 
 
-double NpingStats::getOverallRxPacketRate(){
+double PacketStats::getOverallRxPacketRate(){
   double elapsed = this->rx_timer.elapsed();
   if(elapsed <= 0.0)
     return 0.0;
@@ -467,7 +467,7 @@ double NpingStats::getOverallRxPacketRate(){
 }
 
 
-double NpingStats::getOverallRxByteRate(){
+double PacketStats::getOverallRxByteRate(){
   double elapsed = this->rx_timer.elapsed();
   if(elapsed <= 0.0)
     return 0.0;

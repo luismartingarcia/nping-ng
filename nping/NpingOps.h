@@ -305,7 +305,7 @@ class NpingOps {
   public:
     vector<TargetHost *> target_hosts;     /* List of Nping target hosts  */
     vector<NetworkInterface *> interfaces; /* List of relevant net ifaces */
-    NpingStats stats;                      /* Global statistics           */
+    PacketStats stats;                      /* Global statistics           */
     EthernetHeaderTemplate eth;            /* Header field values for Eth */
     IPv4HeaderTemplate ip4;                /* Header field values for IPv4*/
     IPv6HeaderTemplate ip6;                /* Header field values for IPv6*/

@@ -204,7 +204,7 @@ class NpingTimer {
 #define INDEX_ECHO 2
 
 
-class NpingStats {
+class PacketStats {
 
   private:
     u64_t packets[3];
@@ -224,8 +224,8 @@ class NpingStats {
     NpingTimer run_timer; /* Timer to measure Nping execution time. */
 
  public:
-    NpingStats();
-    ~NpingStats();
+    PacketStats();
+    ~PacketStats();
 
     void reset();
 
