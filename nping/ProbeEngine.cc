@@ -189,7 +189,7 @@ int ProbeEngine::setup_sniffer(vector<NetworkInterface *> &ifacelist, vector<con
 
     /* Obtain the pcap descriptor */
     if ((errmsg = nsock_pcap_open(this->nsp, my_pcap_iod, pcapdev, 8192, o.getSpoofAddress() ? 1 : 0, bpf_filters[i])) != NULL)
-      nping_fatal(QT_3, "Error opening capture device %s --> %s\n", pcapdev, errmsg);
+      nping_fatal(QT_3, "Error opening capture device %s --> %s", pcapdev, errmsg);
 
     /* Add the IOD for the current interface to the list of pcap IODs */
     this->pcap_iods.push_back(my_pcap_iod);
