@@ -169,7 +169,7 @@ int ProbeEngine::setup_sniffer(vector<NetworkInterface *> &ifacelist, vector<con
 
   assert(ifacelist.size()==bpf_filters.size());
 
-  for(u32 i; i<ifacelist.size(); i++){
+  for(u32 i=0; i<ifacelist.size(); i++){
 
     /* Get a new descriptor from Nsock and associate it with the interface name
      * it belongs to. */
