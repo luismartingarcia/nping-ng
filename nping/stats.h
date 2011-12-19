@@ -199,16 +199,23 @@ class NpingTimer {
 };
 
 
+#define INDEX_SENT 0
+#define INDEX_RCVD 1
+#define INDEX_ECHO 2
+
+
 class NpingStats {
 
   private:
-    u64_t packets_sent;
-    u64_t packets_received;
-    u64_t packets_echoed;
+    u64_t packets[3];
+    u64_t bytes[3];
+    u64_t tcp[3];
+    u64_t udp[3];
+    u64_t icmp[3];
+    u64_t arp[3];
+    u64_t ip4[3];
+    u64_t ip6[3];
 
-    u64_t bytes_sent;
-    u64_t bytes_received;
-    u64_t bytes_echoed;
 
     u32 echo_clients_served;
 

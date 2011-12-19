@@ -219,13 +219,37 @@ NpingStats::~NpingStats(){
 
 
 void NpingStats::reset(){
-  this->packets_sent=0;
-  this->packets_received=0;
-  this->packets_echoed=0;
+  this->packets[INDEX_SENT]=0;
+  this->packets[INDEX_RCVD]=0;
+  this->packets[INDEX_ECHO]=0;
 
-  this->bytes_sent=0;
-  this->bytes_received=0;
-  this->bytes_echoed=0;
+  this->bytes[INDEX_SENT]=0;
+  this->bytes[INDEX_RCVD]=0;
+  this->bytes[INDEX_ECHO]=0;
+
+  this->tcp[INDEX_SENT]=0;
+  this->tcp[INDEX_RCVD]=0;
+  this->tcp[INDEX_ECHO]=0;
+
+  this->udp[INDEX_SENT]=0;
+  this->udp[INDEX_RCVD]=0;
+  this->udp[INDEX_ECHO]=0;
+
+  this->icmp[INDEX_SENT]=0;
+  this->icmp[INDEX_RCVD]=0;
+  this->icmp[INDEX_ECHO]=0;
+
+  this->arp[INDEX_SENT]=0;
+  this->arp[INDEX_RCVD]=0;
+  this->arp[INDEX_ECHO]=0;
+
+  this->ip4[INDEX_SENT]=0;
+  this->ip4[INDEX_RCVD]=0;
+  this->ip4[INDEX_ECHO]=0;
+
+  this->ip6[INDEX_SENT]=0;
+  this->ip6[INDEX_RCVD]=0;
+  this->ip6[INDEX_ECHO]=0;
 
   this->echo_clients_served=0;
 
@@ -238,24 +262,24 @@ void NpingStats::reset(){
 
 /** Updates packet and byte count for transmitted packets. */
 int NpingStats::addSentPacket(u32 len){
-  this->packets_sent++;
-  this->bytes_sent+=len;
+  this->packets[INDEX_SENT]++;
+  this->bytes[INDEX_SENT]+=len;
   return OP_SUCCESS;
 } /* End of addSentPacket() */
 
 
 /** Updates packet and byte count for received packets. */
 int NpingStats::addRecvPacket(u32 len){
-  this->packets_received++;
-  this->bytes_received+=len;
+  this->packets[INDEX_RCVD]++;
+  this->bytes[INDEX_RCVD]+=len;
   return OP_SUCCESS;
 } /* End of addRecvPacket() */
 
 
 /** Updates packet and byte count for echoed packets. */
 int NpingStats::addEchoedPacket(u32 len){
-  this->packets_echoed++;
-  this->bytes_echoed+=len;
+  this->packets[INDEX_ECHO]++;
+  this->bytes[INDEX_ECHO]+=len;
   return OP_SUCCESS;
 } /* End of addEchoedPacket() */
 
@@ -332,32 +356,32 @@ double NpingStats::elapsedRuntime(struct timeval *now){
 
 
 u64_t NpingStats::getSentPackets(){
-  return this->packets_sent;
+  return this->packets[INDEX_SENT];
 } /* End of getSentPackets() */
 
 
 u64_t NpingStats::getSentBytes(){
-  return this->bytes_sent;
+  return this->bytes[INDEX_SENT];
 } /* End of getSentBytes() */
 
 
 u64_t NpingStats::getRecvPackets(){
-  return this->packets_received;
+  return this->packets[INDEX_RCVD];
 } /* End of getRecvPackets() */
 
 
 u64_t NpingStats::getRecvBytes(){
-  return this->bytes_received;
+  return this->bytes[INDEX_RCVD];
 } /* End of getRecvBytes() */
 
 
 u64_t NpingStats::getEchoedPackets(){
-  return this->packets_echoed;
+  return this->packets[INDEX_ECHO];
 } /* End of getEchoedPackets() */
 
 
 u64_t NpingStats::getEchoedBytes(){
-  return this->bytes_echoed;
+  return this->bytes[INDEX_ECHO];
 } /* End of getEchoedBytes() */
 
 u32 NpingStats::getEchoClientsServed(){
@@ -366,16 +390,16 @@ u32 NpingStats::getEchoClientsServed(){
 
 
 u64_t NpingStats::getLostPackets(){
-  if(this->packets_sent <= this->packets_received)
+  if(this->packets[INDEX_SENT] <= this->packets[INDEX_RCVD])
     return 0;
   else
-    return this->packets_sent - this->packets_received;
+    return this->packets[INDEX_SENT] - this->packets[INDEX_RCVD];
 } /* End of getLostPackets() */
 
 
 double NpingStats::getLostPacketPercentage(){
-  u32 pkt_rcvd=this->packets_received;
-  u32 pkt_sent=this->packets_sent;
+  u32 pkt_rcvd=this->packets[INDEX_RCVD];
+  u32 pkt_sent=this->packets[INDEX_SENT];
   u32 pkt_lost=(pkt_rcvd>=pkt_sent) ? 0 : (u32)(pkt_sent-pkt_rcvd);
   /* Only compute percentage if we actually sent packets, don't do divisions
    * by zero! (this could happen when user presses CTRL-C and we print the
@@ -393,16 +417,16 @@ double NpingStats::getLostPacketPercentage100(){
 
 
 u64_t NpingStats::getUnmatchedPackets(){
-  if(this->packets_received <= this->packets_echoed)
+  if(this->packets[INDEX_RCVD] <= this->packets[INDEX_ECHO])
     return 0;
   else
-    return this->packets_received - this->packets_echoed;
+    return this->packets[INDEX_RCVD] - this->packets[INDEX_ECHO];
 } /* End of getUnmatchedPackets() */
 
 
 double NpingStats::getUnmatchedPacketPercentage(){
-  u32 pkt_captured=this->packets_received;
-  u32 pkt_echoed=this->packets_echoed;
+  u32 pkt_captured=this->packets[INDEX_RCVD];
+  u32 pkt_echoed=this->packets[INDEX_ECHO];
   u32 pkt_unmatched=(pkt_captured<=pkt_echoed) ? 0 : (u32)(pkt_captured-pkt_echoed);
   double percentunmatched=0.0;
   if( pkt_unmatched!=0 && pkt_captured!=0)
@@ -421,7 +445,7 @@ double NpingStats::getOverallTxPacketRate(){
   if(elapsed <= 0.0)
     return 0.0;
   else
-    return this->packets_sent / elapsed;
+    return this->packets[INDEX_SENT] / elapsed;
 }
 
 
@@ -430,7 +454,7 @@ double NpingStats::getOverallTxByteRate(){
   if(elapsed <= 0.0)
     return 0.0;
   else
-    return this->bytes_sent / elapsed;
+    return this->bytes[INDEX_SENT] / elapsed;
 }
 
 
@@ -439,7 +463,7 @@ double NpingStats::getOverallRxPacketRate(){
   if(elapsed <= 0.0)
     return 0.0;
   else
-    return this->packets_received / elapsed;
+    return this->packets[INDEX_RCVD] / elapsed;
 }
 
 
@@ -448,6 +472,6 @@ double NpingStats::getOverallRxByteRate(){
   if(elapsed <= 0.0)
     return 0.0;
   else
-    return this->bytes_received / elapsed;
+    return this->bytes[INDEX_RCVD] / elapsed;
 }
 
