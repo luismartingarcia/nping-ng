@@ -325,6 +325,10 @@ char *ProbeEngine::bpf_filter(vector<TargetHost *> &Targets, NetworkInterface *t
   IPAddress *src_addr;
   bool first=true;
 
+  /* If the user specified a custom BPF filter, use it. */
+  if(o.issetBPFFilterSpec())
+    return o.getBPFFilterSpec();
+
   /* If we have 20 or less targets, build a list of addresses so we can set
    * an explicit BPF filter */
   if (target_interface->associatedHosts() <= 20) {
