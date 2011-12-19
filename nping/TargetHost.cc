@@ -712,30 +712,48 @@ ICMPv6Header *TargetHost::getICMPv6Header(){
 /* This method stores a chain of PacketElements inside the object. In particular,
  * the supplied pointer is stored in the TargetHost::sent_pkts vector. Note that
  * then MAX_STORED_PACKETS_PER_HOST is exceeded, the oldest packet in the list
- * will be removed (and its elements will be freed). /*/
+ * will be removed (and its elements will be freed). This method also store
+ * the current time in TargetHost::sent_times. This allows hosts determine
+ * their RTTs. */
 int TargetHost::store_packet(PacketElement *pkt){
+  struct timeval now;
   assert(pkt!=NULL);
   /* Check if we have reached the maximum number of packets we are allowed to
    * store. In that case, delete the oldest one.*/
   if(this->sent_pkts.size()>=MAX_STORED_PACKETS_PER_HOST){
     PacketParser::freePacketChain(this->sent_pkts[0]);
     this->sent_pkts.erase(this->sent_pkts.begin(), this->sent_pkts.begin()+1);
+    this->sent_times.erase(this->sent_times.begin(), this->sent_times.begin()+1);
   }
+  gettimeofday(&now, NULL);
   this->sent_pkts.push_back(pkt);
+  this->sent_times.push_back(now);
   return OP_SUCCESS;
 } /* End of store_packet() */
 
 
-int TargetHost::is_response(PacketElement *pkt_rcvd){
+int TargetHost::is_response(PacketElement *pkt_rcvd, struct timeval *rcvd_time){
   assert(pkt_rcvd!=NULL);
+  int rtt=0;
+  struct timeval now;
+  if(rcvd_time!=NULL){
+    now=*rcvd_time;
+  }else{
+    gettimeofday(&now, NULL);
+  }
 
   for(size_t i=0; i<this->sent_pkts.size(); i++){
     /* If we found the probe that matches the answer, then we remove the
      * probe from our list so we don't process it again next time. */
     if(PacketParser::is_response(this->sent_pkts[i], pkt_rcvd)){
+      /* Now that we know the packet is a response to one of our probes, let's
+       * determine the RTT and update our internal stats. */
+      rtt= TIMEVAL_SUBTRACT(now, this->sent_times[i]);
+      this->stats.update_rtt(rtt);
+      /* Do some cleanup */
       PacketParser::freePacketChain(this->sent_pkts[i]);
       this->sent_pkts.erase(this->sent_pkts.begin()+i, this->sent_pkts.begin()+i+1);
-      // TODO: @todo Here update internal stats!
+      this->sent_times.erase(this->sent_times.begin()+i, this->sent_times.begin()+i+1);
       return true;
     }
   }

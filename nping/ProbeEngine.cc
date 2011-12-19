@@ -266,6 +266,7 @@ int ProbeEngine::start(vector<TargetHost *> &Targets, vector<NetworkInterface *>
 
   /* Init the time counters */
   gettimeofday(&this->start_time, NULL);
+  o.stats.start_clocks();
 
   /* Schedule the first pcap read event (one for each interface we use) */
   for(size_t i=0; i<this->pcap_iods.size(); i++){
@@ -318,6 +319,11 @@ int ProbeEngine::start(vector<TargetHost *> &Targets, vector<NetworkInterface *>
           }
         }
 
+        /* Check if we've just sent the last packet. In that case, stop the
+         * Tx clock.*/
+        if(r==(o.getRounds()-1) && p==(total_ports-1) && t==(Targets.size()-1))
+          o.stats.stop_tx_clock();
+
         /* Determine how long do we have to wait until we send the next pkt */
         TIMEVAL_MSEC_ADD(next_time, start_time, count*o.getDelay() );
         if((wait_time=TIMEVAL_MSEC_SUBTRACT(next_time, now)-time_deviation) < 0){
@@ -345,6 +351,7 @@ int ProbeEngine::start(vector<TargetHost *> &Targets, vector<NetworkInterface *>
   }
 
   /* Cleanup and return */
+  o.stats.stop_rx_clock();
   nping_print(DBG_1, "Nping Probe Engine Finished.");
   return OP_SUCCESS;
 } /* End of start() */
@@ -449,6 +456,7 @@ int ProbeEngine::send_packet(TargetHost *tgt, PacketElement *pkt, struct timeval
   struct sockaddr_in s4;   /* Target IPv4 address                   */
   struct sockaddr_in6 s6;  /* Target IPv6 address                   */
   u8 pktbuff[65535];       /* Binary buffer for the outgoing packet */
+  PacketElement *tlayer=NULL;
   assert(tgt!=NULL && pkt!=NULL);
   pkt->dumpToBinaryBuffer(pktbuff, 65535);
 
@@ -484,6 +492,14 @@ int ProbeEngine::send_packet(TargetHost *tgt, PacketElement *pkt, struct timeval
     send_ipv6_packet_eth_or_sd(-1, NULL, &s6, pktbuff, pkt->getLen());
   }else{
     nping_fatal(QT_3, "%s(): Unknown protocol", __func__);
+  }
+
+  /* Update statistics */
+  if((tlayer=PacketParser::find_transport_layer(pkt))!=NULL){
+    o.stats.update_sent(tgt->getTargetAddress()->getVersion(), tlayer->protocol_id(), pkt->getLen());
+    tgt->stats.update_sent(tgt->getTargetAddress()->getVersion(), tlayer->protocol_id(), pkt->getLen());
+  }else{
+    nping_warning(QT_2, "%s(): No transport layer found. Please report this bug.", __func__);
   }
 
   /* Finally, print the packet we've just sent */
@@ -564,14 +580,14 @@ int ProbeEngine::do_unprivileged(int proto, TargetHost *tgt, u16 tport, struct t
     if( o.showSentPackets() ){
       nping_print(VB_0,"SENT (%.4fs) Starting TCP Handshake > %s:%d", ((double)TIMEVAL_MSEC_SUBTRACT(*now, this->start_time)) / 1000, tgt->getTargetAddress()->toString() , tport);
     }
+    /* Update statistics. */
+    tgt->stats.update_connects(tgt->getTargetAddress()->getVersion(), HEADER_TYPE_TCP);
+    o.stats.update_connects(tgt->getTargetAddress()->getVersion(), HEADER_TYPE_TCP);
   }else if(proto==DO_UDP_UNPRIV){
     nsock_connect_udp(nsp, fds[packetno%max_iods], udpunpriv_handler_wrapper, tgt, (struct sockaddr *)&to, sslen, tport);
   }
-packetno++;
-//o.stats.addSentPacket(80); /* Estimation Src>Dst 1 TCP SYN && TCP ACK */
-//mypacket->target->setProbeSentTCP(0, mypacket->dstport);
-
-return OP_SUCCESS;
+  packetno++;
+  return OP_SUCCESS;
 } /* End of do_unprivileged() */
 
 
@@ -603,7 +619,7 @@ int ProbeEngine::packet_capture_handler(nsock_pool nsp, nsock_event nse, void *a
   struct timeval pcaptime;                  /* Time the packet was captured  */
   struct timeval now;
   gettimeofday(&now, NULL);
-  PacketElement *pkt=NULL;
+  PacketElement *pkt=NULL, *tlayer=NULL;
 
   if (status == NSE_STATUS_SUCCESS) {
     switch(type) {
@@ -624,12 +640,18 @@ int ProbeEngine::packet_capture_handler(nsock_pool nsp, nsock_event nse, void *a
            * target hosts and ask each of those hosts to check if that's the
            * case. */
           for(size_t i=0; i<o.target_hosts.size(); i++){
-            if(o.target_hosts[i]->is_response(pkt)){
+            if(o.target_hosts[i]->is_response(pkt, &now)){
               nping_print(VB_0|NO_NEWLINE,"RCVD (%.4fs) ", ((double)TIMEVAL_MSEC_SUBTRACT(now, this->start_time)) / 1000);
               pkt->print(stdout, o.getDetailLevel());
               printf("\n");
-              // TODO: @todo Here update general stats. (the is_response()
-              // call already updates the host's internal stats.
+              /* Find which transport layer protocol we have received and
+               * update stats accordingly. */
+              if((tlayer=PacketParser::find_transport_layer(pkt))!=NULL){
+                o.stats.update_rcvd(o.target_hosts[i]->getTargetAddress()->getVersion(), tlayer->protocol_id(), rcvd_pkt_len);
+                o.target_hosts[i]->stats.update_rcvd(o.target_hosts[i]->getTargetAddress()->getVersion(), tlayer->protocol_id(), rcvd_pkt_len);
+              }else{
+                nping_warning(QT_2, "%s(): No transport layer found. Please report this bug.", __func__);
+              }
             }
           }
         }
@@ -724,10 +746,16 @@ int ProbeEngine::tcpconnect_handler(nsock_pool nsp, nsock_event nse, void *mydat
          * sending any data back to us. */
         nsock_read(nsp, nsi, tcpconnect_handler_wrapper, 10000, tgt);
 
+        /* Update statistics. */
+        tgt->stats.update_accepts(family, HEADER_TYPE_TCP);
+        o.stats.update_accepts(family, HEADER_TYPE_TCP);
+
         /* If the user specified a payload, inject it into the connection we've
          * just established. */
         if(o.getPayloadBuffer()!=NULL){
           nsock_write(nsp, nsi, tcpconnect_handler_wrapper, 10000, tgt, (const char *)o.getPayloadBuffer(), o.getPayloadLen());
+          tgt->stats.update_bytes_written(o.getPayloadLen());
+          o.stats.update_bytes_written(o.getPayloadLen());
         }
 
       break;
@@ -738,7 +766,6 @@ int ProbeEngine::tcpconnect_handler(nsock_pool nsp, nsock_event nse, void *mydat
           if(o.getVerbosity()>=VB_3 && o.getPayloadBuffer()!=NULL)
             luis_hdump((char *)o.getPayloadBuffer(), o.getPayloadLen()); // TODO @todo Find print_hexdump() and use it!
         }
-        // TODO @todo Update statistics here!
       break;
 
       case NSE_TYPE_READ:
@@ -752,7 +779,10 @@ int ProbeEngine::tcpconnect_handler(nsock_pool nsp, nsock_event nse, void *mydat
           nping_print(VB_0, "DATA (%.4fs) %d byte%s received from %s:%d", ((double)TIMEVAL_MSEC_SUBTRACT(now, this->start_time)) / 1000, recvbytes, recvbytes!=1 ? "s" : "", ipstring, peerport);
           if(o.getVerbosity()>=VB_3)
             luis_hdump((char *)recvbuff, recvbytes); // TODO @todo Find print_hexdump() and use it!
-          // TODO @todo Update statistics here!
+
+          /* Update statistics */
+          tgt->stats.update_bytes_read(o.getPayloadLen());
+          o.stats.update_bytes_read(o.getPayloadLen());
         }
       break;
 
@@ -883,9 +913,9 @@ int ProbeEngine::udpunpriv_handler(nsock_pool nsp, nsock_event nse, void *mydata
           if(o.getVerbosity()>=VB_3 && o.getPayloadBuffer()!=NULL && o.getPayloadLen()>0)
             luis_hdump((char *)o.getPayloadBuffer(), o.getPayloadLen()); // TODO @todo Find print_hexdump() and use it!
         }
-        //trg->setProbeSentUDP( 0, peerport);
-        //o.stats.addSentPacket(sentbytes); /* Here we don't count the headers, just payload bytes */
-
+        /* Update statistics */
+        tgt->stats.update_sent(family, HEADER_TYPE_UDP, payload_len);
+        o.stats.update_sent(family, HEADER_TYPE_UDP, payload_len);
         /* If user did not disable packet capture, schedule a read operation */
         if(!o.disablePacketCapture())
           nsock_read(nsp, nsi, udpunpriv_handler_wrapper, DEFAULT_UDP_READ_TIMEOUT_MS, tgt);
@@ -909,9 +939,9 @@ int ProbeEngine::udpunpriv_handler(nsock_pool nsp, nsock_event nse, void *mydata
         nping_print(VB_0,"RECV (%.4fs) UDP packet with %d bytes from %s:%d", ((double)TIMEVAL_MSEC_SUBTRACT(now, this->start_time)) / 1000,  readbytes, ipstring, peerport );
         if(o.getVerbosity()>=VB_3 && readbuff!=NULL && readbytes>0)
           luis_hdump((char *)readbuff, readbytes); // TODO @todo Find print_hexdump() and use it!
-
-        //trg->setProbeRecvUDP(peerport, 0);
-        //o.stats.addRecvPacket(readbytes);
+        /* Update statistics */
+        tgt->stats.update_rcvd(family, HEADER_TYPE_UDP, readbytes);
+        o.stats.update_rcvd(family, HEADER_TYPE_UDP, readbytes);
       break;
 
       default:

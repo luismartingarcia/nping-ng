@@ -137,6 +137,7 @@ NpingTimer::NpingTimer(){
   this->reset();
 }
 
+
 NpingTimer::~NpingTimer(){
 
 }
@@ -146,7 +147,7 @@ void NpingTimer::reset(){
   this->start_tv.tv_usec=0;
   this->stop_tv.tv_sec=0;
   this->stop_tv.tv_usec=0;
-}
+} /* End of reset() */
 
 
 int NpingTimer::start(){
@@ -154,7 +155,7 @@ int NpingTimer::start(){
     return OP_FAILURE;
   gettimeofday(&start_tv, NULL);
   return OP_SUCCESS;
-}
+} /* End of start() */
 
 
 int NpingTimer::stop(){
@@ -162,7 +163,7 @@ int NpingTimer::stop(){
     return OP_FAILURE;
   gettimeofday(&stop_tv, NULL);
   return OP_SUCCESS;
-}
+} /* End of stop() */
 
 
 double NpingTimer::elapsed(struct timeval *now){
@@ -184,24 +185,23 @@ double NpingTimer::elapsed(struct timeval *now){
     end_tv = &tv;
   }
   return TIMEVAL_SUBTRACT(*end_tv, start_tv) / 1000000.0;
-}
+} /* End of elapsed() */
 
 
 bool NpingTimer::is_started(){
   return timeval_set(&this->start_tv);
-}
+} /* End of is_started() */
 
 
 bool NpingTimer::is_stopped(){
   return timeval_set(&this->stop_tv);
-}
+} /* End of is_stopped() */
 
 
 /* Returns true if tv has been initialized; i.e., its members are not all zero. */
-bool NpingTimer::timeval_set(const struct timeval *tv) {
+bool NpingTimer::timeval_set(const struct timeval *tv){
   return (tv->tv_sec != 0 || tv->tv_usec != 0);
-}
-
+} /* End of timeval_set() */
 
 
 /*****************************************************************************/
@@ -210,12 +210,12 @@ bool NpingTimer::timeval_set(const struct timeval *tv) {
 
 PacketStats::PacketStats(){
   this->reset();
-}
+} /* End of PacketStats constructor */
 
 
 PacketStats::~PacketStats(){
 
-}
+} /* End of PacketStats destructor */
 
 
 void PacketStats::reset(){
@@ -255,11 +255,21 @@ void PacketStats::reset(){
   this->ip6[INDEX_RCVD]=0;
   this->ip6[INDEX_ECHO]=0;
 
+  this->tcpconn[INDEX_CONN_ISSUED]=0;
+  this->tcpconn[INDEX_CONN_ACCEPTED]=0;
+
+  //this->sctpconn[INDEX_CONN_ISSUED]=0;
+  //this->sctpconn[INDEX_CONN_ACCEPTED]=0;
+
   this->echo_clients_served=0;
 
   this->tx_timer.reset();
   this->rx_timer.reset();
   this->run_timer.reset();
+
+  this->max_rtt=-1;
+  this->min_rtt=-1;
+  this->avg_rtt=-1;
 
 } /* End of reset() */
 
@@ -328,116 +338,264 @@ int PacketStats::update_echo(int ip_version, int proto, u32 pkt_len){
 int PacketStats::update_clients_served(){
   this->echo_clients_served++;
   return OP_SUCCESS;
-} /* End of addEchoClientServed() */
+} /* End of update_clients_served() */
 
 
-int PacketStats::startClocks(){
-  this->startTxClock();
-  this->startRxClock();
+/* Updates connection counters (issued and accepted TCP connections). This
+ * method is meant to be used internally. Use the update_connects() and
+ * update_accepts() instead. */
+int PacketStats::update_connection_count(int index, int ip_version, int proto){
+  assert(index==INDEX_CONN_ISSUED || index==INDEX_CONN_ACCEPTED);
+  /* IP stats */
+  switch(ip_version){
+    case AF_INET:
+      this->ip4[index]++;
+    break;
+    case AF_INET6:
+      this->ip6[index]++;
+    break;
+  }
+  /* TCP Connection stats */
+  switch(proto){
+    case HEADER_TYPE_TCP:
+      this->tcpconn[index]++;
+    break;
+    default:
+      assert(false);
+    break;
+  }
   return OP_SUCCESS;
-}
+} /* End of update_connection_count() */
 
 
-int PacketStats::stopClocks(){
-  this->stopTxClock();
-  this->stopRxClock();
+/* Update the stats for the number of connections that we have tried to
+ * establish. In other words, the number of connect()s that we have issued.
+ * The "proto" parameter is now redundant but it will make sense if one day
+ * we support SCTP connections. */
+int PacketStats::update_connects(int ip_version, int proto){
+  return this->update_connection_count(INDEX_CONN_ISSUED, ip_version, proto);
+} /* End of update_connects() */
+
+
+/* Update the stats for the number of connections that we have successfully
+ * established. The "proto" parameter is now redundant but it will make
+ * sense if one day we support SCTP connections. */
+int PacketStats::update_accepts(int ip_version, int proto){
+  return this->update_connection_count(INDEX_CONN_ACCEPTED, ip_version, proto);
+} /* End of update_accepts() */
+
+
+/* Update the number of bytes read. Note that this method is public only because
+ * it is used to update byte counts for TCP connections. Also, note that we
+ * are reusing the same this->bytes variable that holds byte counts for
+ * raw packets. However, as Nping shouldn't mix privileged and unprivileged
+ * operation modes, this should be OK for now. */
+int PacketStats::update_bytes_read(u32 count){
+  this->bytes[INDEX_RCVD]+=count;
   return OP_SUCCESS;
-}
+} /* End of update_bytes_read() */
 
 
-int PacketStats::startTxClock(){
+/* Update the number of bytes written. Note that this method is public only
+ * because it is used to update byte counts for TCP connections where we had
+ * some payload to send. Also, note that we are reusing the same this->bytes
+ * variable that holds byte counts for raw packets. However, as Nping shouldn't
+ * mix privileged and unprivileged operation modes, this should be OK for
+ * now. */
+int PacketStats::update_bytes_written(u32 count){
+  this->bytes[INDEX_SENT]+=count;
+  return OP_SUCCESS;
+} /* End of update_bytes_written() */
+
+
+/* Assumes that the counter for received packets has NOT been incremented yet. */
+int PacketStats::update_rtt(int rtt){
+
+  /* Update Max RTT */
+  if(rtt > this->max_rtt || this->max_rtt<0){
+    this->max_rtt=rtt;
+  }
+  /* Update Min RTT */
+  if(rtt < this->min_rtt || this->min_rtt<0){
+    this->min_rtt=rtt;
+  }
+  /* Update average RTT */
+  if(this->packets[INDEX_RCVD]==0 || this->avg_rtt<0){
+    this->avg_rtt = rtt;
+  }else{
+    this->avg_rtt = ((this->avg_rtt*(this->packets[INDEX_RCVD]))+rtt) / (this->packets[INDEX_RCVD]+1);
+  }
+  return OP_SUCCESS;
+} /* End of update_rtt() */
+
+
+int PacketStats::start_clocks(){
+  this->start_tx_clock();
+  this->start_rx_clock();
+  return OP_SUCCESS;
+} /* End of start_clocks() */
+
+
+int PacketStats::stop_clocks(){
+  this->stop_tx_clock();
+  this->stop_rx_clock();
+  return OP_SUCCESS;
+} /* End of stop_clocks() */
+
+
+int PacketStats::start_tx_clock(){
   this->tx_timer.start();
   return OP_SUCCESS;
-}
+} /* End of start_tx_clock() */
 
 
-int PacketStats::stopTxClock(){
+int PacketStats::stop_tx_clock(){
   this->tx_timer.stop();
   return OP_SUCCESS;
-}
+} /* End of stop_tx_clock() */
 
-int PacketStats::startRxClock(){
+int PacketStats::start_rx_clock(){
   this->rx_timer.start();
   return OP_SUCCESS;
-}
+} /* End of start_rx_clock() */
 
 
-int PacketStats::stopRxClock(){
+int PacketStats::stop_rx_clock(){
   this->rx_timer.stop();
   return OP_SUCCESS;
-}
+} /* End of stop_rx_clock() */
 
 
-int PacketStats::startRuntime(){
+int PacketStats::start_runtime(){
   this->run_timer.start();
   return OP_SUCCESS;
-}
+} /* End of start_runtime() */
 
 
-int PacketStats::stopRuntime(){
+int PacketStats::stop_runtime(){
   this->run_timer.start();
   return OP_SUCCESS;
-}
+} /* End of stop_runtime() */
 
 
-double PacketStats::elapsedTx(){
-  return this->tx_timer.elapsed();
-}
+double PacketStats::get_tx_elapsed(){
+  return this->tx_timer.elapsed(NULL);
+} /* End of get_tx_elapsed() */
 
 
-double PacketStats::elapsedRx(){
-  return this->rx_timer.elapsed();
-}
+double PacketStats::get_rx_elapsed(){
+  return this->rx_timer.elapsed(NULL);
+} /* End of get_rx_elapsed() */
 
 
-double PacketStats::elapsedRuntime(struct timeval *now){
+double PacketStats::get_runtime_elapsed(struct timeval *now){
   return this->run_timer.elapsed(now);
-}
+} /* End of get_runtime_elapsed() */
 
 
-u64_t PacketStats::getSentPackets(){
+u64_t PacketStats::get_pkts_sent(){
   return this->packets[INDEX_SENT];
-} /* End of getSentPackets() */
+} /* End of get_pkts_sent() */
 
 
-u64_t PacketStats::getSentBytes(){
+u64_t PacketStats::get_bytes_sent(){
   return this->bytes[INDEX_SENT];
-} /* End of getSentBytes() */
+} /* End of get_bytes_sent() */
 
 
-u64_t PacketStats::getRecvPackets(){
+u64_t PacketStats::get_pkts_rcvd(){
   return this->packets[INDEX_RCVD];
-} /* End of getRecvPackets() */
+} /* End of get pkts_rcvd() */
 
 
-u64_t PacketStats::getRecvBytes(){
+u64_t PacketStats::get_bytes_rcvd(){
   return this->bytes[INDEX_RCVD];
-} /* End of getRecvBytes() */
+} /* End of get_bytes_rcvd() */
 
 
-u64_t PacketStats::getEchoedPackets(){
+u64_t PacketStats::get_pkts_echoed(){
   return this->packets[INDEX_ECHO];
-} /* End of getEchoedPackets() */
+} /* End of get_pkts_echoed() */
 
 
-u64_t PacketStats::getEchoedBytes(){
+u64_t PacketStats::get_bytes_echoed(){
   return this->bytes[INDEX_ECHO];
-} /* End of getEchoedBytes() */
+} /* End of get_bytes_echoed() */
 
-u32 PacketStats::getEchoClientsServed(){
+
+u32 PacketStats::get_clients_served(){
   return this->echo_clients_served;
-} /* End of getEchoClientsServed() */
+} /* End of get_clients_served() */
 
 
-u64_t PacketStats::getLostPackets(){
+u64_t PacketStats::get_connects(int proto){
+  /* TCP Connection stats */
+  switch(proto){
+    case HEADER_TYPE_TCP:
+      return this->tcpconn[INDEX_CONN_ISSUED];
+    break;
+    default:
+      assert(false);
+    break;
+  }
+  return 0;
+} /* End of get_connects() */
+
+
+u64_t PacketStats::get_accepts(int proto){
+  /* TCP Connection stats */
+  switch(proto){
+    case HEADER_TYPE_TCP:
+      return this->tcpconn[INDEX_CONN_ACCEPTED];
+    break;
+    default:
+      assert(false);
+    break;
+  }
+  return 0;
+} /* End of get_accepts() */
+
+
+u64_t PacketStats::get_connects_failed(int proto){
+  /* TCP Connection stats */
+  switch(proto){
+    case HEADER_TYPE_TCP:
+      if(this->tcpconn[INDEX_CONN_ISSUED] <= this->tcpconn[INDEX_CONN_ACCEPTED])
+        return 0;
+      else
+        return this->tcpconn[INDEX_CONN_ISSUED] - this->tcpconn[INDEX_CONN_ACCEPTED];
+    break;
+    default:
+      assert(false);
+    break;
+  }
+  return 0;
+} /* End of get_accepts() */
+
+
+double PacketStats::get_percent_failed(int proto){
+  u32 pkt_rcvd=this->get_accepts(proto);
+  u32 pkt_sent=this->get_connects(proto);
+  u32 pkt_lost=(pkt_rcvd>=pkt_sent) ? 0 : (u32)(pkt_sent-pkt_rcvd);
+  /* Only compute percentage if we actually sent packets, don't do divisions
+   * by zero! (this could happen when user presses CTRL-C and we print the
+   * stats */
+  double percentlost=0.0;
+  if( pkt_lost!=0 && pkt_sent!=0)
+    percentlost=((double)pkt_lost)/((double)pkt_sent);
+  return percentlost*100;
+} /* End of get_percent_lost() */
+
+
+u64_t PacketStats::get_pkts_lost(){
   if(this->packets[INDEX_SENT] <= this->packets[INDEX_RCVD])
     return 0;
   else
     return this->packets[INDEX_SENT] - this->packets[INDEX_RCVD];
-} /* End of getLostPackets() */
+} /* End of get_pkts_lost() */
 
 
-double PacketStats::getLostPacketPercentage(){
+double PacketStats::get_percent_lost(){
   u32 pkt_rcvd=this->packets[INDEX_RCVD];
   u32 pkt_sent=this->packets[INDEX_SENT];
   u32 pkt_lost=(pkt_rcvd>=pkt_sent) ? 0 : (u32)(pkt_sent-pkt_rcvd);
@@ -447,71 +605,87 @@ double PacketStats::getLostPacketPercentage(){
   double percentlost=0.0;
   if( pkt_lost!=0 && pkt_sent!=0)
     percentlost=((double)pkt_lost)/((double)pkt_sent);
-  return percentlost;
-} /* End of getLostPacketPercentage() */
+  return percentlost*100;
+} /* End of get_percent_lost() */
 
 
-double PacketStats::getLostPacketPercentage100(){
-  return this->getLostPacketPercentage()*100;
-} /* End of getLostPacketPercentage100() */
-
-
-u64_t PacketStats::getUnmatchedPackets(){
+u64_t PacketStats::get_pkts_unmatched(){
   if(this->packets[INDEX_RCVD] <= this->packets[INDEX_ECHO])
     return 0;
   else
     return this->packets[INDEX_RCVD] - this->packets[INDEX_ECHO];
-} /* End of getUnmatchedPackets() */
+} /* End of get_pkts_unmatched() */
 
 
-double PacketStats::getUnmatchedPacketPercentage(){
+double PacketStats::get_percent_unmatched(){
   u32 pkt_captured=this->packets[INDEX_RCVD];
   u32 pkt_echoed=this->packets[INDEX_ECHO];
   u32 pkt_unmatched=(pkt_captured<=pkt_echoed) ? 0 : (u32)(pkt_captured-pkt_echoed);
   double percentunmatched=0.0;
   if( pkt_unmatched!=0 && pkt_captured!=0)
     percentunmatched=((double)pkt_unmatched)/((double)pkt_captured);
-  return percentunmatched;
-} /* End of getUnmatchedPacketPercentage() */
+  return percentunmatched*100;
+} /* End of get_percent_unmatched() */
 
 
-double PacketStats::getUnmatchedPacketPercentage100(){
-  return this->getUnmatchedPacketPercentage()*100;
-} /* End of getUnmatchedPacketPercentage100() */
-
-
-double PacketStats::getOverallTxPacketRate(){
-  double elapsed = this->tx_timer.elapsed();
+double PacketStats::get_tx_pkt_rate(){
+  double elapsed = this->tx_timer.elapsed(NULL);
   if(elapsed <= 0.0)
     return 0.0;
   else
     return this->packets[INDEX_SENT] / elapsed;
-}
+} /* End of get_tx_pkt_rate() */
 
 
-double PacketStats::getOverallTxByteRate(){
-  double elapsed = this->tx_timer.elapsed();
+double PacketStats::get_tx_byte_rate(){
+  double elapsed = this->tx_timer.elapsed(NULL);
   if(elapsed <= 0.0)
     return 0.0;
   else
     return this->bytes[INDEX_SENT] / elapsed;
-}
+} /* End of get_tx_byte_rate() */
 
 
-double PacketStats::getOverallRxPacketRate(){
-  double elapsed = this->rx_timer.elapsed();
+double PacketStats::get_rx_pkt_rate(){
+  double elapsed = this->rx_timer.elapsed(NULL);
   if(elapsed <= 0.0)
     return 0.0;
   else
     return this->packets[INDEX_RCVD] / elapsed;
-}
+} /* End of get_rx_pkt_rate() */
 
 
-double PacketStats::getOverallRxByteRate(){
-  double elapsed = this->rx_timer.elapsed();
+double PacketStats::get_rx_byte_rate(){
+  double elapsed = this->rx_timer.elapsed(NULL);
   if(elapsed <= 0.0)
     return 0.0;
   else
     return this->bytes[INDEX_RCVD] / elapsed;
-}
+} /* End of get_rx_byte_rate() */
 
+
+/* Returns max RTT observed for this host */
+int PacketStats::get_max_rtt(){
+  return this->max_rtt;
+} /* End of get_max_rtt() */
+
+
+/* Print round trip times */
+int PacketStats::print_RTTs(){
+  /* Maximum RTT observed */
+  if(max_rtt>=0)
+    nping_print(VB_0|NO_NEWLINE,"Max rtt: %.3lfms ", this->max_rtt/1000.0 );
+  else
+    nping_print(VB_0|NO_NEWLINE,"Max rtt: N/A ");
+  /* Minimum RTT observed */
+  if(min_rtt>=0)
+    nping_print(VB_0|NO_NEWLINE,"| Min rtt: %.3lfms ", this->min_rtt/1000.0 );
+  else
+    nping_print(VB_0|NO_NEWLINE,"| Min rtt: N/A " );
+  /* Average RTT */
+  if(avg_rtt>=0)
+    nping_print(VB_0,"| Avg rtt: %.3lfms", this->avg_rtt/1000.0 );
+  else
+    nping_print(VB_0,"| Avg rtt: N/A" );
+  return OP_SUCCESS;
+} /* End of print_RTTs() */

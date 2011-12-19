@@ -403,8 +403,8 @@ int EchoClient::nep_recv_echo(u8 *packet, size_t packetlen){
    * between the last sent packet and the received echo packet. We assume
    * the packet was captured RTT/2 seconds ago. */
   struct timeval tmp=o.getLastPacketSentTime();
-  float sent_time = o.stats.elapsedRuntime(&tmp);
-  float now_time = o.stats.elapsedRuntime(t);
+  float sent_time = o.stats.get_runtime_elapsed(&tmp);
+  float now_time = o.stats.get_runtime_elapsed(t);
   float rtt = now_time - sent_time;
   float final_time = sent_time + rtt/2;
 

@@ -96,6 +96,7 @@
 #include "nping.h"
 #include "NetworkInterface.h"
 #include "HeaderTemplates.h"
+#include "stats.h"
 #include <vector>
 using namespace std;
 
@@ -133,8 +134,8 @@ class TargetHost{
 
     int net_distance;        /* If >=0, indicates how many hops away the target is    */
     NetworkInterface *iface; /* Info about the proper interface to reach target       */
-
-    vector<PacketElement *> sent_pkts; /* List of transmitted packets */
+    vector<PacketElement *> sent_pkts; /* List of transmitted packets                 */
+    vector<struct timeval> sent_times; /* List of timestamps for transmitted packets  */
 
     EthernetHeader *getEthernetHeader(u16 eth_type);
     IPv4Header *getIPv4Header(const char *next_proto);
@@ -145,6 +146,7 @@ class TargetHost{
     ICMPv6Header *getICMPv6Header();
     int store_packet(PacketElement *pkt);
 
+  /* Public methods */
   public:
     TargetHost();
     ~TargetHost();
@@ -180,8 +182,11 @@ class TargetHost{
 
     void reset();
     int getNextPacketBatch(vector<PacketElement *> &Packets);
-    int is_response(PacketElement *pkt_rcvd);
+    int is_response(PacketElement *pkt_rcvd, struct timeval *rcvd_time);
 
+  /* Public attributes */
+  public:
+    PacketStats stats;   /* Tx/Rx statistics for this host. */
 };
 
 #endif /* __TARGETHOST_H__ */

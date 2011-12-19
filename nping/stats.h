@@ -189,34 +189,39 @@ class NpingTimer {
     void reset();
     int start();
     int stop();
-    double elapsed(struct timeval *now=NULL);
+    double elapsed(struct timeval *now);
     bool is_started();
     bool is_stopped();
 
-
   private:
-      bool timeval_set(const struct timeval *tv);
+    bool timeval_set(const struct timeval *tv);
+
 };
 
-
+/* Array indexes for raw packet stats */
 #define INDEX_SENT 0
 #define INDEX_RCVD 1
 #define INDEX_ECHO 2
+
+/* Array indexes for TCP connection stats */
+#define INDEX_CONN_ISSUED   0
+#define INDEX_CONN_ACCEPTED 1
 
 
 class PacketStats {
 
   private:
-    u64_t packets[3];
-    u64_t bytes[3];
-    u64_t tcp[3];
-    u64_t udp[3];
-    u64_t icmp4[3];
-    u64_t icmp6[3];
-    u64_t arp[3];
-    u64_t ip4[3];
-    u64_t ip6[3];
-
+    u64_t packets[3];  /* Packets sent/received/echoed */
+    u64_t bytes[3];    /* Bytes sent/received/echoed */
+    u64_t tcp[3];      /* TCP packets sent/received/echoed */
+    u64_t udp[3];      /* UDP packets sent/received/echoed */
+    u64_t icmp4[3];    /* ICMPv4 packets sent/received/echoed */
+    u64_t icmp6[3];    /* ICMPv6 packets sent/received/echoed */
+    u64_t arp[3];      /* ARP packets sent/received/echoed */
+    u64_t ip4[3];      /* IPv4 packets sent/received/echoed */
+    u64_t ip6[3];      /* IPv6 packets sent/received/echoed */
+    u64_t tcpconn[2];  /* TCP-Unprivileged connections attempted/accepted */
+  //u64_y sctpconn[2]  /* SCTP-Unprivileged connections attempted/accepted */
 
     u32 echo_clients_served;
 
@@ -224,58 +229,58 @@ class PacketStats {
     NpingTimer rx_timer;  /* Timer for packet reception.            */
     NpingTimer run_timer; /* Timer to measure Nping execution time. */
 
+    int max_rtt;
+    int min_rtt;
+    int avg_rtt;
+
     int update_packet_count(int index, int ip_version, int proto, u32 pkt_len);
+    int update_connection_count(int index, int ip_version, int proto);
 
  public:
     PacketStats();
     ~PacketStats();
-
     void reset();
-
     int update_sent(int ip_version, int proto, u32 pkt_len);
     int update_rcvd(int ip_version, int proto, u32 pkt_len);
     int update_echo(int ip_version, int proto, u32 pkt_len);
     int update_clients_served();
-
-    int startClocks();
-    int stopClocks();
-
-    int startTxClock();
-    int stopTxClock();
-
-    int startRxClock();
-    int stopRxClock();
-
-    int startRuntime();
-    int stopRuntime();
-
-    double elapsedTx();
-    double elapsedRx();
-    double elapsedRuntime(struct timeval *now=NULL);
-
-    u64_t getSentPackets();
-    u64_t getSentBytes();
-
-    u64_t getRecvPackets();
-    u64_t getRecvBytes();
-
-    u64_t getEchoedPackets();
-    u64_t getEchoedBytes();
-    u32 getEchoClientsServed();
-
-    u64_t getLostPackets();
-    double getLostPacketPercentage();
-    double getLostPacketPercentage100();
-
-    u64_t getUnmatchedPackets();
-    double getUnmatchedPacketPercentage();
-    double getUnmatchedPacketPercentage100();
-
-    double getOverallTxPacketRate();
-    double getOverallTxByteRate();
-
-    double getOverallRxPacketRate();
-    double getOverallRxByteRate();
+    int update_connects(int ip_version, int proto);
+    int update_accepts(int ip_version, int proto);
+    int update_bytes_read(u32 count);
+    int update_bytes_written(u32 count);
+    int update_rtt(int rtt);
+    int start_clocks();
+    int stop_clocks();
+    int start_tx_clock();
+    int stop_tx_clock();
+    int start_rx_clock();
+    int stop_rx_clock();
+    int start_runtime();
+    int stop_runtime();
+    double get_tx_elapsed();
+    double get_rx_elapsed();
+    double get_runtime_elapsed(struct timeval *now);
+    u64_t get_pkts_sent();
+    u64_t get_bytes_sent();
+    u64_t get_pkts_rcvd();
+    u64_t get_bytes_rcvd();
+    u64_t get_pkts_echoed();
+    u64_t get_bytes_echoed();
+    u32 get_clients_served();
+    u64_t get_connects(int proto);
+    u64_t get_accepts(int proto);
+    u64_t get_connects_failed(int proto);
+    double get_percent_failed(int proto);
+    u64_t get_pkts_lost();
+    double get_percent_lost();
+    u64_t get_pkts_unmatched();
+    double get_percent_unmatched();
+    double get_tx_pkt_rate();
+    double get_tx_byte_rate();
+    double get_rx_pkt_rate();
+    double get_rx_byte_rate();
+    int get_max_rtt();
+    int print_RTTs();
 
 };
 

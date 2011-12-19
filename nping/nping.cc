@@ -168,7 +168,7 @@ int main(int argc, char *argv[] ){
   /* Get current time */
   now = time(NULL);
   tm = localtime(&now);
-  o.stats.startRuntime();
+  o.stats.start_runtime();
 
   /* Some run-time tests to ensure everything works as expected */
   do_safe_checks();
@@ -227,10 +227,10 @@ int main(int argc, char *argv[] ){
         break;
 
         case ROLE_SERVER:
-            o.stats.startClocks();
+            o.stats.start_clocks();
             es.start();
             es.cleanup();
-            o.stats.stopClocks();
+            o.stats.stop_clocks();
         break;
 
         default:
@@ -239,7 +239,7 @@ int main(int argc, char *argv[] ){
   }
 
   /* Display stats, clean up and quit */
-  o.stats.stopRuntime();
+  o.stats.stop_runtime();
   o.displayStatistics();
   o.displayNpingDoneMsg();
   o.cleanup();
@@ -288,9 +288,9 @@ void signal_handler(int signo){
   nping_print(DBG_1,"signal_handler(): Received signal %d", signo);
   switch(signo) {
       case SIGINT:
-        o.stats.stopTxClock();
-        o.stats.stopRxClock();
-        o.stats.stopRuntime();
+        o.stats.stop_tx_clock();
+        o.stats.stop_rx_clock();
+        o.stats.stop_runtime();
         o.displayStatistics();
         o.displayNpingDoneMsg();
         o.cleanup();
