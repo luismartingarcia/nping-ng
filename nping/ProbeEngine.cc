@@ -322,7 +322,7 @@ char *ProbeEngine::bpf_filter(vector<TargetHost *> &Targets, NetworkInterface *t
   int len=0;
   unsigned int targetno;
   memset(pcap_filter, 0, sizeof(pcap_filter));
-  IPAddress *src_addr;
+  IPAddress *src_addr=NULL;
   bool first=true;
 
   /* If the user specified a custom BPF filter, use it. */
