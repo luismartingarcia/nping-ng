@@ -773,11 +773,8 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
       if (parse_u8(optarg, &aux8)!=OP_SUCCESS){
         nping_fatal(QT_3,"TTL/Hop Limit must be a number between 0 and 255 (inclusive)");
       }else{
-        if(o.ipv6()){
-          //o.ip6.hlim.setConstant(aux8); // TODO: Finish this!!
-        }else{
-          o.ip4.ttl.setConstant(aux8);
-        }
+        o.ip6.hlim.setConstant(aux8);
+        o.ip4.ttl.setConstant(aux8);
       }
       /* TODO: At some point we may want to let users specify TTLs like "linux",
        * "bsd" etc, so the default TTL for those systems is used. Check
