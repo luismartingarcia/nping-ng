@@ -142,11 +142,14 @@
 #include "winfix.h"
 #endif
 using namespace std;
-NpingOps o;
-EchoClient ec;
-EchoServer es;
-ProbeEngine prob; /* Probe Mode Engine               */
 
+/* GLOBALS */
+NpingOps o;       /* Holds Nping's global configuration. */
+EchoClient ec;    /* Echo client.                        */
+EchoServer es;    /* Echo server.                        */
+ProbeEngine prob; /* Probe Mode Engine                   */
+
+/* Miscellaneous functions implemented in this file. */
 int do_safe_checks();
 void test_stuff();
 void signal_handler(int signo);
