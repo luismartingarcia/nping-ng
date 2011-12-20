@@ -224,7 +224,6 @@ int ProbeEngine::start(vector<TargetHost *> &Targets, vector<NetworkInterface *>
   this->init_nsock();
   pts=o.getTargetPorts(&total_ports);
   total_ports = (total_ports==0) ? 1 : total_ports;
-  assert(pts!=NULL);
 
   /* Build a BPF filter for each interface */
   for(u32 i=0; i<Interfaces.size(); i++){
@@ -260,10 +259,19 @@ int ProbeEngine::start(vector<TargetHost *> &Targets, vector<NetworkInterface *>
          */
         if(o.mode(DO_TCP_CONNECT) || o.mode(DO_UDP_UNPRIV)){
           gettimeofday(&now, NULL);
-          if(o.mode(DO_TCP_CONNECT)) // TODO: @todo set the target port right!!
-            do_tcp_connect(Targets[t], pts[p], &now);
+          if(o.mode(DO_TCP_CONNECT)){ // TODO: @todo set the target port right!!
+            if(pts!=NULL){
+              do_tcp_connect(Targets[t], pts[p], &now);
+            }else{
+              do_tcp_connect(Targets[t], DEFAULT_TCP_TARGET_PORT, &now);
+            }
+          }
           //if(o.mode(DO_UDP_UNPRIV))
-            //do_udp_unpriv(Targets[t], pts[p], &now);
+            //if(pts!=NULL){
+            //  do_udp_unpriv(Targets[t], pts[p], &now);
+            //}else{
+            //  do_udp_unpriv(Targets[t], DEFAULT_UDP_TARGET_PORT, &now);
+            //}
         }else{
           /* Obtain a list of packets to send (each TargetHost adds whatever
            * packets it wants to send to the supplied vector) */
