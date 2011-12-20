@@ -172,6 +172,7 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
   {"tcp-connect", no_argument, 0, 0},
   {"tcp", no_argument, 0, 0},
   {"udp", no_argument, 0, 0},
+  {"udp-unpriv", no_argument, 0, 0},
   {"icmp", no_argument, 0, 0},
   {"arp", no_argument, 0, 0},
   {"tr", no_argument, 0, 0},
@@ -349,6 +350,8 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
       o.addMode(DO_TCP);
     }else if (optcmp(long_options[option_index].name, "udp") == 0) {
       o.addMode(DO_UDP);
+    }else if (optcmp(long_options[option_index].name, "udp-unpriv") == 0) {
+      o.addMode(DO_UDP_UNPRIV);
     }else if (optcmp(long_options[option_index].name, "icmp") == 0) {
       o.addMode(DO_ICMP);
     }else if (optcmp(long_options[option_index].name, "arp") == 0) {

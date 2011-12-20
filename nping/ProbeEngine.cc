@@ -123,22 +123,22 @@ void ProbeEngine::reset() {
 /** Sets up the internal nsock pool and the nsock trace level */
 int ProbeEngine::init_nsock(){
   struct timeval now;
-  if( nsock_init==false ){
-      /* Create a new nsock pool */
-      if ((nsp = nsp_new(NULL)) == NULL)
-        nping_fatal(QT_3, "Failed to create new pool.  QUITTING.\n");
+  if(nsock_init==false){
+    /* Create a new nsock pool */
+    if ((nsp = nsp_new(NULL)) == NULL)
+      nping_fatal(QT_3, "Failed to create new pool.  QUITTING.\n");
 
-      /* Allow broadcast addresses */
-      nsp_setbroadcast(nsp, 1);
+    /* Allow broadcast addresses */
+    nsp_setbroadcast(nsp, 1);
 
-      /* Set nsock trace level */
-      gettimeofday(&now, NULL);
-      if( o.getDebugging() == DBG_5)
-        nsp_settrace(nsp, NULL, 1 , &now);
-      else if( o.getDebugging() > DBG_5 )
-        nsp_settrace(nsp, NULL, 10 , &now);
-      /* Flag it as already initialized so we don't do it again */
-      nsock_init=true;
+    /* Set nsock trace level */
+    gettimeofday(&now, NULL);
+    if( o.getDebugging() == DBG_5)
+      nsp_settrace(nsp, NULL, 1 , &now);
+    else if( o.getDebugging() > DBG_5 )
+      nsp_settrace(nsp, NULL, 10 , &now);
+    /* Flag it as already initialized so we don't do it again */
+    nsock_init=true;
   }
   return OP_SUCCESS;
 } /* End of init() */
@@ -162,14 +162,12 @@ nsock_pool ProbeEngine::getNsockPool(){
 } /* End of getNsockPool() */
 
 
-
 /* This method gets the probe engine ready for packet capture. Basically it
  * obtains a pcap descriptor from nsock and sets an appropriate BPF filter. */
 int ProbeEngine::setup_sniffer(vector<NetworkInterface *> &ifacelist, vector<const char *>bpf_filters){
   char *errmsg = NULL;
   char pcapdev[128];
   nsock_iod my_pcap_iod;
-
   assert(ifacelist.size()==bpf_filters.size());
 
   for(u32 i=0; i<ifacelist.size(); i++){
@@ -266,12 +264,13 @@ int ProbeEngine::start(vector<TargetHost *> &Targets, vector<NetworkInterface *>
               do_tcp_connect(Targets[t], DEFAULT_TCP_TARGET_PORT, &now);
             }
           }
-          //if(o.mode(DO_UDP_UNPRIV))
-            //if(pts!=NULL){
-            //  do_udp_unpriv(Targets[t], pts[p], &now);
-            //}else{
-            //  do_udp_unpriv(Targets[t], DEFAULT_UDP_TARGET_PORT, &now);
-            //}
+          if(o.mode(DO_UDP_UNPRIV)){
+            if(pts!=NULL){
+              do_udp_unpriv(Targets[t], pts[p], &now);
+            }else{
+              do_udp_unpriv(Targets[t], DEFAULT_UDP_TARGET_PORT, &now);
+            }
+          }
         }else{
           /* Obtain a list of packets to send (each TargetHost adds whatever
            * packets it wants to send to the supplied vector) */
@@ -318,7 +317,6 @@ int ProbeEngine::start(vector<TargetHost *> &Targets, vector<NetworkInterface *>
   /* Cleanup and return */
   nping_print(DBG_1, "Nping Probe Engine Finished.");
   return OP_SUCCESS;
-
 } /* End of start() */
 
 
@@ -368,8 +366,7 @@ char *ProbeEngine::bpf_filter(vector<TargetHost *> &Targets, NetworkInterface *t
       }else if(first){
         src_addr=Targets[targetno]->getSourceAddress();
       }
-      len = Snprintf(dst_hosts + filterlen,
-                     sizeof(dst_hosts) - filterlen,
+      len = Snprintf(dst_hosts + filterlen, sizeof(dst_hosts) - filterlen,
                      "%ssrc host %s", (first)? "" : " or ",
                      Targets[targetno]->getTargetAddress()->toString());
       first=false;
@@ -407,7 +404,6 @@ char *ProbeEngine::bpf_filter(vector<TargetHost *> &Targets, NetworkInterface *t
     nping_fatal(QT_3, "ran out of space in pcap filter");
   return pcap_filter;
 } /* End of bpf_filter() */
-
 
 
 int ProbeEngine::send_packet(TargetHost *tgt, PacketElement *pkt, struct timeval *now){
@@ -466,10 +462,7 @@ int ProbeEngine::send_packet(TargetHost *tgt, PacketElement *pkt, struct timeval
 } /* End of send_packet() */
 
 
-
-
-
-int ProbeEngine::do_tcp_connect(TargetHost *tgt, u16 tport, struct timeval *now){
+int ProbeEngine::do_unprivileged(int proto, TargetHost *tgt, u16 tport, struct timeval *now){
   struct sockaddr_storage ss;      /* Source address */
   struct sockaddr_storage to;      /* Destination address                     */
   size_t sslen=0;                  /* Destination address length              */
@@ -485,18 +478,18 @@ int ProbeEngine::do_tcp_connect(TargetHost *tgt, u16 tport, struct timeval *now)
   if(fds==NULL){
     max_iods=get_max_open_descriptors()-RESERVED_DESCRIPTORS;
     if( o.getTotalProbes() > max_iods ){
-        max_iods=set_max_open_descriptors( o.getTotalProbes() )-RESERVED_DESCRIPTORS;
+      max_iods=set_max_open_descriptors( o.getTotalProbes() )-RESERVED_DESCRIPTORS;
     }
     /* If we couldn't determine the limit, just use a predefined value */
     if(max_iods<=0)
-        max_iods=DEFAULT_MAX_DESCRIPTORS-RESERVED_DESCRIPTORS;
+      max_iods=DEFAULT_MAX_DESCRIPTORS-RESERVED_DESCRIPTORS;
     /* Allocate space for nsock_iods */
     if( (fds=(nsock_iod *)calloc(max_iods, sizeof(nsock_iod)))==NULL ){
-        /* If we can't allocate for that many descriptors, reduce our requirements */
-        max_iods=DEFAULT_MAX_DESCRIPTORS-RESERVED_DESCRIPTORS;
-        if( (fds=(nsock_iod *)calloc(max_iods, sizeof(nsock_iod)))==NULL ){
-            nping_fatal(QT_3, "ProbeMode::probe_tcpconnect_event_handler(): Not enough memory");
-        }
+      /* If we can't allocate for that many descriptors, reduce our requirements */
+      max_iods=DEFAULT_MAX_DESCRIPTORS-RESERVED_DESCRIPTORS;
+      if( (fds=(nsock_iod *)calloc(max_iods, sizeof(nsock_iod)))==NULL ){
+        nping_fatal(QT_3, "ProbeMode::probe_tcpconnect_event_handler(): Not enough memory");
+      }
     }
     nping_print(DBG_7, "%d descriptors needed, %d available", o.getTotalProbes(), max_iods);
   }
@@ -517,28 +510,36 @@ int ProbeEngine::do_tcp_connect(TargetHost *tgt, u16 tport, struct timeval *now)
   }
   /* Create new IOD for connects */
   if ((fds[packetno%max_iods] = nsi_new(nsp, NULL)) == NULL)
-    nping_fatal(QT_3, "tcpconnect_event_handler(): Failed to create new nsock_iod.\n");
+    nping_fatal(QT_3, "%s(): Failed to create new nsock_iod.\n", __func__);
   /* Set socket source address. This allows setting things like custom source port */
   tgt->getSourceAddress()->getAddress(&ss);
   /* TODO: Set sin_port or sin6_port here! */
   nsi_set_localaddr(fds[packetno%max_iods], &ss, sslen);
-  /*Set socket options for REUSEADDR*/
-  //setsockopt(nsi_getsd(fds[packetno%max_iods]),SOL_SOCKET,SO_REUSEADDR,&optval,sizeof(optval));
 
-  nsock_connect_tcp(nsp, fds[packetno%max_iods], tcpconnect_handler_wrapper, 100000, tgt, (struct sockaddr *)&to, sslen, tport);
-  if( o.showSentPackets() ){
-
-    nping_print(VB_0,"SENT (%.4fs) Starting TCP Handshake > %s:%d", ((double)TIMEVAL_MSEC_SUBTRACT(*now, this->start_time)) / 1000, tgt->getTargetAddress()->toString() , tport);
-
-    //    nping_print(VB_0,"SENT (%.4fs) Starting TCP Handshake > %s:%d", o.stats.elapsedRuntime(NULL), mypacket->target->getTargetIPstr(), mypacket->dstport);
+  if(proto==DO_TCP_CONNECT){
+    nsock_connect_tcp(nsp, fds[packetno%max_iods], tcpconnect_handler_wrapper, 100000, tgt, (struct sockaddr *)&to, sslen, tport);
+    if( o.showSentPackets() ){
+      nping_print(VB_0,"SENT (%.4fs) Starting TCP Handshake > %s:%d", ((double)TIMEVAL_MSEC_SUBTRACT(*now, this->start_time)) / 1000, tgt->getTargetAddress()->toString() , tport);
+    }
+  }else if(proto==DO_UDP_UNPRIV){
+    nsock_connect_udp(nsp, fds[packetno%max_iods], udpunpriv_handler_wrapper, tgt, (struct sockaddr *)&to, sslen, tport);
   }
 packetno++;
 //o.stats.addSentPacket(80); /* Estimation Src>Dst 1 TCP SYN && TCP ACK */
 //mypacket->target->setProbeSentTCP(0, mypacket->dstport);
 
 return OP_SUCCESS;
-} /* End of do_tcp_connect() */
+} /* End of do_unprivileged() */
 
+
+int ProbeEngine::do_tcp_connect(TargetHost *tgt, u16 tport, struct timeval *now){
+  return do_unprivileged(DO_TCP_CONNECT, tgt, tport, now);
+}
+
+
+int ProbeEngine::do_udp_unpriv(TargetHost *tgt, u16 tport, struct timeval *now){
+  return do_unprivileged(DO_UDP_UNPRIV, tgt, tport, now);
+} /* End of do_udp_unpriv() */
 
 
 /* This method is the handler for PCAP_READ events. In other words, every time
@@ -571,19 +572,19 @@ int ProbeEngine::packet_capture_handler(nsock_pool nsp, nsock_event nse, void *a
         /* Here, we convert the raw hex buffer into a nice chain of PacketElement
          * objects. */
         if((pkt=PacketParser::split(rcvd_pkt, rcvd_pkt_len, false))!=NULL){
-            /* Now let's lee if the captured packet is a response to a probe
-             * we've sent before. What we do is iterate over the list of
-             * target hosts and ask each of those hosts to check if that's the
-             * case. */
-            for(size_t i=0; i<o.target_hosts.size(); i++){
-                if(o.target_hosts[i]->is_response(pkt)){
-                  nping_print(VB_0|NO_NEWLINE,"RCVD (%.4fs) ", ((double)TIMEVAL_MSEC_SUBTRACT(now, this->start_time)) / 1000);
-                  pkt->print(stdout, o.getDetailLevel());
-                  printf("\n");
-                  // TODO: @todo Here update general stats. (the is_response()
-                  // call already updates the host's internal stats.
-                }
+          /* Now let's lee if the captured packet is a response to a probe
+           * we've sent before. What we do is iterate over the list of
+           * target hosts and ask each of those hosts to check if that's the
+           * case. */
+          for(size_t i=0; i<o.target_hosts.size(); i++){
+            if(o.target_hosts[i]->is_response(pkt)){
+              nping_print(VB_0|NO_NEWLINE,"RCVD (%.4fs) ", ((double)TIMEVAL_MSEC_SUBTRACT(now, this->start_time)) / 1000);
+              pkt->print(stdout, o.getDetailLevel());
+              printf("\n");
+              // TODO: @todo Here update general stats. (the is_response()
+              // call already updates the host's internal stats.
             }
+          }
         }
       break;
 
@@ -608,7 +609,6 @@ int ProbeEngine::packet_capture_handler(nsock_pool nsp, nsock_event nse, void *a
   }
   return OP_SUCCESS;
 } /* End of packet_capture_handler() */
-
 
 
 int ProbeEngine::tcpconnect_handler(nsock_pool nsp, nsock_event nse, void *mydata) {
@@ -677,9 +677,11 @@ int ProbeEngine::tcpconnect_handler(nsock_pool nsp, nsock_event nse, void *mydat
       break;
 
       case NSE_TYPE_WRITE:
-        nping_print(VB_0, "DATA (%.4fs) %d byte%s sent to %s:%d", ((double)TIMEVAL_MSEC_SUBTRACT(now, this->start_time)) / 1000, o.getPayloadLen(), o.getPayloadLen()!=1 ? "s" : "", ipstring, peerport);
-        if(o.getVerbosity()>=VB_3 && o.getPayloadBuffer()!=NULL)
+        if(o.showSentPackets()){
+          nping_print(VB_0, "DATA (%.4fs) %d byte%s sent to %s:%d", ((double)TIMEVAL_MSEC_SUBTRACT(now, this->start_time)) / 1000, o.getPayloadLen(), o.getPayloadLen()!=1 ? "s" : "", ipstring, peerport);
+          if(o.getVerbosity()>=VB_3 && o.getPayloadBuffer()!=NULL)
             luis_hdump((char *)o.getPayloadBuffer(), o.getPayloadLen()); // TODO @todo Find print_hexdump() and use it!
+        }
         // TODO @todo Update statistics here!
       break;
 
@@ -738,13 +740,156 @@ int ProbeEngine::tcpconnect_handler(nsock_pool nsp, nsock_event nse, void *mydat
 } /* End of tcpconnect_handler() */
 
 
+/** This function handles nsock events related to UDP_UNPRIV mode.
+  * Basically the handler receives nsock events and takes the appropriate
+  * action based on event type.  This is basically what it does for each event:
+  *
+  * CONNECTS: These events generated by nsock for consistency with the
+  * behavior in TCP connects. They are pretty useless. They merely indicate
+  * that nsock successfully obtained a UDP socket ready to allow sending
+  * packets to the appropriate target. We basically don't do anything when
+  * that event is received, just print a message if we are un debugging mode.
+  *
+  * WRITES: When we get event WRITE it means that nsock actually managed to
+  * get our data sent to the target. In this case, we inform the user that
+  * the packet has been sent, and we schedule a READ operation, to see
+  * if our peer actually returns any data.
+  *
+  * READS: When we get this event it means that the other end actually sent
+  * some data back to us. What we do is read that data, tell the user that
+  * we received some bytes and update statistics.
+  *
+  * */
+int ProbeEngine::udpunpriv_handler(nsock_pool nsp, nsock_event nse, void *mydata) {
+  nsock_iod nsi;                   /* Current nsock IO descriptor.            */
+  enum nse_status status;          /* Current nsock event status.             */
+  enum nse_type type;              /* Current nsock event type.               */
+  struct timeval now;              /* Current time                       .    */
+  struct sockaddr_storage to;      /* Stores destination address for Tx.      */
+  struct sockaddr_storage peer;    /* Stores source address for Rx.           */
+  struct sockaddr_in *peer4=NULL;  /*   |_ Sockaddr for IPv4.                 */
+  struct sockaddr_in6 *peer6=NULL; /*   |_ Sockaddr for IPv6.                 */
+  int family=0;                    /* Will hold Rx address family.            */
+  char ipstring[128];              /* To print IP Addresses.                  */
+  u16 peerport=0;                  /* To hold peer's port number.             */
+  int readbytes=0;                 /* Bytes read in total.                    */
+  char *readbuff=NULL;             /* Hill hold read data.                    */
+  TargetHost *tgt=NULL;            /* TargetHost associated with connection.  */
+  const char *payload=NULL;
+  int payload_len=0;
 
+  /* Initializations */
+  nsi = nse_iod(nse);
+  status = nse_status(nse);
+  type = nse_type(nse);
+  tgt=(TargetHost *)mydata;
+  gettimeofday(&now, NULL);
+  peer4=(struct sockaddr_in *)&peer;
+  peer6=(struct sockaddr_in6 *)&peer;
+  memset(&to, 0, sizeof(struct sockaddr_storage));
+  memset(&peer, 0, sizeof(struct sockaddr_storage));
+  payload = o.getPayloadBuffer()!=NULL ? (const char *)o.getPayloadBuffer() : (const char *)"" ;
+  payload_len = o.getPayloadBuffer()!=NULL ? o.getPayloadLen() : 0 ;
+
+  nping_print(DBG_4, "%s(): Received callback of type %s with status %s", __func__, nse_type2str(type), nse_status2str(status));
+
+  if (status == NSE_STATUS_SUCCESS ) {
+    switch(type) {
+
+      /* This is a bit stupid but, for consistency, Nsock creates an event of
+       * type NSE_TYPE_CONNECT after a call to nsock_connect_udp() is made.
+       * Basically this just means that nsock successfully obtained a UDP socket
+       * ready to allow sending packets to the appropriate target. */
+      case NSE_TYPE_CONNECT:
+        nping_print(DBG_3,"Nsock UDP \"connection\" completed successfully.");
+        nsock_write(nsp, nsi, udpunpriv_handler_wrapper,100000, tgt, payload, payload_len);
+      break;
+
+      /* We get this event as a result of the nsock_write() call performed by
+       * the code in charge of dealing with the timer event. When we get this
+       * even it means that nsock successfully wrote data to the UDP socket so
+       * here we basically just print that we did send some data and we schedule
+       * a read operation. */
+      case NSE_TYPE_WRITE:
+        /* Determine which target are we dealing with */
+        nsi_getlastcommunicationinfo(nsi, NULL, &family, NULL, (struct sockaddr*)&peer, sizeof(struct sockaddr_storage) );
+        if(family==AF_INET6){
+          inet_ntop(AF_INET6, &peer6->sin6_addr, ipstring, sizeof(ipstring));
+          peerport=ntohs(peer6->sin6_port);
+        }else{
+          inet_ntop(AF_INET, &peer4->sin_addr, ipstring, sizeof(ipstring));
+          peerport=ntohs(peer4->sin_port);
+        }
+        if(o.showSentPackets()){
+          nping_print(VB_0,"SENT (%.4fs) UDP packet with %d bytes to %s:%d", ((double)TIMEVAL_MSEC_SUBTRACT(now, this->start_time)) / 1000, payload_len, ipstring, peerport );
+          if(o.getVerbosity()>=VB_3 && o.getPayloadBuffer()!=NULL && o.getPayloadLen()>0)
+            luis_hdump((char *)o.getPayloadBuffer(), o.getPayloadLen()); // TODO @todo Find print_hexdump() and use it!
+        }
+        //trg->setProbeSentUDP( 0, peerport);
+        //o.stats.addSentPacket(sentbytes); /* Here we don't count the headers, just payload bytes */
+
+        /* If user did not disable packet capture, schedule a read operation */
+        if(!o.disablePacketCapture())
+          nsock_read(nsp, nsi, udpunpriv_handler_wrapper, DEFAULT_UDP_READ_TIMEOUT_MS, tgt);
+      break;
+
+      /* We get this event when we've written some data to a UDP socket and
+       * the other end has sent some data back. In this case we read the data and
+       * inform the user of how many bytes we got. */
+      case NSE_TYPE_READ:
+        /* Do an actual read() of the recv data */
+        readbuff=nse_readbuf(nse, &readbytes);
+        /* Determine which target are we dealing with */
+        nsi_getlastcommunicationinfo(nsi, NULL, &family, NULL, (struct sockaddr*)&peer, sizeof(struct sockaddr_storage) );
+        if(family==AF_INET6){
+          inet_ntop(AF_INET6, &peer6->sin6_addr, ipstring, sizeof(ipstring));
+          peerport=ntohs(peer6->sin6_port);
+        }else{
+          inet_ntop(AF_INET, &peer4->sin_addr, ipstring, sizeof(ipstring));
+          peerport=ntohs(peer4->sin_port);
+        }
+        nping_print(VB_0,"RECV (%.4fs) UDP packet with %d bytes from %s:%d", ((double)TIMEVAL_MSEC_SUBTRACT(now, this->start_time)) / 1000,  readbytes, ipstring, peerport );
+        if(o.getVerbosity()>=VB_3 && readbuff!=NULL && readbytes>0)
+          luis_hdump((char *)readbuff, readbytes); // TODO @todo Find print_hexdump() and use it!
+
+        //trg->setProbeRecvUDP(peerport, 0);
+        //o.stats.addRecvPacket(readbytes);
+      break;
+
+      default:
+        nping_fatal(QT_3, "Unexpected Nsock event in %s()",__func__);
+      break;
+
+    } /* switch(type) */
+
+ }else if(status == NSE_STATUS_EOF){
+    nping_print(DBG_4, "%s(): Unexpected behavior: Got EOF. Please report this bug.\n", __func__);
+ }else if (status == NSE_STATUS_ERROR) {
+   nsi_getlastcommunicationinfo(nsi, NULL, &family, NULL, (struct sockaddr*)&peer, sizeof(struct sockaddr_storage) );
+   if(family==AF_INET6){
+     inet_ntop(AF_INET6, &peer6->sin6_addr, ipstring, sizeof(ipstring));
+     peerport=ntohs(peer6->sin6_port);
+   }else{
+     inet_ntop(AF_INET, &peer4->sin_addr, ipstring, sizeof(ipstring));
+     peerport=ntohs(peer4->sin_port);
+   }
+   nping_warning(QT_2,"ERR: (%.4fs) %s to %s:%d failed: %s", ((double)TIMEVAL_MSEC_SUBTRACT(now, this->start_time)) / 1000, nse_type2str(type), ipstring, peerport, strerror(socket_errno()));
+ }else if (status == NSE_STATUS_TIMEOUT) {
+   nping_print(DBG_4, "%s(): %s timeout: %s\n", __func__, nse_type2str(type), strerror(socket_errno()));
+ }else if (status == NSE_STATUS_CANCELLED) {
+   nping_print(DBG_4, "%s(): %s canceled: %s", __func__, nse_type2str(type), strerror(socket_errno()));
+ }else if (status == NSE_STATUS_KILL) {
+   nping_print(DBG_4, "%s(): %s killed: %s", __func__, nse_type2str(type), strerror(socket_errno()));
+ }else{
+   nping_warning(QT_2, "%s(): Unknown status code %d. Please report this bug.", __func__, status);
+ }
+ return OP_SUCCESS;
+} /* End of udpunpriv_handler() */
 
 
 /******************************************************************************
  * Nsock handlers and handler wrappers.                                       *
  ******************************************************************************/
-
 
 /* This handler is a dummy handler used to keep the interpacket delay between
  * packet schedule operations. When this handler is called by nsock, it means
@@ -756,7 +901,6 @@ void interpacket_delay_wait_handler(nsock_pool nsp, nsock_event nse, void *arg){
   nsock_loop_quit(nsp);
   return;
 } /* End of interpacket_delay_wait_handler() */
-
 
 
 /* This handler is a wrapper for the ProbeEngine::packet_capture_handler()
@@ -777,3 +921,13 @@ void tcpconnect_handler_wrapper(nsock_pool nsp, nsock_event nse, void *arg){
   prob.tcpconnect_handler(nsp, nse, arg);
   return;
 } /* End of tcpconnect_handler_wrapper() */
+
+
+/* This handler is a wrapper for the ProbeEngine::udpunpriv_handler()
+ * method. We need this because C++ does not allow to use class methods as
+ * callback functions for things like signal() or the Nsock lib. */
+void udpunpriv_handler_wrapper(nsock_pool nsp, nsock_event nse, void *arg){
+  nping_print(DBG_4, "%s()", __func__);
+  prob.udpunpriv_handler(nsp, nse, arg);
+  return;
+} /* End of udpunpriv_handler_wrapper() */
