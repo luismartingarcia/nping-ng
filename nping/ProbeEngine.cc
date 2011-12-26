@@ -99,6 +99,23 @@
 extern NpingOps o;
 extern ProbeEngine prob;
 
+
+/* The ProbeEngine class is the one that handles Nping's basic operation mode:
+ * send packets and receive responses. There is a global instance of the class
+ * because we need to be able to call methods of ProbeEngine from Nsock event
+ * handlers. This happens because in C++ one cannot pass method pointers as
+ * callback functions.
+ *
+ * The ProbeEngine class is also used by the EchoClient, which basically
+ * hacks it to add TCP READ events into the same Nsock handler. The ProbeEngine
+ * sends packets and captures packets from the wire and the EchoClient handles
+ * any TCP READ event through its own handler. Such READ event normally
+ * corresponds to the reception of an echoed packet (CAPT).
+ *
+ * The ProbeEngine is run calling the start() method, passing a list of
+ * TargetHost and the list of network interfaces that the engine needs to
+ * use to reach those targets. However, note that ProbeEngine also extracts
+ * information from Nping's global configuration object, "NpingOps o" */
 ProbeEngine::ProbeEngine() {
   this->reset();
 } /* End of ProbeEngine constructor */
@@ -108,7 +125,7 @@ ProbeEngine::~ProbeEngine() {
 } /* End of ProbeEngine destructor */
 
 
-/** Sets every attribute to its default value- */
+/* Sets every attribute to its default value. */
 void ProbeEngine::reset() {
   this->nsock_init=false;
   memset(&start_time, 0, sizeof(struct timeval));
@@ -120,7 +137,9 @@ void ProbeEngine::reset() {
 } /* End of reset() */
 
 
-/** Sets up the internal nsock pool and the nsock trace level */
+/* Sets up the internal nsock pool and the nsock trace level. Note that
+ * this function is meant to be called just once. Subsequent calls will
+ * have no effect unless ProbeEngine::reset() has been called previously. */
 int ProbeEngine::init_nsock(){
   struct timeval now;
   if(nsock_init==false){
@@ -144,26 +163,35 @@ int ProbeEngine::init_nsock(){
 } /* End of init() */
 
 
-/** Cleans up the internal nsock pool and any other internal data that
-  * needs to be taken care of before destroying the object. */
+/* Cleans up the internal nsock pool and any other internal data that
+ * needs to be taken care of before destroying the object. */
 int ProbeEngine::cleanup(){
   nsp_delete(this->nsp);
   return OP_SUCCESS;
 } /* End of cleanup() */
 
 
-/** Returns the internal nsock pool.
-  * @warning the caller must ensure that init_nsock() has been called before
-  * calling this method; otherwise, it will fatal() */
+/* Returns the internal Nsock pool handler. This method is provided because
+ * the EchoClient needs it in order to "hack" the ProbeEngine and inject its
+ * own TCP READ events (which correspond to operation of the NEP protocol,
+ * performed over the TCP side channel established with the Echo server.
+ *
+ * @warning the caller must ensure that init_nsock() has been called before
+ * calling this method; otherwise, it will fatal() */
 nsock_pool ProbeEngine::getNsockPool(){
   if( this->nsock_init==false)
-    nping_fatal(QT_3, "getNsockPool() called before init_nsock(). Please report a bug.");
+    nping_fatal(QT_3, "%s() called before init_nsock(). Please report a bug.", __func__);
   return this->nsp;
 } /* End of getNsockPool() */
 
 
 /* This method gets the probe engine ready for packet capture. Basically it
- * obtains a pcap descriptor from nsock and sets an appropriate BPF filter. */
+ * obtains a pcap descriptor from Nsock and sets an appropriate BPF filter for
+ * EACH supplied interface.
+ * @warning Note that the list of interfaces and the list of BPF filters MUST
+ *          have the same number of elements. Otherwise, there will be an
+ *          assertion failure.
+ * @return OP_SUCCESS on success, fatals on error. */
 int ProbeEngine::setup_sniffer(vector<NetworkInterface *> &ifacelist, vector<const char *>bpf_filters){
   char *errmsg = NULL;
   char pcapdev[128];
@@ -199,13 +227,15 @@ int ProbeEngine::setup_sniffer(vector<NetworkInterface *> &ifacelist, vector<con
 } /* End of setup_sniffer() */
 
 
-/** This function handles regular ping mode. Basically it handles both
-  * unprivileged modes (TCP_CONNECT and UDP_UNPRIV) and raw packet modes
-  * (TCP, UDP, ICMP, ARP). This function is where the loops that iterate
-  * over target hosts and target ports are located. It uses the nsock lib
-  * to schedule transmissions. The actual Tx and Rx is done inside the nsock
-  * event handlers, here we just schedule them, take care of the timers,
-  * set up pcap and the bpf filter, etc. */
+/* This function handles regular ping mode. Basically it handles both
+ * unprivileged modes (TCP_CONNECT and UDP_UNPRIV) and raw packet modes
+ * (TCP, UDP, ICMP, ARP). This function is where the loops that iterate
+ * over target hosts and target ports are located. It uses the nsock lib
+ * to keep timing and to handle captured packets or unprivileged READ events.
+ *
+ * Note that although a complete list of targets and network interfaces is
+ * passed, the ProbeEngine still needs to access some additional configuration
+ * parameters through the global NpingOps object.  */
 int ProbeEngine::start(vector<TargetHost *> &Targets, vector<NetworkInterface *> &Interfaces){
   const char *filter = NULL;
   vector<const char *>bpf_filters;
@@ -406,6 +436,14 @@ char *ProbeEngine::bpf_filter(vector<TargetHost *> &Targets, NetworkInterface *t
 } /* End of bpf_filter() */
 
 
+/* This method sends a packet to the supplied target host. The packet is not
+ * supplied in a raw "binary form" but as a chain of PacketElements. If the
+ * first element of the chain is an Ethernet header, then the packet will be
+ * sent at the raw Ethernet level through the interface associated with the
+ * TargetHost. Note that if the packet does NOT start with an Ethernet header,
+ * then the network layer MUST be IP (either v4 or v6).
+ * The "now" parameter should hold the time that the caller wants to display
+ * in Nping's "SENT (X.XXXX)..." output line */
 int ProbeEngine::send_packet(TargetHost *tgt, PacketElement *pkt, struct timeval *now){
   eth_t *ethsd=NULL;       /* DNET Ethernet handler                 */
   struct sockaddr_in s4;   /* Target IPv4 address                   */
@@ -456,12 +494,17 @@ int ProbeEngine::send_packet(TargetHost *tgt, PacketElement *pkt, struct timeval
     }else{
       pkt->print(stdout, o.getDetailLevel());
     }
-    printf("\n");
+    nping_print(VB_0|NO_NEWLINE,"\n");
   }
   return OP_SUCCESS;
 } /* End of send_packet() */
 
 
+/* This function handles TCP and UDP connection attempts. Obviously UDP is
+ * a non-connection-oriented protocol but the interface provided by Nsock
+ * treats it just like TCP. So basically what we do here is to schedule an
+ * immediate TCP/UDP CONNECT event. All other operations (data writes, data
+ * reads, etc) are handled by an specialized event handler. */
 int ProbeEngine::do_unprivileged(int proto, TargetHost *tgt, u16 tport, struct timeval *now){
   struct sockaddr_storage ss;      /* Source address */
   struct sockaddr_storage to;      /* Destination address                     */
@@ -532,11 +575,15 @@ return OP_SUCCESS;
 } /* End of do_unprivileged() */
 
 
+/* Schedules an immediate TCP CONNECT event. For more information, check
+ * do_unprivileged() above. */
 int ProbeEngine::do_tcp_connect(TargetHost *tgt, u16 tport, struct timeval *now){
   return do_unprivileged(DO_TCP_CONNECT, tgt, tport, now);
-}
+} /* End of do_tcp_connect() */
 
 
+/* Schedules an immediate UDP CONNECT event. For more information, check
+ * do_unprivileged() above. */
 int ProbeEngine::do_udp_unpriv(TargetHost *tgt, u16 tport, struct timeval *now){
   return do_unprivileged(DO_UDP_UNPRIV, tgt, tport, now);
 } /* End of do_udp_unpriv() */
@@ -611,6 +658,15 @@ int ProbeEngine::packet_capture_handler(nsock_pool nsp, nsock_event nse, void *a
 } /* End of packet_capture_handler() */
 
 
+/* This is the handler for TCP-Connect unprivileged mode events. Initial
+ * CONNECT requests are scheduled directly by start(), using the do_tcp_connect()
+ * method. Upon reception of a successful CONNECT event, we schedule a READ
+ * event so we can receive any data sent by the server after the connection
+ * has been established. This happens with many network services like FTP
+ * or even our NEP protocol. Also, if the user passed a payload, we schedule
+ * a WRITE event and transmit such data. Any data received afterwards is
+ * also read because for each READ event that we are delivered, we schedule a
+ * new one. */
 int ProbeEngine::tcpconnect_handler(nsock_pool nsp, nsock_event nse, void *mydata) {
   nsock_iod nsi;                   /* Current nsock IO descriptor.            */
   enum nse_status status;          /* Current nsock event status.             */
@@ -740,26 +796,28 @@ int ProbeEngine::tcpconnect_handler(nsock_pool nsp, nsock_event nse, void *mydat
 } /* End of tcpconnect_handler() */
 
 
-/** This function handles nsock events related to UDP_UNPRIV mode.
-  * Basically the handler receives nsock events and takes the appropriate
-  * action based on event type.  This is basically what it does for each event:
-  *
-  * CONNECTS: These events generated by nsock for consistency with the
-  * behavior in TCP connects. They are pretty useless. They merely indicate
-  * that nsock successfully obtained a UDP socket ready to allow sending
-  * packets to the appropriate target. We basically don't do anything when
-  * that event is received, just print a message if we are un debugging mode.
-  *
-  * WRITES: When we get event WRITE it means that nsock actually managed to
-  * get our data sent to the target. In this case, we inform the user that
-  * the packet has been sent, and we schedule a READ operation, to see
-  * if our peer actually returns any data.
-  *
-  * READS: When we get this event it means that the other end actually sent
-  * some data back to us. What we do is read that data, tell the user that
-  * we received some bytes and update statistics.
-  *
-  * */
+/* This function handles nsock events related to UDP-Unprivileged mode.
+ * Initial CONNECT requests are scheduled directly by start(), using the
+ * do_udp_unpriv() method. So in this method, the handler receives nsock
+ * events and takes the appropriate action based on event type.  This is
+ * basically what it does for each event:
+ *
+ * CONNECTS: These events generated by nsock for consistency with the
+ * behavior in TCP connects. They are pretty useless. They merely indicate
+ * that nsock successfully obtained a UDP socket ready to allow sending
+ * packets to the appropriate target. When we get that event we schedule
+ * the actual tranmission of a UDP datagram, in other words, a WRITE evnet.
+ *
+ * WRITES: When we get event WRITE it means that nsock actually managed to
+ * get our data sent to the target. In this case, we inform the user that
+ * the packet has been sent, and we schedule a READ operation, to see
+ * if our peer actually returns any data.
+ *
+ * READS: When we get this event it means that the other end actually sent
+ * some data back to us. What we do is read that data, tell the user that
+ * we received some bytes and update statistics.
+ *
+ */
 int ProbeEngine::udpunpriv_handler(nsock_pool nsp, nsock_event nse, void *mydata) {
   nsock_iod nsi;                   /* Current nsock IO descriptor.            */
   enum nse_status status;          /* Current nsock event status.             */
