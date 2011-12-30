@@ -102,7 +102,7 @@ using namespace std;
 
 /* The internal attribute net_distance may be tested for one of the following to
  * determine if we've discovered how far the target is. */
-#define DISTANCE_UNKONWN -1   /* We don't know how far the host is. */
+#define DISTANCE_UNKNOWN -1   /* We don't know how far the host is. */
 #define DISTANCE_DIRECT   0   /* The host is directly connected.    */
 
 /* Maximum number of sent packets that a host stores internally. This value
