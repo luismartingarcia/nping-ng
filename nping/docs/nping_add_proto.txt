@@ -1,0 +1,139 @@
+/**********************************************************************
+ *                                                                    *
+ *                                                                    *
+ *                   ADDING NEW PROTOCOLS TO NPING                    *
+ *                                                                    *
+ *                                                                    *
+ *                        Luis MartinGarcia.                          *
+ *                      {luis.mgarc@gmail.com}                        *
+ *                                                                    *
+ *                          December 2011                             *
+ *                                                                    *
+ **********************************************************************/
+
+ Adding support for a new protocol in Nping is not an easy task (or
+ at least not as easy at it could be). This document presents some
+ insights into Nping's architecture and provides usefult hints on
+ how to extend its functionality. Please discuss any issues encountered
+ while implementing new protocols as well as errors found in this
+ document, through Nmap's development mailing list (nmap-dev).
+
+ This document is divided in the following categories:
+
+1. The command line interface.
+  2. Packet creation.
+  3. Packet transmission.
+  4. Packet capture and response matching.
+  5. The protocol itself.
+
+
+
+
+
+ 1. The command line interface.
+
+    The implementation of a new protocol must provide the necessary
+    interfaces to let users specify arbitrary header field values,
+    message types, and so on.
+
+    In Nping, user input is provided directly from the command-line
+    and it is handled by the ArgParser class. Extensions to Nping
+    require new command-line flags to be defined, parsed, and properly
+    documented. Those flags may be added to the
+    ArgParser::parseArguments() method. Note that the ArgParser class
+    is in charge of processing user input and performing the necessary
+    validation checks, but it is NOT responsible for storing the
+    parameters or any data supplied by the user. Such task is handled
+    by the global configuration registry, the NpingOps class, and, in
+    particular, the "o" instance, accessible from all source files.
+
+    So, the ArgParser class should parse user input, validate it, and
+    then store it in the global "o". There used to be accessory methods
+    in NpingOps to set things like the IP time to live, TCP sequence
+    numbers and so on. However, now the preferred way to store protocol
+    header values in NpingOps are header templates. Header templates
+    are implemented as xHeaderTemplate classes where "x" is the name
+    of a particular protocol. Examples include TCPHeaderTemplate,
+    ICMPv6HeaderTemplate or IPv4HeaderTemplate. New protocols should
+    define new classes that inherit from HeaderTemplate. Once a
+    template is created, it should be instanced as a public attribute
+    of NpingOps. The fact that the attribute is made public allows
+    setting the protocol header values without the need to implement
+    accessory methods in NpingOps. Also, note that most of the
+    attributes in a header template are instances of the ProtoField
+    family. This provides a lot of flexibility because it allows
+    header field values to vary from one packet to the other. In
+    older version of Nping, header values were fixed and all the
+    packets that were generated were almost identical.
+
+  2. Packet creation.
+
+     Raw packets are crafted by instances of the TargetHost class, and
+     transmitted by the ProbeEngine class. The ProbeEngine class isn't
+     really aware of what it sends so the key component here is
+     TargetHost. In order to implement a new protocol, one must hack
+     the TargetHost::getNextPacketBatch() method. Note that any new
+     protocol must coexist with the rest of protocols. In other words,
+     getNextPacketBatch() should insert one packet of the new protocol
+     into the packet vector, but that shouldn't restrict the insertion
+     of other packets into that same vector.
+
+     In order to build new protocol headers, it may be convenient to
+     define helper methods like those used by TCP, UDP, etc (setTCP(),
+     setUDP()...). If the new protocol is based on IP, then the
+     setIPv4() or setIPv6() methods should be used to configure those
+     layers. If the new protocol requires to be transmitted at the
+     raw Ethernet level, the appropriate Ethernet header must be
+     provided.
+
+  3. Packet transmission.
+
+	 Nping mainly operates with IP based protocols. If the new protocol
+	 being implemented is based on IP, there should be no problem
+	 injecting it into the wire. However, any other network layer
+	 protocols require either extra code to handle raw socket
+	 transmission, or the use of an Ethernet header so it gets
+	 injected at the link-layer level. If special handling is required,
+	 then the ProbeEngine::send_packet() method should be modified for
+	 those needs.
+
+  4. Packet capture and response matching.
+
+     Replies sent by the target hosts are usually received through the
+     pcap library, which captures packets from the wire and passes a
+     copy of them to Nping. The BPF filters used by Nping are pretty
+     liberal but one has to make sure that they do not limit the
+     pcap's ability to capture replies of the new protocol. For this
+     reason, it is recommended to review the code of the
+     ProbeEngine::bpf_filter() method.
+
+     When libpcap captures a packet, it gets passed to Nping. When that
+     happens, Nping must determine if the packet is a response to
+     a probe that it sent before or if it is just some packet that
+     arrived to the network interface but we have no interest in.
+     To do that, Nping asks every host on the list of targets if the
+     packet belongs to them. This is achieved using the
+     TargetHost::is_response() method.
+
+     Implementations of a new protocol must extend is_response() and
+     the netutil library so responses can be properly matched with
+     the original probe.
+
+  5. The protocol itself.
+
+     If possible, any new protocol should be implemented in the
+     netutil library so Nmap or other companion tools can use it if
+     needed. Basically the new protocol needs to inherit from either
+     the PacketElement class or one of its children. If the protocol is
+     a transport layer protocol, then its class should be implemented
+     as a child of TransportLayerHeader. Same thing for the network
+     layer and so on. If the protocol does not fit into any existing
+     category, one can be created or it can inherit directly from
+     PacketElement().
+
+     Adding a new protocol to libnetutil requires to be familiar with
+     the library. Please take enough time to review the library's
+     implementation before commiting changes to it. Also, take into
+     account that such library may also be used by Nmap, Ncat, Ncrack,
+     etc, so any new functionality should implemented genericly enough
+     to allow other uses outside Nping.
