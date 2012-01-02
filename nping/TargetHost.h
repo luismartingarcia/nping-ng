@@ -125,6 +125,7 @@ class TargetHost{
     MACAddress *nxthop_mac;  /* Destination MAC address for frames sent to target     */
 
     EthernetHeaderTemplate *eth; /* Header values for Ethernet                        */
+    ARPHeaderTemplate *arp;  /* Header values for ARP                                 */
     IPv4HeaderTemplate *ip4; /* Header values for IPv4                                */
     IPv6HeaderTemplate *ip6; /* Header values for IPv6                                */
     TCPHeaderTemplate *tcp;  /* Header values for TCP                                 */
@@ -138,6 +139,7 @@ class TargetHost{
     vector<struct timeval> sent_times; /* List of timestamps for transmitted packets  */
 
     EthernetHeader *getEthernetHeader(u16 eth_type);
+    ARPHeader *getARPHeader();
     IPv4Header *getIPv4Header(const char *next_proto);
     IPv6Header *getIPv6Header(const char *next_proto);
     TCPHeader *getTCPHeader();
@@ -173,6 +175,7 @@ class TargetHost{
 
     /* Packet information */
     int setEth(EthernetHeaderTemplate *hdr);
+    int setARP(ARPHeaderTemplate *hdr);
     int setIPv4(IPv4HeaderTemplate *hdr);
     int setIPv6(IPv6HeaderTemplate *hdr);
     int setTCP(TCPHeaderTemplate *hdr);

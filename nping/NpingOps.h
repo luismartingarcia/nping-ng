@@ -307,6 +307,7 @@ class NpingOps {
     vector<NetworkInterface *> interfaces; /* List of relevant net ifaces */
     PacketStats stats;                      /* Global statistics           */
     EthernetHeaderTemplate eth;            /* Header field values for Eth */
+    ARPHeaderTemplate arp;                 /* Header field values for ARP */
     IPv4HeaderTemplate ip4;                /* Header field values for IPv4*/
     IPv6HeaderTemplate ip6;                /* Header field values for IPv6*/
     TCPHeaderTemplate tcp;                 /* Header field values for TCP */

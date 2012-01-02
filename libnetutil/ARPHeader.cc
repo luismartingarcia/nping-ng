@@ -124,6 +124,8 @@
 /* This code was originally part of the Nping tool.                        */
 
 #include "ARPHeader.h"
+#include "IPAddress.h"
+#include "MACAddress.h"
 
 /******************************************************************************/
 /* CONTRUCTORS, DESTRUCTORS AND INITIALIZATION METHODS                        */
@@ -200,7 +202,63 @@ int ARPHeader::validate(){
   * header in the chain (if there is any).
   * @return OP_SUCCESS on success and OP_FAILURE in case of error. */
 int ARPHeader::print(FILE *output, int detail) const {
-  fprintf(output, "ARP[]");
+  struct in_addr myaddr;
+  IPAddress myip;
+  MACAddress mymac;
+
+  switch(this->getOpCode()){
+    case OP_ARP_REQUEST:
+      myaddr.s_addr=this->getTargetIP();
+      myip.setAddress(myaddr);
+      fprintf(output, "ARP[Who has %s? ", myip.toString());
+      myaddr.s_addr=this->getSenderIP();
+      myip.setAddress(myaddr);
+      fprintf(output, "Tell %s]", myip.toString());
+    break;
+
+    case OP_ARP_REPLY:
+      myaddr.s_addr=this->getSenderIP();
+      myip.setAddress(myaddr);
+      fprintf(output, "ARP[%s is at ", myip.toString());
+      mymac.setAddress_bin(this->getSenderMAC());
+      fprintf(output, "%s]", mymac.getAddress_str());
+    break;
+
+    case OP_RARP_REQUEST:
+      mymac.setAddress_bin(this->getTargetMAC());
+      fprintf(output, "RARP[Who is %s? ", mymac.getAddress_str());
+      mymac.setAddress_bin(this->getSenderMAC());
+      fprintf(output, "Tell %s]", mymac.getAddress_str());
+    break;
+
+    case OP_RARP_REPLY:
+      mymac.setAddress_bin(this->getTargetMAC());
+      fprintf(output, "RARP[%s is at ", mymac.getAddress_str());
+      myaddr.s_addr=this->getTargetIP();
+      myip.setAddress(myaddr);
+      fprintf(output, "%s]", myip.toString());
+    break;
+
+    default:
+    fprintf(output, "ARP-Unknown[");
+    fprintf(output, "HType:%04X ", this->getHardwareType());
+    fprintf(output, "PType:%04X ", this->getProtocolType());
+    fprintf(output, "HLen:%d ", this->getHwAddrLen());
+    fprintf(output, "PLen:%d ", this->getProtoAddrLen());
+    fprintf(output, "Op:%04X ", this->getOpCode());
+    mymac.setAddress_bin(this->getSenderMAC());
+    fprintf(output, "SMAC:%s ", mymac.getAddress_str());
+    myaddr.s_addr=this->getSenderIP();
+    myip.setAddress(myaddr);
+    fprintf(output, "SIP:%s ", myip.toString());
+    mymac.setAddress_bin(this->getTargetMAC());
+    fprintf(output, "TMAC:%s ", mymac.getAddress_str());
+    myaddr.s_addr=this->getTargetIP();
+    myip.setAddress(myaddr);
+    fprintf(output, "TIP:%s]", myip.toString());
+    break;
+  }
+
   if(this->next!=NULL){
     print_separator(output, detail);
     next->print(output, detail);
@@ -230,7 +288,7 @@ int ARPHeader::setHardwareType(){
 
 
 /** Returns value of attribute h.ar_hrd */
-u16 ARPHeader::getHardwareType(){
+u16 ARPHeader::getHardwareType() const{
   return ntohs(this->h.ar_hrd);
 } /* End of getHardwareType() */
 
@@ -252,7 +310,7 @@ int ARPHeader::setProtocolType(){
 
 
 /** Returns value of attribute h.ar_pro */
-u16 ARPHeader::getProtocolType(){
+u16 ARPHeader::getProtocolType() const {
   return ntohs(this->h.ar_pro);
 } /* End of getProtocolType() */
 
@@ -274,7 +332,7 @@ int ARPHeader::setHwAddrLen(){
 
 
 /** Returns value of attribute h.ar_hln */
-u8 ARPHeader::getHwAddrLen(){
+u8 ARPHeader::getHwAddrLen() const {
   return this->h.ar_hln;
 } /* End of getHwAddrLen() */
 
@@ -296,7 +354,7 @@ int ARPHeader::setProtoAddrLen(){
 
 
 /** Returns value of attribute h.ar_pln */
-u8 ARPHeader::getProtoAddrLen(){
+u8 ARPHeader::getProtoAddrLen() const {
   return this->h.ar_pln;
 } /* End of getProtoAddrLen() */
 
@@ -310,7 +368,7 @@ int ARPHeader::setOpCode(u16 val){
 
 
 /** Returns value of attribute h.ar_op */
-u16 ARPHeader::getOpCode(){
+u16 ARPHeader::getOpCode() const {
   return ntohs(this->h.ar_op);
 } /* End of getOpCode() */
 
@@ -326,7 +384,7 @@ int ARPHeader::setSenderMAC(const u8 * val){
 
 
 /** Returns value of attribute h.ar_sha */
-u8 * ARPHeader::getSenderMAC(){
+const u8 *ARPHeader::getSenderMAC() const{
   return this->h.data;
 } /* End of getSenderMAC() */
 
@@ -340,7 +398,7 @@ int ARPHeader::setSenderIP(struct in_addr val){
 
 
 /** Returns value of attribute h.ar_sip */
-u32 ARPHeader::getSenderIP(){
+u32 ARPHeader::getSenderIP() const {
   u32 *p = (u32 *)(this->h.data+6);
   return *p;
 } /* End of getSenderIP() */
@@ -348,7 +406,7 @@ u32 ARPHeader::getSenderIP(){
 
 /** Sets TargetMAC.
  *  @return OP_SUCCESS on success and OP_FAILURE in case of error.           */
-int ARPHeader::setTargetMAC(u8 * val){
+int ARPHeader::setTargetMAC(const u8 * val){
   if(val==NULL)
     return OP_FAILURE;
   memcpy(this->h.data+10, val, ETH_ADDRESS_LEN);
@@ -357,7 +415,7 @@ int ARPHeader::setTargetMAC(u8 * val){
 
 
 /** Returns value of attribute h.ar_tha */
-u8 * ARPHeader::getTargetMAC(){
+const u8 * ARPHeader::getTargetMAC() const{
   return this->h.data+10;
 } /* End of getTargetMAC() */
 
@@ -371,7 +429,7 @@ int ARPHeader::setTargetIP(struct in_addr val){
 
 
 /** Returns value of attribute h.ar_tip */
-u32 ARPHeader::getTargetIP(){
+u32 ARPHeader::getTargetIP() const{
   u32 *p = (u32 *)(this->h.data+16);
   return *p;
 } /* End of getTargetIP() */

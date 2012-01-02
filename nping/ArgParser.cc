@@ -226,25 +226,12 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
   {"icmp6-param-pointer", required_argument, 0, 0},
   {"icmp6-mtu", required_argument, 0, 0},
 
-  /* ARP/RARP */
-  /* 1) ARP operation codes. */
+  /* ARP */
   {"arp-type",  required_argument, 0, 0},
-  {"rarp-type",  required_argument, 0, 0},
-  {"arp-code",  required_argument, 0, 0},
-  {"rarp-code",  required_argument, 0, 0},
-  {"arp-operation",  required_argument, 0, 0},
-  {"arp-op",  required_argument, 0, 0},
-  {"rarp-operation",  required_argument, 0, 0},
-  {"rarp-op",  required_argument, 0, 0},
-  /* 2) Rest of the fields */
   {"arp-sender-mac", required_argument, 0, 0},
   {"arp-sender-ip", required_argument, 0, 0},
   {"arp-target-mac", required_argument, 0, 0},
   {"arp-target-ip", required_argument, 0, 0},
-  {"rarp-sender-mac", required_argument, 0, 0},
-  {"rarp-sender-ip", required_argument, 0, 0},
-  {"rarp-target-mac", required_argument, 0, 0},
-  {"rarp-target-ip", required_argument, 0, 0},
 
   /* Ethernet */
   {"dest-mac", required_argument, 0, 0},
@@ -653,55 +640,47 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
         nping_fatal(QT_3, "Invalid ICMPv6 Packet Too Big MTU. Value must be 0<=N<2^32.");
       }
 
-/* ARP/RARP OPTIONS **********************************************************/
+/* ARP OPTIONS ***************************************************************/
     /* Operation code */
-    } else if (optcmp(long_options[option_index].name, "arp-type") == 0 ||
-               optcmp(long_options[option_index].name, "rarp-type") == 0 ||
-               optcmp(long_options[option_index].name, "arp-code") == 0 ||
-               optcmp(long_options[option_index].name, "rarp-code") == 0 ||
-               optcmp(long_options[option_index].name, "arp-operation") == 0 ||
-               optcmp(long_options[option_index].name, "arp-op") == 0 ||
-               optcmp(long_options[option_index].name, "rarp-operation") == 0 ||
-               optcmp(long_options[option_index].name, "rarp-op") == 0 ){
-        o.addMode(DO_ARP);
-        if( atoARPOpCode(optarg, &aux16) != OP_SUCCESS ){
-            nping_fatal(QT_3, "Invalid ARP type/operation code");
-        }else{
-            o.setARPOpCode(aux16);
-        }
+    }else if (optcmp(long_options[option_index].name, "arp-type") == 0){
+      o.addMode(DO_ARP);
+      if(atoARPOpCode(optarg, &aux16) != OP_SUCCESS){
+        nping_fatal(QT_3, "Invalid ARP operation code");
+      }else{
+        o.arp.op.setConstant(aux16);
+      }
     /* ARP Sender MAC Address */
-    } else if (optcmp(long_options[option_index].name, "arp-sender-mac") == 0 ||
-               optcmp(long_options[option_index].name, "rarp-sender-mac") == 0 ){
-        if ( parseMAC(optarg, auxmac) != OP_SUCCESS ){
-            nping_fatal(QT_3, "Invalid ARP Sender MAC address.");
-        }else{
-            o.setARPSenderHwAddr(auxmac);
-        }
+    }else if (optcmp(long_options[option_index].name, "arp-sender-mac") == 0){
+      if(parseMAC(optarg, auxmac) != OP_SUCCESS ){
+        nping_fatal(QT_3, "Invalid ARP Sender MAC address.");
+      }else{
+        MACAddress mymac;
+        mymac.setAddress_bin(auxmac);
+        o.arp.sha.setConstant(mymac);
+      }
     /* ARP Sender IP Address */
-    } else if (optcmp(long_options[option_index].name, "arp-sender-ip") == 0 ||
-               optcmp(long_options[option_index].name, "rarp-sender-ip") == 0 ){
-        if ( aux_ip4.setIPv4Address(optarg)!=OP_SUCCESS ){
-            nping_fatal(QT_3, "Invalid ARP Sender IP address.");
-        }else{
-            o.setARPSenderProtoAddr(aux_ip4.getIPv4Address());
-        }
+    }else if (optcmp(long_options[option_index].name, "arp-sender-ip") == 0){
+      if(aux_ip4.setIPv4Address(optarg)!=OP_SUCCESS ){
+        nping_fatal(QT_3, "Invalid ARP Sender IP address.");
+      }else{
+        o.arp.spa.setConstant(aux_ip4.getIPv4Address());
+      }
     /* ARP Target MAC Address */
-    } else if (optcmp(long_options[option_index].name, "arp-target-mac") == 0 ||
-               optcmp(long_options[option_index].name, "rarp-target-mac") == 0 ){
-        if ( parseMAC(optarg, auxmac) != OP_SUCCESS ){
-            nping_fatal(QT_3, "Invalid ARP Target MAC address.");
-        }else{
-            o.setARPTargetHwAddr(auxmac);
-        }
+    }else if (optcmp(long_options[option_index].name, "arp-target-mac") == 0){
+      if(parseMAC(optarg, auxmac) != OP_SUCCESS ){
+        nping_fatal(QT_3, "Invalid ARP Target MAC address.");
+      }else{
+        MACAddress mymac;
+        mymac.setAddress_bin(auxmac);
+        o.arp.tha.setConstant(mymac);
+      }
     /* ARP Target IP Address */
-    } else if (optcmp(long_options[option_index].name, "arp-target-ip") == 0 ||
-               optcmp(long_options[option_index].name, "rarp-target-ip") == 0 ){
-        if ( aux_ip4.setIPv4Address(optarg)!=OP_SUCCESS ){
-            nping_fatal(QT_3, "Invalid ARP Target IP address.");
-        }else{
-            o.setARPTargetProtoAddr(aux_ip4.getIPv4Address());
-        }
-
+    }else if (optcmp(long_options[option_index].name, "arp-target-ip") == 0){
+      if(aux_ip4.setIPv4Address(optarg)!=OP_SUCCESS ){
+        nping_fatal(QT_3, "Invalid ARP Target IP address.");
+      }else{
+        o.arp.tpa.setConstant(aux_ip4.getIPv4Address());
+      }
 
 /* ETHERNET OPTIONS **********************************************************/
     /* Destination MAC address */

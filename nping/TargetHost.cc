@@ -113,6 +113,7 @@ void TargetHost::reset(){
   this->net_distance=DISTANCE_UNKNOWN;
   this->iface=NULL;
   this->eth=NULL;
+  this->arp=NULL;
   this->ip4=NULL;
   this->ip6=NULL;
   this->tcp=NULL;
@@ -206,6 +207,15 @@ int TargetHost::setEth(EthernetHeaderTemplate *hdr){
 } /* End of setEth() */
 
 
+/* Associates the host with an ARP header template. */
+int TargetHost::setARP(ARPHeaderTemplate *hdr){
+  assert(hdr!=NULL);
+  this->arp=new ARPHeaderTemplate();
+  *this->arp=*hdr;
+  return OP_SUCCESS;
+} /* End of setEth() */
+
+
 /* Associates the host with an IPv4 header template. */
 int TargetHost::setIPv4(IPv4HeaderTemplate *hdr){
   assert(hdr!=NULL);
@@ -274,6 +284,7 @@ int TargetHost::setICMPv6(ICMPv6HeaderTemplate *hdr){
  * handle memory allocation themselves. */
 int TargetHost::getNextPacketBatch(vector<PacketElement *> &Packets){
   EthernetHeader *myeth=NULL;
+  ARPHeader *myarp=NULL;
   IPv4Header *myip4=NULL;
   IPv6Header *myip6=NULL;
   NetworkLayerElement *myip=NULL;
@@ -475,6 +486,19 @@ int TargetHost::getNextPacketBatch(vector<PacketElement *> &Packets){
     }
   }
 
+  /* Build an ARP packet */
+  if(this->arp!=NULL){
+    /* Only create ARP packets when the host is IPv4 and reachable
+     * through Ethernet */
+    if(ip_version==AF_INET && this->eth!=NULL){
+      myarp=this->getARPHeader();
+      myeth=getEthernetHeader(ETHTYPE_ARP);
+      myeth->setNextElement(myarp);
+      Packets.push_back(myeth);
+      this->store_packet(myeth);
+    }
+  }
+
   return OP_SUCCESS;
 } /* End of getNextPacketBatch() */
 
@@ -496,6 +520,47 @@ EthernetHeader *TargetHost::getEthernetHeader(u16 eth_type){
     myeth->setEtherType(eth_type);
   return myeth;
 } /* End of getEthernetHeader() */
+
+
+ARPHeader *TargetHost::getARPHeader(){
+  ARPHeader *myarp=NULL;
+  MACAddress auxmac;
+  assert(this->arp!=NULL && this->eth!=NULL);
+  myarp=new ARPHeader();
+  myarp->setHardwareType(this->arp->htype.getNextValue());
+  myarp->setProtocolType(this->arp->ptype.getNextValue());
+  myarp->setHwAddrLen(this->arp->haddrlen.getNextValue());
+  myarp->setProtoAddrLen(this->arp->paddrlen.getNextValue());
+  myarp->setOpCode(this->arp->op.getNextValue());
+  /* Sender MAC address */
+  if(this->arp->sha.is_set()){
+    myarp->setSenderMAC(this->arp->sha.getNextValue().getAddress_bin());
+  }else{
+    auxmac=this->eth->src.getNextValue();
+    myarp->setSenderMAC(auxmac.getAddress_bin());
+  }
+  /* Target MAC address */
+  if(this->arp->tha.is_set()){
+    myarp->setTargetMAC(this->arp->tha.getNextValue().getAddress_bin());
+  }else{
+    auxmac=this->eth->dst.getNextValue();
+    myarp->setTargetMAC(auxmac.getAddress_bin());
+  }
+  /* Sender IP address */
+  if(this->arp->spa.is_set()){
+    myarp->setSenderIP(this->arp->spa.getNextValue());
+  }else{
+    myarp->setSenderIP(this->source_addr->getIPv4Address());
+  }
+  /* Target IP Address */
+  if(this->arp->tpa.is_set()){
+    myarp->setTargetIP(this->arp->tpa.getNextValue());
+  }else{
+    myarp->setTargetIP(this->target_addr->getIPv4Address());
+  }
+
+  return myarp;
+} /* End of getARPHeader() */
 
 
 IPv4Header *TargetHost::getIPv4Header(const char *next_proto){

@@ -127,6 +127,36 @@ void EthernetHeaderTemplate::reset(){
 } /* End of reset() */
 
 
+
+/******************************************************************************
+ * IPv4PHeaderTemplate Class                                                    *
+ ******************************************************************************/
+
+ARPHeaderTemplate::ARPHeaderTemplate(){
+  this->reset();
+} /* End of ARPHeaderTemplate constructor */
+
+
+ARPHeaderTemplate::~ARPHeaderTemplate(){
+
+} /* End of ARPHeaderTemplate destructor */
+
+
+/* This method returns the object to its default state. The reset() method is
+ * very important because it initializes ARP header fields with default values
+ * that will affect the final packets that Nping produces. However, note that
+ * the values set here may be overridden by NpingOps if necessary (when the
+ * user supplies his own values or when we have special restrictions) */
+void ARPHeaderTemplate::reset(){
+  this->htype.setConstant(DEFAULT_ARP_HTYPE);
+  this->ptype.setConstant(DEFAULT_ARP_PTYPE);
+  this->haddrlen.setConstant(DEFAULT_ARP_HADDRLEN);
+  this->paddrlen.setConstant(DEFAULT_ARP_PADDRLEN);
+  this->op.setConstant(DEFAULT_ARP_OP);
+  /* Hardware and protocol addresses are left unset on purpose. */
+} /* End of reset() */
+
+
 /******************************************************************************
  * IPv4PHeaderTemplate Class                                                    *
  ******************************************************************************/

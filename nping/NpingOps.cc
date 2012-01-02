@@ -1983,6 +1983,10 @@ int NpingOps::setupTargetHosts(){
           if(newhost->getInterface()->getType()==devt_ethernet)
             do_eth=true;
         }
+        /* If we are doing ARP, we need Ethernet... */
+        if(this->mode(DO_ARP) && this->target_addresses[i]->getVersion()==AF_INET){
+          do_eth=true;
+        }
       /* If the user explicitly requested Ethernet, go for it... */
       }else if(this->getSendPreference()==PACKET_SEND_ETH){
         /* ...unless the device is not Ethernet*/
@@ -2054,6 +2058,8 @@ int NpingOps::setupTargetHosts(){
         newhost->setTCP(&this->tcp);
       if(this->mode(DO_UDP))
         newhost->setUDP(&this->udp);
+      if(this->mode(DO_ARP) && this->target_addresses[i]->getVersion()==AF_INET)
+        newhost->setARP(&this->arp);
 
       /* We have all the info we need. Now, just add the new host to the list of
        * target hosts. */

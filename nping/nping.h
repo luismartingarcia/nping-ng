@@ -387,8 +387,6 @@
 #define DEFAULT_ICMPv6_TYPE 128 /**< Default ICMPv6 message: Echo Request    */
 #define DEFAULT_ICMPv6_CODE 0   /**< Default ICMPv6 code: 0 (standard)       */
 
-#define DEFAULT_ARP_OP 1   /**< Default ARP operation: OP_ARP_REQUEST      */
-
 /* WARNING: This is the max length for UDP and TCP payloads. Whatever you set
  * here, it cannot exceed the worst case:
  * 65535 bytes - IPv6Header with options - TCP  Header with options. */

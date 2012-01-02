@@ -98,6 +98,13 @@
  * DEFAULT PROTOCOL FIELD VALUES                                              *
  ******************************************************************************/
 
+/* ARP */
+#define DEFAULT_ARP_HTYPE (HDR_ETH10MB) /* Default hardware type: Ethernet */
+#define DEFAULT_ARP_PTYPE 0x0800        /* Default protocol type: IPv4     */
+#define DEFAULT_ARP_HADDRLEN 6          /* Length of Ethernet MAC addrs    */
+#define DEFAULT_ARP_PADDRLEN 4          /* Length of IPv4 addresses        */
+#define DEFAULT_ARP_OP (OP_ARP_REQUEST) /* Default operation: ARP_REQUEST  */
+
 /* IPv4 */
 #define DEFAULT_IPv4_TTL 64             /* Default IPv4 Time To Live        */
 #define DEFAULT_IPv4_TOS 0              /* Default IPv4 Type of Service     */
@@ -148,6 +155,24 @@ class EthernetHeaderTemplate : public HeaderTemplate{
 
     EthernetHeaderTemplate();
     ~EthernetHeaderTemplate();
+    void reset();
+};
+
+
+class ARPHeaderTemplate : public HeaderTemplate{
+  public:
+    ProtoField_u16 htype;   /* Hardware type             */
+    ProtoField_u16 ptype;   /* Protocol type             */
+    ProtoField_u8 haddrlen; /* Hardware address length   */
+    ProtoField_u8 paddrlen; /* Protocol address length   */
+    ProtoField_u16 op;      /* ARP operation code        */
+    ProtoField_mac sha;     /* Sender hardware address   */
+    ProtoField_inaddr spa;  /* Sender protocol address   */
+    ProtoField_mac tha;     /* Target hardware address   */
+    ProtoField_inaddr tpa;  /* Target protocol address   */
+
+    ARPHeaderTemplate();
+    ~ARPHeaderTemplate();
     void reset();
 };
 

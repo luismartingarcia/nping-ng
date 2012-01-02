@@ -244,42 +244,42 @@ class ARPHeader : public NetworkLayerElement {
         /* Hardware Type */
         int setHardwareType(u16 t);
         int setHardwareType();
-        u16 getHardwareType();
+        u16 getHardwareType() const;
 
         /* Protocol Type */
         int setProtocolType(u16 t);
         int setProtocolType();
-        u16 getProtocolType();
+        u16 getProtocolType() const;
 
         /* Hardware Address Length */
         int setHwAddrLen(u8 v);
         int setHwAddrLen();
-        u8 getHwAddrLen();
+        u8 getHwAddrLen() const;
 
         /* Hardware Address Length */
         int setProtoAddrLen(u8 v);
         int setProtoAddrLen();
-        u8 getProtoAddrLen();
+        u8 getProtoAddrLen() const;
 
         /* Operation Code */
         int setOpCode(u16 c);
-        u16 getOpCode();
+        u16 getOpCode() const;
 
         /* Sender Hardware Address */
         int setSenderMAC(const u8 *m);
-        u8 *getSenderMAC();
+        const u8 *getSenderMAC() const;
 
         /* Sender Protocol address */
         int setSenderIP(struct in_addr i);
-        u32 getSenderIP();
+        u32 getSenderIP() const;
 
         /* Target Hardware Address */
-        int setTargetMAC(u8 *m);
-        u8 *getTargetMAC();
+        int setTargetMAC(const u8 *m);
+        const u8 *getTargetMAC() const;
 
         /* Target Protocol Address */
         int setTargetIP(struct in_addr i);
-        u32 getTargetIP();
+        u32 getTargetIP() const;
 
 }; /* End of class ARPHeader */
 
