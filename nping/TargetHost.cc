@@ -594,6 +594,8 @@ IPv6Header *TargetHost::getIPv6Header(const char *next_proto){
   myip6->setSourceAddress(this->source_addr->getIPv6Address());
   myip6->setDestinationAddress(this->target_addr->getIPv6Address());
   myip6->setHopLimit(this->ip6->hlim.getNextValue());
+  myip6->setFlowLabel(this->ip6->flow.getNextValue());
+  myip6->setTrafficClass(this->ip6->tclass.getNextValue());
   if(this->ip6->nh.is_set()){
     myip6->setNextHeader(this->ip6->nh.getNextValue());
   }else if(next_proto!=NULL){
