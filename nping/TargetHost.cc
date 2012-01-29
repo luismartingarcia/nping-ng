@@ -120,6 +120,8 @@ void TargetHost::reset(){
   this->udp=NULL;
   this->icmp4=NULL;
   this->icmp6=NULL;
+  this->payload=NULL;
+  this->payload_len=0;
 } /* End of reset() */
 
 
@@ -270,6 +272,15 @@ int TargetHost::setICMPv6(ICMPv6HeaderTemplate *hdr){
 } /* End of setICMPv4() */
 
 
+/* Associates the host with a payload buffer */
+int TargetHost::setPayload(u8 *data, u32 data_len){
+  assert(data!=NULL);
+  this->payload=data;
+  this->payload_len=data_len;
+  return OP_SUCCESS;
+} /* End of setPayload() */
+
+
 /* This method inserts whatever packets this TargetHost needs to send into the
  * supplied vector. The number of packets inserted in each call is always the
  * same but it depends on user configuration. If, for example, user passed
@@ -292,6 +303,7 @@ int TargetHost::getNextPacketBatch(vector<PacketElement *> &Packets){
   UDPHeader *myudp=NULL;
   ICMPv4Header *myicmp4=NULL;
   ICMPv6Header *myicmp6=NULL;
+  RawData *myraw=NULL;
   int ip_version=AF_UNSPEC;
   u16 eth_type=0;
   u16 sum=0, aux=0;
@@ -303,14 +315,20 @@ int TargetHost::getNextPacketBatch(vector<PacketElement *> &Packets){
   }else if(this->ip6!=NULL){
     ip_version=AF_INET6;
     eth_type=ETHTYPE_IPV6;
-  }else{
+  }else if(this->arp==NULL){
     nping_fatal(QT_3, "%s(): No IP version set.",__func__);
+  }
+
+  /* If we need to send a payload, have it ready. */
+  if(this->payload!=NULL){
+    myraw=this->getPayloadHeader();
   }
 
   /* Build a TCP packet */
   if(this->tcp!=NULL){
 
     mytcp=this->getTCPHeader();
+    mytcp->setNextElement(myraw);
 
     if(ip_version==AF_INET){
       myip=myip4=this->getIPv4Header("TCP");
@@ -362,6 +380,7 @@ int TargetHost::getNextPacketBatch(vector<PacketElement *> &Packets){
   if(this->udp!=NULL){
 
     myudp=this->getUDPHeader();
+    myudp->setNextElement(myraw);
 
     if(ip_version==AF_INET){
       myip=myip4=this->getIPv4Header("UDP");
@@ -414,6 +433,7 @@ int TargetHost::getNextPacketBatch(vector<PacketElement *> &Packets){
   if(this->icmp4!=NULL){
     assert(ip_version==AF_INET);
     myicmp4=this->getICMPv4Header();
+    myicmp4->setNextElement(myraw);
     myip4=this->getIPv4Header("ICMP");
     myip4->setNextElement(myicmp4);
     myip4->setTotalLength();
@@ -458,6 +478,7 @@ int TargetHost::getNextPacketBatch(vector<PacketElement *> &Packets){
   if(this->icmp6!=NULL){
     assert(ip_version==AF_INET6);
     myicmp6=this->getICMPv6Header();
+    myicmp6->setNextElement(myraw);
     myip6=this->getIPv6Header("ICMPv6");
     myip6->setNextElement(myicmp6);
     myip6->setPayloadLength();
@@ -492,6 +513,7 @@ int TargetHost::getNextPacketBatch(vector<PacketElement *> &Packets){
      * through Ethernet */
     if(ip_version==AF_INET && this->eth!=NULL){
       myarp=this->getARPHeader();
+      myarp->setNextElement(myraw);
       myeth=getEthernetHeader(ETHTYPE_ARP);
       myeth->setNextElement(myarp);
       Packets.push_back(myeth);
@@ -768,6 +790,15 @@ ICMPv6Header *TargetHost::getICMPv6Header(){
 
   return myicmp6;
 } /* End of getICMPv6Header() */
+
+
+RawData *TargetHost::getPayloadHeader(){
+  RawData *myraw=NULL;
+  assert(this->payload!=NULL);
+  myraw=new RawData();
+  myraw->store(this->payload, this->payload_len);
+  return myraw;
+} /* End of getPayloadHeader() */
 
 
 /* This method stores a chain of PacketElements inside the object. In particular,

@@ -132,6 +132,8 @@ class TargetHost{
     UDPHeaderTemplate *udp;  /* Header values for UDP                                 */
     ICMPv4HeaderTemplate *icmp4; /* Header values for ICMPv4                          */
     ICMPv6HeaderTemplate *icmp6; /* Header values for ICMPv6                          */
+    u8 *payload;             /* Payload                                               */
+    u32 payload_len;         /* Payload length                                        */
 
     int net_distance;        /* If >=0, indicates how many hops away the target is    */
     NetworkInterface *iface; /* Info about the proper interface to reach target       */
@@ -146,6 +148,8 @@ class TargetHost{
     UDPHeader *getUDPHeader();
     ICMPv4Header *getICMPv4Header();
     ICMPv6Header *getICMPv6Header();
+    RawData *getPayloadHeader();
+
     int store_packet(PacketElement *pkt);
 
   /* Public methods */
@@ -182,6 +186,7 @@ class TargetHost{
     int setUDP(UDPHeaderTemplate *hdr);
     int setICMPv4(ICMPv4HeaderTemplate *hdr);
     int setICMPv6(ICMPv6HeaderTemplate *hdr);
+    int setPayload(u8 *data, u32 data_len);
 
     void reset();
     int getNextPacketBatch(vector<PacketElement *> &Packets);

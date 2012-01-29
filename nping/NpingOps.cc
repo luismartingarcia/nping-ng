@@ -2032,7 +2032,9 @@ int NpingOps::setupTargetHosts(){
         newhost->setEth(&myeth);
       }
 
-      /* Now, tell the target host which packets it has to send. */
+      /* Now, tell the target host which packets it has to send. Note that when
+       * we are doing ARP, the IP header is useless, but we still pass it. This
+       * is OK, TargetHosts will ignore the header in this case. */
       if(this->target_addresses[i]->getVersion()==AF_INET){
         newhost->setIPv4(&this->ip4);
       }else{
@@ -2051,6 +2053,8 @@ int NpingOps::setupTargetHosts(){
         newhost->setUDP(&this->udp);
       if(this->mode(DO_ARP) && this->target_addresses[i]->getVersion()==AF_INET)
         newhost->setARP(&this->arp);
+      if(this->payload_buff!=NULL)
+        newhost->setPayload(this->payload_buff, this->payload_len);
 
       /* We have all the info we need. Now, just add the new host to the list of
        * target hosts. */
