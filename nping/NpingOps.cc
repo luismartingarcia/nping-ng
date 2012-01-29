@@ -1370,7 +1370,7 @@ void NpingOps::validateOptions() {
         this->addMode(DO_UDP_UNPRIV);
     }
     /* Now do a proper check for privileged modes. */
-    if(this->mode(DO_TCP) || this->mode(DO_UDP) || this->mode(DO_ARP) ||
+    if(this->mode(DO_TCP) || this->mode(DO_UDP) || this->mode(DO_ARP) || this->mode(DO_ICMP) ||
         this->mode(DO_TRACEROUTE) || this->mode(DO_EXT_HOPOPT) || this->mode(DO_EXT_ROUTING) ||
         this->mode(DO_EXT_DOPT) || this->mode(DO_EXT_FRAGMENT) )
       nping_fatal(QT_3,"Mode %s requires %s.", this->mode2Ascii( this->getModes() ), privreq);
