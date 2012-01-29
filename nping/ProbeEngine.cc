@@ -253,25 +253,27 @@ int ProbeEngine::start(vector<TargetHost *> &Targets, vector<NetworkInterface *>
   pts=o.getTargetPorts(&total_ports);
   total_ports = (total_ports==0) ? 1 : total_ports;
 
-  /* Build a BPF filter for each interface */
-  for(u32 i=0; i<Interfaces.size(); i++){
-    filter = this->bpf_filter(Targets, Interfaces[i]);
-    assert(filter!=NULL);
-    bpf_filters.push_back(strdup(filter));
-    nping_print(DBG_2, "[ProbeEngine] Interface=%s BPF:%s", Interfaces[i]->getName(), filter);
-  }
+  if(o.mode(MODE_IS_PRIVILEGED)){
+    /* Build a BPF filter for each interface */
+    for(u32 i=0; i<Interfaces.size(); i++){
+      filter = this->bpf_filter(Targets, Interfaces[i]);
+      assert(filter!=NULL);
+      bpf_filters.push_back(strdup(filter));
+      nping_print(DBG_2, "[ProbeEngine] Interface=%s BPF:%s", Interfaces[i]->getName(), filter);
+    }
 
-  /* Set up the sniffer(s) */
-  this->setup_sniffer(Interfaces, bpf_filters);
+    /* Set up the sniffer(s) */
+    this->setup_sniffer(Interfaces, bpf_filters);
+
+    /* Schedule the first pcap read event (one for each interface we use) */
+    for(size_t i=0; i<this->pcap_iods.size(); i++){
+      nsock_pcap_read_packet(this->nsp, this->pcap_iods[i], packet_capture_handler_wrapper, -1, NULL);
+    }
+  }
 
   /* Init the time counters */
   gettimeofday(&this->start_time, NULL);
   o.stats.start_clocks();
-
-  /* Schedule the first pcap read event (one for each interface we use) */
-  for(size_t i=0; i<this->pcap_iods.size(); i++){
-    nsock_pcap_read_packet(this->nsp, this->pcap_iods[i], packet_capture_handler_wrapper, -1, NULL);
-  }
 
   /* Do the Probe Mode rounds! */
   for(unsigned int r=0; r<o.getRounds(); r++){
