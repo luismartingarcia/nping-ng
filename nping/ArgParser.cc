@@ -1287,7 +1287,7 @@ void ArgParser::printUsage(void){
 "  --mf                             : Set More Fragments flag.\n"
 "  --rf                             : Set the reserved flag.\n"
 "  --ttl <hops>                     : Set time to live [0-255].\n"
-"  --fragoff <offset>               : Set the fragment offset (13 bits)"
+"  --fragoff <offset>               : Set the fragment offset (13 bits)\n"
 "  --csum-ip                        : Use a fixed checksum. \n"
 "  --badsum-ip                      : Use a random invalid checksum. \n"
 "  --ip-options <S|R [route]|L [route]|T|U ...> : Set IP options\n"
