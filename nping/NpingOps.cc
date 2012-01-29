@@ -1336,12 +1336,6 @@ void NpingOps::validateOptions() {
     nping_fatal(QT_3, "Sorry, ARP does not support IPv6.");
   }
 
-/** TCP CONNECT RELATED PARAMETERS *********************************************/
-  if(this->mode(DO_TCP_CONNECT)) {
-    if(this->getPayloadType()!=PL_NONE)
-      nping_print(VB_0, "Warning: Payload supplied in TCP Connect mode. Payload will be ignored.");
-  }
-
  if(this->mode(DO_TCP_CONNECT) || this->mode(DO_UDP_UNPRIV) )
     nping_print(DBG_2,"Nping will send packets in unprivileged mode using regular system calls");
 
