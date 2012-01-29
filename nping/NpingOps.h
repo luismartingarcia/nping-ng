@@ -135,6 +135,11 @@
 #define DO_EXT_DOPT      0x0400   /* Add destination options IPv6 ext hdr */
 #define DO_EXT_FRAGMENT  0x0800   /* Add Fragmentation IPv6 extension hdr */
 
+/* These are special constants used in NpingOps::mode() to determine if
+ * the current mode needs root privileges or not. */
+#define MODE_IS_PRIVILEGED 0xFFAA
+#define MODE_IS_UNPRIVILEGED 0xFFBB
+
 /* Roles */
 #define ROLE_NORMAL 0x22
 #define ROLE_CLIENT 0x44

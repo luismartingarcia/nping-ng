@@ -319,8 +319,31 @@ bool NpingOps::issetMode(){
 } /* End of isset() */
 
 
+/* Returns true if the supplied mode has been set. There are two special
+ * constants, MODE_IS_PRIVILEGED and MODE_IS_UNPRIVILEGED, that can be passed
+ * to determine if the current mode requires root privileges. Here are a few
+ * examples of how this can be used:
+ * mode(DO_ICMPv4) returns true if we are sending ICMPv4 packets.
+ * mode(MODE_IS_UNPRIVILEGED) returns true if only TCP Connect or UDP Unpriv
+ * are set.
+ * mode(MODE_IS_PRIVILEGED) returns true if any mode that requires raw sockets
+ * has been set. */
 bool NpingOps::mode(u16 test_value){
-  return (this->modes & test_value);
+  if(test_value==MODE_IS_PRIVILEGED){
+    return !this->mode(MODE_IS_UNPRIVILEGED);
+  }else if(test_value==MODE_IS_UNPRIVILEGED){
+    /* Return true when only TCP connect or UDP Unpriv is set. Both
+     * can be set, but no other mode should be set in order to return
+     * true. */
+    if(this->modes==DO_TCP_CONNECT || this->modes==DO_UDP_UNPRIV ||
+       this->modes==(DO_TCP_CONNECT|DO_UDP_UNPRIV)){
+      return true;
+    }else{
+      return false;
+    }
+  }else{
+    return (this->modes & test_value);
+  }
 } /* End of mode() */
 
 
