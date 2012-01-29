@@ -1424,8 +1424,14 @@ void NpingOps::validateOptions() {
 #endif
 
 /** MISCELLANEOUS ************************************************************/
-  if(this->source_ports!=NULL && this->mode(DO_TCP_CONNECT) && this->getRounds()>1 )
-    nping_warning(QT_1, "Warning: Setting a source port in TCP-Connect mode with %d rounds may not work after the first round. You may want to do just one round (use --count 1).", this->getRounds() );
+  if(this->source_ports!=NULL && this->mode(DO_TCP_CONNECT) && (u16)this->getRounds()>this->sportcount ){
+    if(!this->isRoot()){
+      nping_warning(QT_1, "Warning: Setting a source port in TCP-Connect mode may not work if you are not root");
+    }else{
+      nping_warning(QT_1, "Warning: In TCP-Connect mode, setting less source ports (%d) than packet rounds (%d) may not work. You may want to reduce the number of rounds or increase the number of source ports. (use --count 1).", this->sportcount, this->getRounds() );
+    }
+  }
+
 } /* End of validateOptions() */
 
 

@@ -147,9 +147,9 @@ class ProbeEngine  {
     static char *bpf_filter(vector<TargetHost *> &Targets, NetworkInterface *target_interface);
     int setup_sniffer(vector<NetworkInterface *> &ifacelist, vector<const char *>bpf_filters);
     int send_packet(TargetHost *tgt, PacketElement *pkt, struct timeval *now);
-    int do_unprivileged(int proto, TargetHost *tgt, u16 tport, struct timeval *now);
-    int do_tcp_connect(TargetHost *tgt, u16 tport, struct timeval *now);
-    int do_udp_unpriv(TargetHost *tgt, u16 tport, struct timeval *now);
+    int do_unprivileged(int proto, TargetHost *tgt, u16 tport, u16 sport, struct timeval *now);
+    int do_tcp_connect(TargetHost *tgt, u16 tport, u16 sport, struct timeval *now);
+    int do_udp_unpriv(TargetHost *tgt, u16 tport, u16 sport, struct timeval *now);
     int packet_capture_handler(nsock_pool nsp, nsock_event nse, void *arg);
     int tcpconnect_handler(nsock_pool nsp, nsock_event nse, void *arg);
     int udpunpriv_handler(nsock_pool nsp, nsock_event nse, void *arg);

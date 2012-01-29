@@ -244,6 +244,10 @@ int ProbeEngine::start(vector<TargetHost *> &Targets, vector<NetworkInterface *>
   int wait_time=0, time_deviation=0;
   u16 total_ports=0;
   u16 *pts=NULL;
+  u16 spts_len=0;
+  u16 spts_idx=0;
+  u16 *spts=o.getSourcePorts(&spts_len);
+  u16 curr_spt=0; /* Current source port for unpriv mode. Must be init to zero. */
   u32 count=1;
 
   nping_print(DBG_1, "Starting Nping Probe Engine...");
@@ -280,6 +284,15 @@ int ProbeEngine::start(vector<TargetHost *> &Targets, vector<NetworkInterface *>
 
     for(unsigned int p=0; p<total_ports; p++){
 
+      /* Use a custom source port if appropriate */
+      if(spts!=NULL){
+        curr_spt=spts[spts_idx];
+        if(spts_idx==(spts_len-1))
+          spts_idx=0;
+        else
+          spts_idx++;
+      }
+
       for(unsigned int t = 0; t < Targets.size(); t++){
 
         /* There are two possibilities.
@@ -292,16 +305,16 @@ int ProbeEngine::start(vector<TargetHost *> &Targets, vector<NetworkInterface *>
           gettimeofday(&now, NULL);
           if(o.mode(DO_TCP_CONNECT)){ // TODO: @todo set the target port right!!
             if(pts!=NULL){
-              do_tcp_connect(Targets[t], pts[p], &now);
+              do_tcp_connect(Targets[t], pts[p], curr_spt, &now);
             }else{
-              do_tcp_connect(Targets[t], DEFAULT_TCP_TARGET_PORT, &now);
+              do_tcp_connect(Targets[t], DEFAULT_TCP_TARGET_PORT, curr_spt, &now);
             }
           }
           if(o.mode(DO_UDP_UNPRIV)){
             if(pts!=NULL){
-              do_udp_unpriv(Targets[t], pts[p], &now);
+              do_udp_unpriv(Targets[t], pts[p], curr_spt, &now);
             }else{
-              do_udp_unpriv(Targets[t], DEFAULT_UDP_TARGET_PORT, &now);
+              do_udp_unpriv(Targets[t], DEFAULT_UDP_TARGET_PORT, curr_spt, &now);
             }
           }
         }else{
@@ -523,7 +536,7 @@ int ProbeEngine::send_packet(TargetHost *tgt, PacketElement *pkt, struct timeval
  * treats it just like TCP. So basically what we do here is to schedule an
  * immediate TCP/UDP CONNECT event. All other operations (data writes, data
  * reads, etc) are handled by an specialized event handler. */
-int ProbeEngine::do_unprivileged(int proto, TargetHost *tgt, u16 tport, struct timeval *now){
+int ProbeEngine::do_unprivileged(int proto, TargetHost *tgt, u16 tport, u16 sport, struct timeval *now){
   struct sockaddr_storage ss;      /* Source address */
   struct sockaddr_storage to;      /* Destination address                     */
   size_t sslen=0;                  /* Destination address length              */
@@ -574,7 +587,9 @@ int ProbeEngine::do_unprivileged(int proto, TargetHost *tgt, u16 tport, struct t
     nping_fatal(QT_3, "%s(): Failed to create new nsock_iod.\n", __func__);
   /* Set socket source address. This allows setting things like custom source port */
   tgt->getSourceAddress()->getAddress(&ss);
-  /* TODO: Set sin_port or sin6_port here! */
+  if(sport!=0){
+    setsockaddrport(&ss, sport);
+  }
   nsi_set_localaddr(fds[packetno%max_iods], &ss, sslen);
 
   if(proto==DO_TCP_CONNECT){
@@ -595,15 +610,15 @@ int ProbeEngine::do_unprivileged(int proto, TargetHost *tgt, u16 tport, struct t
 
 /* Schedules an immediate TCP CONNECT event. For more information, check
  * do_unprivileged() above. */
-int ProbeEngine::do_tcp_connect(TargetHost *tgt, u16 tport, struct timeval *now){
-  return do_unprivileged(DO_TCP_CONNECT, tgt, tport, now);
+int ProbeEngine::do_tcp_connect(TargetHost *tgt, u16 tport, u16 sport, struct timeval *now){
+  return do_unprivileged(DO_TCP_CONNECT, tgt, tport, sport, now);
 } /* End of do_tcp_connect() */
 
 
 /* Schedules an immediate UDP CONNECT event. For more information, check
  * do_unprivileged() above. */
-int ProbeEngine::do_udp_unpriv(TargetHost *tgt, u16 tport, struct timeval *now){
-  return do_unprivileged(DO_UDP_UNPRIV, tgt, tport, now);
+int ProbeEngine::do_udp_unpriv(TargetHost *tgt, u16 tport, u16 sport, struct timeval *now){
+  return do_unprivileged(DO_UDP_UNPRIV, tgt, tport, sport, now);
 } /* End of do_udp_unpriv() */
 
 
