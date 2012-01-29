@@ -1363,6 +1363,13 @@ void NpingOps::validateOptions() {
 
 /** CHECK PRIVILEGES FOR CURRENT MODE ****************************************/
   if(!this->isRoot()){
+    /* If the argparser set UDP mode but we are not root, just go
+     * into UDP-Unpriv mode*/
+    if(this->mode(DO_UDP)){
+        this->delMode(DO_UDP);
+        this->addMode(DO_UDP_UNPRIV);
+    }
+    /* Now do a proper check for privileged modes. */
     if(this->mode(DO_TCP) || this->mode(DO_UDP) || this->mode(DO_ARP) ||
         this->mode(DO_TRACEROUTE) || this->mode(DO_EXT_HOPOPT) || this->mode(DO_EXT_ROUTING) ||
         this->mode(DO_EXT_DOPT) || this->mode(DO_EXT_FRAGMENT) )
