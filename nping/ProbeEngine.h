@@ -120,6 +120,10 @@ using namespace std;
 /* Default timeout for UDP socket nsock_read() operations */
 #define DEFAULT_UDP_READ_TIMEOUT_MS  1000
 
+/* Amount of time we keep capturing responses after the last packet is sent,
+ * providing we have no measured RTT for any of the hosts. */
+#define DEFAULT_TIME_WAIT_AFTER_LAST_PACKET 1000
+
 
 class ProbeEngine  {
 

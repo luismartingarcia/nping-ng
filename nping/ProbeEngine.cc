@@ -249,6 +249,8 @@ int ProbeEngine::start(vector<TargetHost *> &Targets, vector<NetworkInterface *>
   u16 *spts=o.getSourcePorts(&spts_len);
   u16 curr_spt=0; /* Current source port for unpriv mode. Must be init to zero. */
   u32 count=1;
+  int max_rtt=0;
+
 
   nping_print(DBG_1, "Starting Nping Probe Engine...");
 
@@ -339,11 +341,34 @@ int ProbeEngine::start(vector<TargetHost *> &Targets, vector<NetworkInterface *>
         if(r==(o.getRounds()-1) && p==(total_ports-1) && t==(Targets.size()-1))
           o.stats.stop_tx_clock();
 
-        /* Determine how long do we have to wait until we send the next pkt */
-        TIMEVAL_MSEC_ADD(next_time, start_time, count*o.getDelay() );
-        if((wait_time=TIMEVAL_MSEC_SUBTRACT(next_time, now)-time_deviation) < 0){
-          nping_print(DBG_1, "Wait time < 0 ! (wait_time=%d)", wait_time);
-          wait_time=0;
+        /* Determine how long do we have to wait until we send the next pkt.
+         * If we still have more packets to send, we wait until a whole
+         * inter-packet delay has elapsed since the last packet we sent. */
+        if(!(r==(o.getRounds()-1) && p==(total_ports-1) && t==(Targets.size()-1))){
+          TIMEVAL_MSEC_ADD(next_time, start_time, count*o.getDelay() );
+          if((wait_time=TIMEVAL_MSEC_SUBTRACT(next_time, now)-time_deviation) < 0){
+            nping_print(DBG_1, "Wait time < 0 ! (wait_time=%d)", wait_time);
+            wait_time=0;
+          }
+        /* If we have sent the last packet already, it doesn't make sense to wait
+         * for the same amount of time as before (the inter-packet delay). Imagine
+         * we have an interpacket delay of 10s and a max RTT of 0.2s. Why wait 10s
+         * when we can reasonably stop capturing packets after 0.2s? So here what we
+         * do is to determine the higher RTT that we've observed in the past, and
+         * wait for t=4*Max_RTT (We multiply the max RTT observed by 4 so if
+         * we have multiple targets, we don't miss a first response sent by
+         * a slow target). If we don't have any RTT we wait for a fixed 1 second. */
+        }else{
+          for(u32 z=0; z<Targets.size(); z++){
+            if(Targets[z]->stats.get_max_rtt()>max_rtt)
+              max_rtt=Targets[z]->stats.get_max_rtt();
+          }
+          if(max_rtt==0){
+            wait_time=DEFAULT_TIME_WAIT_AFTER_LAST_PACKET;
+          }else{
+            wait_time=4*max_rtt;
+          }
+          nping_print(DBG_2, "Final wait time for responses: %d msecs.", wait_time);
         }
 
         /* Now schedule a dummy wait event so we don't send more packets
