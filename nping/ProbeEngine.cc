@@ -348,6 +348,7 @@ int ProbeEngine::start(vector<TargetHost *> &Targets, vector<NetworkInterface *>
          * inter-packet delay has elapsed since the last packet we sent. */
         if(!(r==(o.getRounds()-1) && p==(total_ports-1) && t==(Targets.size()-1))){
           TIMEVAL_MSEC_ADD(next_time, start_time, count*o.getDelay() );
+          gettimeofday(&now, NULL);
           if((wait_time=TIMEVAL_MSEC_SUBTRACT(next_time, now)-time_deviation) < 0){
             nping_print(DBG_1, "Wait time < 0 ! (wait_time=%d)", wait_time);
             wait_time=0;
