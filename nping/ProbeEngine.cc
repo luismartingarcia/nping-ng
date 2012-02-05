@@ -376,6 +376,7 @@ int ProbeEngine::start(vector<TargetHost *> &Targets, vector<NetworkInterface *>
 
         /* Now schedule a dummy wait event so we don't send more packets
          * until the inter-packet delay has passed */
+        nping_print(DBG_2, "Waiting for %d msecs.", wait_time);
         nsock_timer_create(nsp, interpacket_delay_wait_handler, wait_time, NULL);
 
         /* Now wait until all events have been dispatched */
