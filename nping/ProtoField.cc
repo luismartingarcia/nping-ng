@@ -731,3 +731,111 @@ MACAddress ProtoField_mac::getNextValue(){
   assert(false);
   return return_val;
 } /* End of getNextValue() */
+
+
+
+/*****************************************************************************
+ * ProtoField_buff Class                                                       *
+ *****************************************************************************/
+
+ProtoField_buff::ProtoField_buff(){
+  this->start_value=NULL;
+  this->current_value=NULL;
+  this->value_len=0;
+  this->discrete_set=NULL;
+  this->discrete_set_len=0;
+  this->current_set_element=0;
+} /* End of ProtoField_buff constructor */
+
+
+ProtoField_buff::ProtoField_buff(u8 *startvalue, u32 value_len){
+  this->setStartValue(startvalue, value_len);
+} /* End of ProtoField_buff constructor */
+
+
+ProtoField_buff::ProtoField_buff(u8 **set, u32 each_element_len, u32 number_of_elements){
+  this->setDiscreteSet(set, each_element_len, number_of_elements);
+} /* End of ProtoField_buff constructor */
+
+
+ProtoField_buff::~ProtoField_buff(){
+
+} /* End of ProtoField_buff destructor */
+
+
+int ProtoField_buff::setStartValue(u8 *startvalue, u32 value_len){
+  this->start_value=startvalue;
+  this->current_value=startvalue;
+  this->value_len=value_len;
+  this->discrete_set=NULL;
+  this->discrete_set_len=0;
+  this->current_set_element=0;
+  this->set=true;
+  return OP_SUCCESS;
+} /* End of setStartValue() */
+
+
+int ProtoField_buff::setDiscreteSet(u8 **set, u32 each_element_len, u32 number_of_elements){
+  assert(set!=NULL && number_of_elements>0 && each_element_len>0);
+  this->setBehavior(FIELD_TYPE_DISCRETE_SET);
+  this->discrete_set=set;
+  this->discrete_set_len=number_of_elements;
+  this->value_len=each_element_len;
+  this->current_set_element=0;
+  this->set=true;
+  return OP_SUCCESS;
+} /* End of setDiscreteSet() */
+
+
+/* Sets a constant value for the field. Note that this method overwrites the
+ * current field behavior, setting it to FIELD_TYPE_CONSTANT, */
+int ProtoField_buff::setConstant(u8 *val, u32 value_len){
+  this->setStartValue(val, value_len);
+  this->setBehavior(FIELD_TYPE_CONSTANT);
+  return OP_SUCCESS;
+} /* End of setConstant() */
+
+
+u8 *ProtoField_buff::getNextValue(){
+  return this->getNextValue(NULL);
+}
+
+
+/* @warning If the proto type is FIELD_TYPE_RANDOM the original buffer gets
+ * overwritten in every call to getNextValue() */
+u8 *ProtoField_buff::getNextValue(u32 *value_len){
+  u8 *return_val=NULL;
+
+  if(value_len!=NULL)
+    *value_len=this->value_len;
+
+  switch(this->behavior){
+
+
+    case FIELD_TYPE_CONSTANT:
+    case FIELD_TYPE_INCREMENTAL:
+      return this->start_value;
+    break;
+
+    case FIELD_TYPE_RANDOM:
+      /* Overwrite the contents of the original buffer with random data. */
+      for(u32 i=0; i<this->value_len; i++){
+        this->start_value[i]=get_random_u8();
+      }
+      return this->start_value;
+    break;
+
+    case FIELD_TYPE_DISCRETE_SET:
+      assert(this->discrete_set!=NULL);
+      return_val = this->discrete_set[this->current_set_element];
+      if(this->current_set_element+1>=this->discrete_set_len){
+        this->current_set_element=0;
+      }else{
+        this->current_set_element++;
+      }
+      return return_val;
+    break;
+  }
+  assert(false);
+  return 0;
+} /* End of getNextValue() */

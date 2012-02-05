@@ -268,5 +268,31 @@ class ProtoField_mac : public ProtoField{
 
 };
 
+/*****************************************************************************
+ * ProtoField_buff Class                                                       *
+ *****************************************************************************/
+
+class ProtoField_buff : public ProtoField{
+  private:
+    u8 *start_value;
+    u8 *current_value;
+    u32 value_len;
+    u8 **discrete_set;
+    u32 discrete_set_len;
+    u32 current_set_element;
+
+  public:
+    ProtoField_buff();
+    ProtoField_buff(u8 *startvalue, u32 value_len);
+    ProtoField_buff(u8 **set, u32 each_element_len, u32 number_of_elements);
+    ~ProtoField_buff();
+    u8 *getNextValue();
+    u8 *getNextValue(u32 *value_len);
+    int setDiscreteSet(u8 **set, u32 each_element_len, u32 number_of_elements);
+    int setStartValue(u8 *startvalue, u32 value_len);
+    int setConstant(u8 *val, u32 value_len);
+
+};
+
 
 #endif /* __PROTOFIELD_H__ */
