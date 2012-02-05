@@ -989,6 +989,10 @@ int ProbeEngine::udpunpriv_handler(nsock_pool nsp, nsock_event nse, void *mydata
         /* Update statistics */
         tgt->stats.update_rcvd(family, HEADER_TYPE_UDP, readbytes);
         o.stats.update_rcvd(family, HEADER_TYPE_UDP, readbytes);
+        /* Even when we have received some data, we schedule another read
+         * operation so we can get more if the target still transmits stuff */
+        if(!o.disablePacketCapture())
+          nsock_read(nsp, nsi, udpunpriv_handler_wrapper, DEFAULT_UDP_READ_TIMEOUT_MS, tgt);
       break;
 
       default:
