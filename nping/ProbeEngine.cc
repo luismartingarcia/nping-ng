@@ -272,8 +272,10 @@ int ProbeEngine::start(vector<TargetHost *> &Targets, vector<NetworkInterface *>
     this->setup_sniffer(Interfaces, bpf_filters);
 
     /* Schedule the first pcap read event (one for each interface we use) */
-    for(size_t i=0; i<this->pcap_iods.size(); i++){
-      nsock_pcap_read_packet(this->nsp, this->pcap_iods[i], packet_capture_handler_wrapper, -1, NULL);
+    if(!o.disablePacketCapture()){
+      for(size_t i=0; i<this->pcap_iods.size(); i++){
+        nsock_pcap_read_packet(this->nsp, this->pcap_iods[i], packet_capture_handler_wrapper, -1, NULL);
+      }
     }
   }
 
@@ -786,7 +788,8 @@ int ProbeEngine::tcpconnect_handler(nsock_pool nsp, nsock_event nse, void *mydat
 
         /* Schedule a read operation so we can determine if the target is
          * sending any data back to us. */
-        nsock_read(nsp, nsi, tcpconnect_handler_wrapper, 10000, tgt);
+        if(!o.disablePacketCapture())
+          nsock_read(nsp, nsi, tcpconnect_handler_wrapper, 10000, tgt);
 
         /* Update statistics. */
         tgt->stats.update_accepts(family, HEADER_TYPE_TCP);
