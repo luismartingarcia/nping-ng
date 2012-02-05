@@ -188,6 +188,7 @@ class IPv4HeaderTemplate : public HeaderTemplate{
     ProtoField_u16 csum;  /* Checksum                    */
     ProtoField_u8 ttl;    /* Time to Live                */
     ProtoField_u8 nh;     /* Next Header                 */
+    ProtoField_buff opts; /* IP Options                  */
 
     IPv4HeaderTemplate();
     ~IPv4HeaderTemplate();

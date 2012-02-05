@@ -587,6 +587,8 @@ ARPHeader *TargetHost::getARPHeader(){
 
 IPv4Header *TargetHost::getIPv4Header(const char *next_proto){
   IPv4Header *myip4=NULL;
+  u32 ipoptslen=0;
+  u8 *ipopts=NULL;
   assert(this->ip4!=NULL);
   myip4=new IPv4Header();
   myip4->setSourceAddress(this->source_addr->getIPv4Address());
@@ -598,6 +600,9 @@ IPv4Header *TargetHost::getIPv4Header(const char *next_proto){
   myip4->setMF(this->ip4->mf.getNextValue());
   myip4->setDF(this->ip4->df.getNextValue());
   myip4->setTTL(this->ip4->ttl.getNextValue());
+  if((ipopts=this->ip4->opts.getNextValue(&ipoptslen))!=NULL){
+    myip4->setOpts(ipopts, ipoptslen);
+  }
   if(this->ip4->nh.is_set()){
     myip4->setNextProto(this->ip4->nh.getNextValue());
   }else if(next_proto!=NULL){

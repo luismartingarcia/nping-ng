@@ -165,6 +165,7 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
   u8 *auxbuff=NULL;
   u16 *portlist=NULL;
   char errstr[256];
+  static u8 ipoptsbuff[128];
 
   struct option long_options[] =  {
 
@@ -789,16 +790,13 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
       o.ip4.csum.setBehavior(FIELD_TYPE_BADSUM);
     /* IP Options */
     } else if (optcmp(long_options[option_index].name, "ip-options") == 0 ){
-        /* We need to know if options specification is correct so we perform
-         * a little test here, instead of waiting until the IPv4Header
-         * complains and fatal()s we just call parse_ip_options() ourselves.
-         * The call should fatal if something is wrong with user-supplied opts */
-         int foo=0, bar=0;
-         u8 buffer[128];
-         if( parse_ip_options(optarg, buffer, 128, &foo, &bar, errstr, sizeof(errstr)) < 0 )
+        /* Here we parse the supplied IP Options. The result is a binary
+         * buffer than can be inserted directly into an IPv4 header. */
+         int foo=0, bar=0, optslen=0;
+         if((optslen=parse_ip_options(optarg, ipoptsbuff, sizeof(ipoptsbuff), &foo, &bar, errstr, sizeof(errstr))) < 0 )
             nping_fatal(QT_3, "Incorrect IP options specification.");
-         /* If we get here it's safe to store the options */
-         o.setIPOptions(optarg);
+         else
+           o.ip4.opts.setConstant(ipoptsbuff, optslen);
     /* Maximum Transmission Unit */
     } else if (optcmp(long_options[option_index].name, "mtu") == 0 ){
         /* Special treatment for random here since the generated number must be n%8==0 */
