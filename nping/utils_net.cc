@@ -1923,7 +1923,7 @@ const char *spec_to_addresses(const char *target_expr, int af, vector<IPAddress 
       if(total_octets[0]==256 && total_octets[1]==256 && total_octets[2]==256 && total_octets[3]==256 && max_netmask>0)
         return "Supplied range covers the whole address space. Too many addresses.";
       u32 total_addresses= total_octets[0] * total_octets[1] * total_octets[2] * total_octets[3];
-      if(total_addresses > pow(2, 32-max_netmask) )
+      if(total_addresses > pow((double)2, 32-max_netmask) )
         return "The supplied range contains too many addresses.";
 
       /* Now form all possible combinations and turn them into an array of
