@@ -127,11 +127,15 @@ using namespace std;
 
 class ProbeEngine  {
 
+  public:
+    struct timeval start_time;   /* Time at which the engine was started    */
+    struct timeval ts_last_sent; /* Time at which the engine was started    */
+
   private:
     nsock_pool nsp;              /* Internal Nsock pool                     */
     bool nsock_init;             /* True if Nsock pool has been initialized */
     vector<nsock_iod> pcap_iods; /* List of Nsock Pcap descriptors.         */
-    struct timeval start_time;   /* Time at which the engine was started    */
+
     int rawsd4;                  /* Raw socket descriptor for IPv4          */
     int rawsd6;                  /* Raw socket descriptor for IPv6          */
     nsock_iod *fds;              /* IODs for multiple parallel connections  */

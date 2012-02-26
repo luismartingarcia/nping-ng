@@ -377,7 +377,8 @@ int EchoClient::nep_recv_echo(u8 *packet, size_t packetlen){
   u8 *pkt=NULL;
   u16 pktlen=0;
   u8 pktinfobuffer[512+1];
-  struct timeval *t = (struct timeval *)nsock_gettimeofday();
+  struct timeval now;
+  gettimeofday(&now, NULL);
   memset(pktinfobuffer, 0, sizeof(pktinfobuffer));
 
   /* Verify the received packet (this covers authentication etc) */
@@ -402,16 +403,14 @@ int EchoClient::nep_recv_echo(u8 *packet, size_t packetlen){
   /* Guess the time the packet was captured. We do this computing the RTT
    * between the last sent packet and the received echo packet. We assume
    * the packet was captured RTT/2 seconds ago. */
-  struct timeval tmp=o.getLastPacketSentTime();
-  float sent_time = o.stats.get_runtime_elapsed(&tmp);
-  float now_time = o.stats.get_runtime_elapsed(t);
-  float rtt = now_time - sent_time;
-  float final_time = sent_time + rtt/2;
+  double rtt = TIMEVAL_SUBTRACT(now, prob.ts_last_sent)/1000000;
+  double final_time = (TIMEVAL_SUBTRACT(now, prob.start_time)/1000000) + (rtt/2);
+  //printf("RTT=%lf, FT=%lf\n", rtt, final_time);
 
   /* @todo: compute the link layer offset from the DLT type and discard
    * link layer headers */
   getPacketStrInfo("IP", pkt, pktlen, pktinfobuffer, 512);
-  nping_print(VB_0,"CAPT (%.4fs) %s", final_time, pktinfobuffer );
+  nping_print(VB_0,"CAPT (%.4lfs) %s", final_time, pktinfobuffer );
   if( o.getVerbosity() >= VB_3)
     luis_hdump((char*)pkt, pktlen);
 

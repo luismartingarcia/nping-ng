@@ -299,6 +299,13 @@ int ProbeEngine::start(vector<TargetHost *> &Targets, vector<NetworkInterface *>
 
       for(unsigned int t = 0; t < Targets.size(); t++){
 
+        /* Get current timestamp so we can output time elapsed  */
+        if(r==0 && p==0 && t==0){
+          now=this->start_time;
+        }else{
+          gettimeofday(&now, NULL);
+        }
+
         /* There are two possibilities.
          *   1: we are in some unprivileged mode in which we have to issue TCP
          *      connects or send UDP datagrams using regular system calls
@@ -306,7 +313,6 @@ int ProbeEngine::start(vector<TargetHost *> &Targets, vector<NetworkInterface *>
          *   2: We need to produce and send raw packets.
          */
         if(o.mode(DO_TCP_CONNECT) || o.mode(DO_UDP_UNPRIV)){
-          gettimeofday(&now, NULL);
           if(o.mode(DO_TCP_CONNECT)){ // TODO: @todo set the target port right!!
             if(pts!=NULL){
               do_tcp_connect(Targets[t], pts[p], curr_spt, &now);
@@ -329,7 +335,6 @@ int ProbeEngine::start(vector<TargetHost *> &Targets, vector<NetworkInterface *>
           /* Here, schedule the immediate transmission of all the packets
            * provided by the TargetHosts. */
           nping_print(DBG_2, "Starting transmission of %d packets", (int)Packets.size());
-          gettimeofday(&now, NULL);
           while(Packets.size()>0){
               this->send_packet(Targets[t], Packets[0], &now);
              /* Delete the packet we've just sent from the list so we don't send
@@ -501,7 +506,7 @@ int ProbeEngine::send_packet(TargetHost *tgt, PacketElement *pkt, struct timeval
   struct sockaddr_in6 s6;  /* Target IPv6 address                   */
   u8 pktbuff[65535];       /* Binary buffer for the outgoing packet */
   PacketElement *tlayer=NULL;
-  assert(tgt!=NULL && pkt!=NULL);
+  assert(tgt!=NULL && pkt!=NULL && now!=NULL);
   pkt->dumpToBinaryBuffer(pktbuff, 65535);
 
   /* Now decide whether the packet should be transmitted at the raw Ethernet
@@ -539,6 +544,7 @@ int ProbeEngine::send_packet(TargetHost *tgt, PacketElement *pkt, struct timeval
   }
 
   /* Update statistics */
+  this->ts_last_sent=*now;
   if((tlayer=PacketParser::find_transport_layer(pkt))!=NULL){
     o.stats.update_sent(tgt->getTargetAddress()->getVersion(), tlayer->protocol_id(), pkt->getLen());
     tgt->stats.update_sent(tgt->getTargetAddress()->getVersion(), tlayer->protocol_id(), pkt->getLen());
