@@ -369,7 +369,7 @@ int ProbeEngine::start(vector<TargetHost *> &Targets, vector<NetworkInterface *>
           if(max_rtt==0){
             wait_time=DEFAULT_TIME_WAIT_AFTER_LAST_PACKET;
           }else{
-            wait_time=4*max_rtt;
+            wait_time=(4*max_rtt)/1000;
           }
           nping_print(DBG_2, "Final wait time for responses: %d msecs.", wait_time);
         }
