@@ -233,6 +233,8 @@ int TCPHeader::print(FILE *output, int detail) const {
           !this->getCWR() ? "" : "C"
          );
   fprintf(output, " seq=%lu", (long unsigned int)this->getSeq() );
+  if(detail>=PRINT_DETAIL_LOW && this->getACK())
+      fprintf(output, " ack=%lu", (long unsigned int)this->getAck() );
   if(detail>=PRINT_DETAIL_HIGH){
     fprintf(output, " ack=%lu", (long unsigned int)this->getAck() );
     fprintf(output, " off=%d", this->getOffset() );
