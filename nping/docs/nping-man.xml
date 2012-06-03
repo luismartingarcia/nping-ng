@@ -171,7 +171,7 @@ Some obscure options aren't even included here.</para>
 
      <para>IPv6 addresses can only be specified by their fully qualified IPv6
            address or hostname. CIDR and octet ranges aren't supported for
-           IPv6 because they are rarely useful.</para>
+           IPv6 yet.</para>
 
      <para>Nping accepts multiple host specifications on the command line,
            and they don't need to be the same type. The command
