@@ -961,8 +961,7 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
         o.tcp.csum.setConstant(aux16);
         o.udp.csum.setConstant(aux16);
         o.icmp4.csum.setConstant(aux16);
-        //o.icmp6.csum.setConstant(aux16);
-        // TODO @todo Uncomment these when UDP and ICMPv6 are implemented
+        o.icmp6.csum.setConstant(aux16);
       }else{
         nping_fatal(QT_3, "Invalid ICMP Identifier. Value must be 0<=N<2^16.");
       }
