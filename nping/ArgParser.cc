@@ -955,8 +955,7 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
       o.tcp.csum.setBehavior(FIELD_TYPE_BADSUM);
       o.udp.csum.setBehavior(FIELD_TYPE_BADSUM);
       o.icmp4.csum.setBehavior(FIELD_TYPE_BADSUM);
-      //o.icmp6.csum.setBehavior(FIELD_TYPE_BADSUM);
-      // TODO @todo Uncomment these when UDP and ICMPv6 are implemented
+      o.icmp6.csum.setBehavior(FIELD_TYPE_BADSUM);
     } else if (optcmp(long_options[option_index].name, "csum") == 0 ){
       if(parse_u16(optarg, &aux16) == OP_SUCCESS){
         o.tcp.csum.setConstant(aux16);
