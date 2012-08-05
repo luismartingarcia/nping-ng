@@ -48,10 +48,170 @@
  * Things that have NOT been done yet                                        *
  *****************************************************************************/
 
-* Improve IPv6 support. Currently it doesn't work well. The situation should be
-  analyzed in detail because right now Nping has code to send packets at raw
-  transport level (letting the OS craft the IPv6 header), and at raw ethernet
-  level. None of them seems to work well, though.
+* Fix delayed output of RCVD lines in echo mode. There is this function:
+  NpingOps::setDelayedRcvd(const char *str, nsock_event_id id) in
+  NpingOps, but currently it is not being called by the ProbeEngine. Note that
+  since we now print packets using the PacketElement::print() and don't have
+  access to a proper string, it is possible that we need to save a copy of the
+  packet instead of storing it's ascii representation, so we can call print()
+  on it, and get the info printed out.
+
+* Check int ProbeEngine::packet_capture_handler(). It's probably leaking a
+  lot of memory. When run with "sudo ./nping localhost -c0  --delay 0ms"
+  allocated memory keeps growing and growing. There are two things to check,
+  captured packets, and sent packets. Verify that any captured packet that is
+  not a response is freed. Also, sent and received packets, need to be freed
+  after certain time.
+
+* Packets captured seem to include things like the 2-byte Ethernet trailing
+  checksum. Check nse_readpcap() is working correctly.
+
+    sudo ./nping google.com --tcp
+
+    Starting Nping 0.5.61TEST4 ( http://nmap.org/nping ) at 2012-08-05 19:44 CEST
+    SENT (0.0000s) IPv4[192.168.1.171 > 74.125.230.196 ttl=64 id=56884 iplen=40] TCP[12784 > 80 S seq=1741618064 win=1480]
+    RCVD (0.0240s) IPv4[74.125.230.196 > 192.168.1.171 ttl=55 id=19908 iplen=44] TCP[80 > 12784 SA seq=2851297000 ack=1741618065 win=14300 <mss 1430>] Payload[2 bytes]
+
+
+* In Echo mode, sudo ./nping --ec "public" echo.nmap.org --tcp -vvv, one of
+  the stats lines is printed twice (kindof).
+
+    Max rtt: 178.163ms | Min rtt: 168.957ms | Avg rtt: 173.560ms
+    Raw packets sent: 2 (80B) | Rcvd: 2 (92B) | Lost: 0 (0.00%)| Echoed: 1 (40B)
+    Raw packets sent: 2 (80B) | Rcvd: 2 (92B) | Lost: 0 (0.00%)
+    Tx time: 1.45961s | Tx bytes/s: 54.81 | Tx pkts/s: 1.37
+    Rx time: 1.45961s | Rx bytes/s: 63.03 | Rx pkts/s: 1.37
+    Nping done: 1 IP address pinged in 3.32 seconds
+
+* Decide on packet output. Ideally, each PacketElement class should print itself.
+  That's what we do now, but the problem is that we don't get "IP:Port > IP:Port"
+  things like 192.168.1.3:4456 > 72.1.1.1:80, because the IPv4Header class
+  doesn't know about the TCPHeader class that follows. Is it acceptable to
+  print IPv4[...] TCP[...] or we want to have the original nping output back?
+
+* Now that nping has multi packet support, consider extending the echo protocol
+  so multiple types of patches can be matched by the echo server. This could be
+  done by allowing one NEP_PACKET_SPEC per transport protocol (IP, TCP, UDP).
+
+* Fix stats for the echo server. Currently it prints "Raw packets sent". That
+  line needs to dissapear from the output.
+
+    Starting Nping 0.5.61TEST4 ( http://nmap.org/nping ) at 2012-08-05 20:09 CEST
+    Packet capture will be performed using network interface wlan0.
+    Waiting for connections...
+    ^C
+    Raw packets captured: 0 (0B) | Echoed: 0 (0B) | Not Matched: 0 (0B) (0.00%)
+    Raw packets sent: 0 (0B) | Rcvd: 0 (0B) | Lost: 0 (0.00%)
+    Tx time: 0.95463s | Tx bytes/s: 0.00 | Tx pkts/s: 0.00
+    Rx time: 0.95463s | Rx bytes/s: 0.00 | Rx pkts/s: 0.00
+    Nping done: 0 clients served in 0.95 seconds
+
+* Improve stats. When sending multiple packets at the same time, provide
+  sent/rcvd stats for each type.
+
+    sudo ./nping google.com --tcp --icmp
+
+    Starting Nping 0.5.61TEST4 ( http://nmap.org/nping ) at 2012-08-05 20:14 CEST
+    SENT (0.0000s) IPv4[192.168.1.171 > 74.125.230.197 ttl=64 id=28991 iplen=40] TCP[32925 > 80 S seq=926182838 win=1480]
+    SENT (0.0000s) IPv4[192.168.1.171 > 74.125.230.197 ttl=64 id=28992 iplen=28] ICMPv4[Echo request id=50987 seq=0]
+    RCVD (0.0250s) IPv4[74.125.230.197 > 192.168.1.171 ttl=55 id=45449 iplen=44] TCP[80 > 32925 SA seq=789301890 ack=926182839 win=14300 <mss 1430>] Payload[2 bytes]
+    RCVD (0.0250s) IPv4[74.125.230.197 > 192.168.1.171 ttl=55 id=45450 iplen=28] ICMPv4[Echo reply id=50987 seq=0] Payload[18 bytes]
+    ^C
+    Max rtt: 25.957ms | Min rtt: 25.141ms | Avg rtt: 25.549ms
+    Raw packets sent: 2 (68B) | Rcvd: 2 (92B) | Lost: 0 (0.00%)
+    Tx time: 0.62958s | Tx bytes/s: 108.01 | Tx pkts/s: 3.18
+    Rx time: 0.62958s | Rx bytes/s: 146.13 | Rx pkts/s: 3.18
+    Nping done: 1 IP address pinged in 0.70 seconds
+
+* For Echo clients, fix CAPT time calculation and delayed output.
+  Currently it doesn't work:
+
+     ./nping --ec public --tcp echo.nmap.com
+
+    Starting Nping 0.5.61TEST4 ( http://nmap.org/nping ) at 2012-08-05 20:15 CEST
+    SENT (0.0000s) IPv4[192.168.1.171 > 74.207.244.221 ttl=64 id=63688 iplen=40] TCP[26528 > 80 S seq=2773943728 win=1480]
+    RCVD (0.1740s) IPv4[74.207.244.221 > 192.168.1.171 ttl=52 id=0 iplen=44] TCP[80 > 26528 SA seq=2565506202 ack=2773943729 win=14600 <mss 1460>] Payload[2 bytes]
+    CAPT (0.0000s) TCP 83.50.255.169:26528 > 74.207.244.221:80 S ttl=54 id=63688 iplen=40  seq=2773943728 win=1480
+
+* Sometimes, the last response is not printed (or captured). This happens, at
+  least when -c1 is passed. Apparently with -c2 it does not happen, but this
+  needs to be verified.
+
+    sudo ./nping localhost nmap.org -c1
+
+    Starting Nping 0.5.61TEST4 ( http://nmap.org/nping ) at 2012-08-05 20:24 CEST
+    SENT (0.0000s) IPv4[127.0.0.1 > 127.0.0.1 ttl=64 id=11917 iplen=28] ICMPv4[Echo request id=890 seq=0]
+    RCVD (0.0000s) IPv4[127.0.0.1 > 127.0.0.1 ttl=64 id=32688 iplen=28] ICMPv4[Echo reply id=890 seq=0]
+    SENT (0.9930s) IPv4[192.168.1.171 > 74.207.254.18 ttl=64 id=11917 iplen=28] ICMPv4[Echo request id=890 seq=0]
+
+    Statistics for host 127.0.0.1:
+     |_ Raw packets sent: 1 (28B) | Rcvd: 1 (28B) | Lost: 0 (0.00%)
+     |_ Max rtt: 0.190ms | Min rtt: 0.190ms | Avg rtt: 0.190ms
+    Statistics for host 74.207.254.18:
+     |_ Raw packets sent: 1 (28B) | Rcvd: 0 (0B) | Lost: 1 (100.00%)
+     |_ Max rtt: N/A | Min rtt: N/A | Avg rtt: N/A
+    Raw packets sent: 2 (56B) | Rcvd: 1 (28B) | Lost: 1 (50.00%)
+    Tx time: 0.99239s | Tx bytes/s: 56.43 | Tx pkts/s: 2.02
+    Rx time: 0.99240s | Rx bytes/s: 28.21 | Rx pkts/s: 1.01
+    Nping done: 2 IP addresses pinged in 1.08 seconds
+
+
+    sudo ./nping localhost nmap.org -c2
+
+    Starting Nping 0.5.61TEST4 ( http://nmap.org/nping ) at 2012-08-05 20:24 CEST
+    SENT (0.0000s) IPv4[127.0.0.1 > 127.0.0.1 ttl=64 id=58343 iplen=28] ICMPv4[Echo request id=803 seq=0]
+    RCVD (0.0000s) IPv4[127.0.0.1 > 127.0.0.1 ttl=64 id=32689 iplen=28] ICMPv4[Echo reply id=803 seq=0]
+    SENT (1.0000s) IPv4[192.168.1.171 > 74.207.254.18 ttl=64 id=58343 iplen=28] ICMPv4[Echo request id=803 seq=0]
+    RCVD (1.1770s) IPv4[74.207.254.18 > 192.168.1.171 ttl=52 id=29325 iplen=28] ICMPv4[Echo reply id=803 seq=0] Payload[18 bytes]
+    SENT (2.0010s) IPv4[127.0.0.1 > 127.0.0.1 ttl=64 id=58344 iplen=28] ICMPv4[Echo request id=803 seq=1]
+    RCVD (2.0010s) IPv4[127.0.0.1 > 127.0.0.1 ttl=64 id=32690 iplen=28] ICMPv4[Echo reply id=803 seq=1]
+    SENT (3.0000s) IPv4[192.168.1.171 > 74.207.254.18 ttl=64 id=58344 iplen=28] ICMPv4[Echo request id=803 seq=1]
+    RCVD (3.1820s) IPv4[74.207.254.18 > 192.168.1.171 ttl=52 id=29326 iplen=28] ICMPv4[Echo reply id=803 seq=1] Payload[18 bytes]
+
+    Statistics for host 127.0.0.1:
+     |_ Raw packets sent: 2 (56B) | Rcvd: 2 (56B) | Lost: 0 (0.00%)
+     |_ Max rtt: 0.182ms | Min rtt: 0.116ms | Avg rtt: 0.149ms
+    Statistics for host 74.207.254.18:
+     |_ Raw packets sent: 2 (56B) | Rcvd: 2 (92B) | Lost: 0 (0.00%)
+     |_ Max rtt: 182.110ms | Min rtt: 177.804ms | Avg rtt: 179.957ms
+    Raw packets sent: 4 (112B) | Rcvd: 4 (148B) | Lost: 0 (0.00%)
+    Tx time: 3.00044s | Tx bytes/s: 37.33 | Tx pkts/s: 1.33
+    Rx time: 3.71207s | Rx bytes/s: 39.87 | Rx pkts/s: 1.08
+    Nping done: 2 IP addresses pinged in 3.80 seconds
+
+* When targeting IPv4 and IPv6 hosts at the same time (and probably when
+  targeting hosts reachable through different network interfaces with different
+  configured IPs), the BPF filter is not correct. For example, when running
+  "nping ::1 localhost" we only get IPv6 responses. If we invert the order,
+  "nping localhost ::1" we get IPv4 responses (because localhost is resolved
+  for IPv4 by default). The cause is a single source IP address being specified
+  in the BPF filter. These are the filters that are being generated for those
+  two examples: "dst host ::1 and (src host ::1 or src host 127.0.0.1)" and
+  "dst host 127.0.0.1 and (src host 127.0.0.1 or src host ::1)". We should,
+  either get rid of the "dst host" part, or include every source IP that we
+  are using.
+
+* The fact that TargetHosts make a copy of the header templates that are
+  passed is weird. Maybe instead of taking pointers, the setTCP, setEth...
+  functions should take the templates by value. That way the code would be
+  less confusing.
+
+* In the packet capture handler, when we iterate over the list of target hosts,
+  it would be great if we could skip those hosts that are not reachable through
+  the network interface where the captured packet came from.ç
+
++ Document the ability of Nping to send payloads in TCP Connect mode. Use the
+  example of this payload: --data "474554202f20485454502f312e300d0a0d0a", which
+  is "HTTP GET / HTTP/1.0\r\n"
+
+    sudo ./nping --tcp-connect google.com -p80 --data "474554202f20485454502f312e300d0a0d0a" -vvvv
+
+* Remove test MISC_21(1st of them) and MISC_22. It doesn't make sense anymore.
+  If we want to re-anable nping acting as a kind of tcpdump, we'd have to
+  redesign the thing.
+
+* Now UDP unpriv sends 0 bytes, not 4. Change that in Nping's test script and
+  also check references to that in the man page.
 
 * Investigate an IPv6-related core dump reported by Vasiliy Kulikov.
   More info: http://seclists.org/nmap-dev/2011/q3/567
@@ -797,3 +957,26 @@ SENT (1.0580s) ARP who has 192.168.240.139? Tell 192.168.240.1
 0020   00 00 00 00 00 00 c0 a8  f0 8b                    ..........      
 
 
+[DONE] Fix echo mode. Now some fields get incremented in each iteration and that
+  messes up the matching. As a result, only the first CAPT is received. The rest
+  of the packets don't get matched at the server side.
+
+    Starting Nping 0.5.61TEST4 ( http://nmap.org/nping ) at 2012-08-05 19:43 CEST
+    SENT (0.0000s) IPv4[192.168.1.171 > 74.207.244.221 ttl=64 id=57016 iplen=40] TCP[30527 > 80 S seq=3695554152 win=1480]
+    RCVD (0.1690s) IPv4[74.207.244.221 > 192.168.1.171 ttl=52 id=0 iplen=44] TCP[80 > 30527 SA seq=2377841490 ack=3695554153 win=14600 <mss 1460>] Payload[2 bytes]
+    CAPT (0.0000s) TCP 83.50.255.169:30527 > 74.207.244.221:80 S ttl=54 id=57016 iplen=40  seq=3695554152 win=1480
+    SENT (1.0000s) IPv4[192.168.1.171 > 74.207.244.221 ttl=64 id=57017 iplen=40] TCP[30528 > 80 S seq=3695554153 win=1480]
+    RCVD (1.1680s) IPv4[74.207.244.221 > 192.168.1.171 ttl=52 id=0 iplen=44] TCP[80 > 30528 SA seq=2395577066 ack=3695554154 win=14600 <mss 1460>] Payload[2 bytes]
+    SENT (2.0000s) IPv4[192.168.1.171 > 74.207.244.221 ttl=64 id=57018 iplen=40] TCP[30529 > 80 S seq=3695554154 win=1480]
+    RCVD (2.1700s) IPv4[74.207.244.221 > 192.168.1.171 ttl=52 id=0 iplen=44] TCP[80 > 30529 SA seq=2419052034 ack=3695554155 win=14600 <mss 1460>] Payload[2 bytes]
+    SENT (3.0010s) IPv4[192.168.1.171 > 74.207.244.221 ttl=64 id=57019 iplen=40] TCP[30530 > 80 S seq=3695554155 win=1480]
+    RCVD (3.1700s) IPv4[74.207.244.221 > 192.168.1.171 ttl=52 id=0 iplen=44] TCP[80 > 30530 SA seq=2435093077 ack=3695554156 win=14600 <mss 1460>] Payload[2 bytes]
+    SENT (4.0010s) IPv4[192.168.1.171 > 74.207.244.221 ttl=64 id=57020 iplen=40] TCP[30531 > 80 S seq=3695554156 win=1480]
+    RCVD (4.1790s) IPv4[74.207.244.221 > 192.168.1.171 ttl=52 id=0 iplen=44] TCP[80 > 30531 SA seq=2443052137 ack=3695554157 win=14600 <mss 1460>] Payload[2 bytes]
+
+    Max rtt: 178.034ms | Min rtt: 168.797ms | Avg rtt: 171.155ms
+    Raw packets sent: 5 (200B) | Rcvd: 5 (230B) | Lost: 0 (0.00%)| Echoed: 1 (40B)
+    Raw packets sent: 5 (200B) | Rcvd: 5 (230B) | Lost: 0 (0.00%)
+    Tx time: 4.00116s | Tx bytes/s: 49.99 | Tx pkts/s: 1.25
+    Rx time: 4.68375s | Rx bytes/s: 49.11 | Rx pkts/s: 1.07
+    Nping done: 1 IP address pinged in 6.08 seconds
