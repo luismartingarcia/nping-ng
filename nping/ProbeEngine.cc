@@ -554,13 +554,27 @@ int ProbeEngine::send_packet(TargetHost *tgt, PacketElement *pkt, struct timeval
 
   /* Finally, print the packet we've just sent */
   if(o.showSentPackets()){
+    PacketElement *pkt2print=pkt;
     nping_print(VB_0|NO_NEWLINE,"SENT (%.4fs) ", ((double)TIMEVAL_MSEC_SUBTRACT(*now, this->start_time)) / 1000);
+
+    /* Skip the Ethernet layer if necessary */
     if(o.showEth()==false && pkt->protocol_id()==HEADER_TYPE_ETHERNET){
-      pkt->getNextElement()->print(stdout, o.getDetailLevel());
-    }else{
-      pkt->print(stdout, o.getDetailLevel());
+      pkt2print=pkt->getNextElement();
     }
-    nping_print(VB_0|NO_NEWLINE,"\n");
+    pkt2print->print(stdout, o.getDetailLevel());
+    if(o.getVerbosity()>=VB_3){
+      int mylen=0;
+      u8 *mybuff = pkt2print->getBinaryBuffer(&mylen);
+      if(mybuff!=NULL){
+        if(mylen>0){
+          nping_print(VB_3|NO_NEWLINE,"\n");
+          print_hexdump(VB_3 | NO_NEWLINE, mybuff,mylen);
+        }
+        free(mybuff);
+      }
+    }else{
+      nping_print(VB_0|NO_NEWLINE,"\n");
+    }
   }
   return OP_SUCCESS;
 } /* End of send_packet() */
@@ -693,9 +707,28 @@ int ProbeEngine::packet_capture_handler(nsock_pool nsp, nsock_event nse, void *a
            * case. */
           for(size_t i=0; i<o.target_hosts.size(); i++){
             if(o.target_hosts[i]->is_response(pkt, &now)){
+              /* It's a response! Let's print it. */
+              PacketElement *pkt2print=pkt;
               nping_print(VB_0|NO_NEWLINE,"RCVD (%.4fs) ", ((double)TIMEVAL_MSEC_SUBTRACT(now, this->start_time)) / 1000);
-              pkt->print(stdout, o.getDetailLevel());
-              printf("\n");
+              /* Skip the Ethernet layer if necessary */
+              if(o.showEth()==false && pkt->protocol_id()==HEADER_TYPE_ETHERNET){
+                pkt2print=pkt->getNextElement();
+              }
+              pkt2print->print(stdout, o.getDetailLevel());
+              if(o.getVerbosity()>=VB_3){
+                int mylen=0;
+                u8 *mybuff = pkt2print->getBinaryBuffer(&mylen);
+                if(mybuff!=NULL){
+                  if(mylen>0){
+                    nping_print(VB_3|NO_NEWLINE,"\n");
+                    print_hexdump(VB_3 | NO_NEWLINE, mybuff,mylen);
+                  }
+                  free(mybuff);
+                }
+              }else{
+                nping_print(VB_0|NO_NEWLINE,"\n");
+              }
+
               /* Find which transport layer protocol we have received and
                * update stats accordingly. */
               if((tlayer=PacketParser::find_transport_layer(pkt))!=NULL){
