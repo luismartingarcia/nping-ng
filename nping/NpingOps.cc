@@ -1422,7 +1422,7 @@ bool NpingOps::canRunUDPWithoutPrivileges(){
 
 void NpingOps::displayNpingDoneMsg(){
   if(this->getRole()==ROLE_SERVER){
-    nping_print(QT_1, "Nping done: %lu %s served in %.2et_clief seconds",
+    nping_print(QT_1, "Nping done: %lu %s served in %.2f seconds",
                (unsigned long)this->stats.get_clients_served(),
                (this->stats.get_clients_served()==1)? "client" : "clients",
                this->stats.get_runtime_elapsed(NULL)
