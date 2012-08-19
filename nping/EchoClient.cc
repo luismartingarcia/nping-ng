@@ -761,7 +761,7 @@ int EchoClient::generate_packet_spec(EchoHeader *h, int spec_proto){
     h->addFieldSpec(PSPEC_IPv6_FLOW, (u8*)&aux32);
   }else{ /* AF_INET */
     /* IP Identification */
-    aux16=o.ip4.id.getNextValue();
+    aux16=htons(o.ip4.id.getNextValue());
     h->addFieldSpec(PSPEC_IPv4_ID, (u8*)&aux16);
     /* Type of Service */
     aux8=o.ip4.tos.getNextValue();
