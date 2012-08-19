@@ -2027,6 +2027,24 @@ int NpingOps::setupTargetHosts(){
         newhost->setEth(&myeth);
       }
 
+      /* Now let's check if we are running in echo client mode. In this case
+       * the protocol fields cannot vary. Otherwise packets would differ from
+       * the specification passed to the server during the session
+       * establishment (NEP_PACKET_SPEC), and the matching engine wouldn't be
+       * able to identify and echo them. For this reason, in Echo Client mode,
+       * we need to avoid ProbeFields with the FIELD_TYPE_INCREMENTAL behavior
+       * (See HeaderTemplates.cc for details). So here, we go over the list
+       * of fields of the headers we plan to send and we change their behavior
+       * to make sure they keep constant (FILED_TYPE_CONSTANT).*/
+      if(this->getRole()==ROLE_CLIENT){
+        this->ip4.id.setBehavior(FIELD_TYPE_CONSTANT);
+        this->tcp.sport.setBehavior(FIELD_TYPE_CONSTANT);
+        this->tcp.seq.setBehavior(FIELD_TYPE_CONSTANT);
+        this->udp.sport.setBehavior(FIELD_TYPE_CONSTANT);
+        this->icmp4.seq.setBehavior(FIELD_TYPE_CONSTANT);
+        this->icmp6.seq.setBehavior(FIELD_TYPE_CONSTANT);
+      }
+
       /* Now, tell the target host which packets it has to send. Note that when
        * we are doing ARP, the IP header is useless, but we still pass it. This
        * is OK, TargetHosts will ignore the header in this case. */
