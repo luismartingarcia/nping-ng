@@ -681,7 +681,7 @@ int ProbeEngine::packet_capture_handler(nsock_pool nsp, nsock_event nse, void *a
   enum nse_status status = nse_status(nse);
   enum nse_type type = nse_type(nse);
   const u8 *rcvd_pkt = NULL;                /* Points to the captured packet */
-  size_t rcvd_pkt_len = 0;                  /* Lenght of the captured packet */
+  size_t rcvd_pkt_len = 0;                  /* Length of the captured packet */
   struct timeval pcaptime;                  /* Time the packet was captured  */
   struct timeval now;
   gettimeofday(&now, NULL);
