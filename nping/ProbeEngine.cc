@@ -736,6 +736,7 @@ int ProbeEngine::packet_capture_handler(nsock_pool nsp, nsock_event nse, void *a
                 o.setDelayedRcvd(pkt, timestamp, ev_id);
               }else{
                 ProbeEngine::print_rcvd_pkt(pkt, timestamp);
+                PacketParser::freePacketChain(pkt);
               }
             }
           }
