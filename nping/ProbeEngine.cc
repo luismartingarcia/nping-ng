@@ -707,26 +707,35 @@ int ProbeEngine::packet_capture_handler(nsock_pool nsp, nsock_event nse, void *a
            * case. */
           for(size_t i=0; i<o.target_hosts.size(); i++){
             if(o.target_hosts[i]->is_response(pkt, &now)){
-              /* It's a response! Let's print it. */
-              float timestamp=(((double)TIMEVAL_MSEC_SUBTRACT(now, this->start_time)) / 1000);
 
-              if( o.getRole() == ROLE_CLIENT ){
-                int delay=(int)MIN(o.getDelay()*0.33, 333);
-                nsock_event_id ev_id=nsock_timer_create(nsp, delayed_output_handler_wrapper, delay, NULL);
-                o.setDelayedRcvd(pkt, timestamp, ev_id);
-              }else{
-                  ProbeEngine::print_rcvd_pkt(pkt, timestamp);
-              }
-
-
-
-              /* Find which transport layer protocol we have received and
+              /* It's a response! Let's update the stats and print its contents. */
+              /* First, find which transport layer protocol we have received and
                * update stats accordingly. */
               if((tlayer=PacketParser::find_transport_layer(pkt))!=NULL){
                 o.stats.update_rcvd(o.target_hosts[i]->getTargetAddress()->getVersion(), tlayer->protocol_id(), rcvd_pkt_len);
                 o.target_hosts[i]->stats.update_rcvd(o.target_hosts[i]->getTargetAddress()->getVersion(), tlayer->protocol_id(), rcvd_pkt_len);
               }else{
                 nping_warning(QT_2, "%s(): No transport layer found. Please report this bug.", __func__);
+              }
+              /* Now print the packet. If we are in Echo Client Mode, we delay the
+               * output for a bit, so we can receive the CAPT version and print it
+               * right after the SENT line. This allows users to easily compare
+               * both packets. Otherwise, there would be a RCVD line in the middle
+               * that would make comparisons a bit less straightforward. If we
+               * are in normal mode, we just call print_rcvd_pkt() and print it
+               * right away. */
+              float timestamp=(((double)TIMEVAL_MSEC_SUBTRACT(now, this->start_time)) / 1000);
+              if( o.getRole() == ROLE_CLIENT ){
+                int delay=(int)MIN(o.getDelay()*0.33, 333);
+                /* Here, we schedule a timing event. When the timer goes off,
+                 * the handler prints the packet. However, the packet may
+                 * get printed earlier than that, as soon as we get a CAPT
+                 * (echoed) packet. We pass the handler so we can cancel the
+                 * event in that case, so it doesn't get printed twice. */
+                nsock_event_id ev_id=nsock_timer_create(nsp, delayed_output_handler_wrapper, delay, NULL);
+                o.setDelayedRcvd(pkt, timestamp, ev_id);
+              }else{
+                ProbeEngine::print_rcvd_pkt(pkt, timestamp);
               }
             }
           }
