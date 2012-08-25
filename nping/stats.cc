@@ -523,6 +523,140 @@ u64_t PacketStats::get_bytes_echoed(){
 } /* End of get_bytes_echoed() */
 
 
+u64_t PacketStats::get_tcp_sent(){
+  return this->tcp[INDEX_SENT];
+} /* End of get_tcp_sent() */
+
+
+u64_t PacketStats::get_tcp_rcvd(){
+  return this->tcp[INDEX_RCVD];
+} /* End of get_tcp_rcvd() */
+
+
+u64_t PacketStats::get_tcp_echoed(){
+  return this->tcp[INDEX_ECHO];
+} /* End of get_tcp_echoed() */
+
+
+u64_t PacketStats::get_tcp_lost(){
+  return (this->tcp[INDEX_SENT] <= this->tcp[INDEX_RCVD]) ? 0 :
+      (this->tcp[INDEX_SENT] - this->tcp[INDEX_RCVD]);
+} /* End of get_tcp_lost() */
+
+
+u64_t PacketStats::get_udp_sent(){
+  return this->udp[INDEX_SENT];
+} /* End of get_udp_sent() */
+
+
+u64_t PacketStats::get_udp_rcvd(){
+  return this->udp[INDEX_RCVD];
+} /* End of get_udp_rcvd() */
+
+
+u64_t PacketStats::get_udp_echoed(){
+  return this->udp[INDEX_ECHO];
+} /* End of get_udp_echoed() */
+
+
+u64_t PacketStats::get_udp_lost(){
+  return (this->udp[INDEX_SENT] <= this->udp[INDEX_RCVD]) ? 0 :
+      (this->udp[INDEX_SENT] - this->udp[INDEX_RCVD]);
+} /* End of get_udp_lost() */
+
+u64_t PacketStats::get_icmp4_sent(){
+  return this->icmp4[INDEX_SENT];
+} /* End of get_icmp4_sent() */
+
+
+u64_t PacketStats::get_icmp4_rcvd(){
+  return this->icmp4[INDEX_RCVD];
+} /* End of get_icmp4_rcvd() */
+
+
+u64_t PacketStats::get_icmp4_echoed(){
+  return this->icmp4[INDEX_ECHO];
+} /* End of get_icmp4_echoed() */
+
+
+u64_t PacketStats::get_icmp4_lost(){
+  return (this->icmp4[INDEX_SENT] <= this->icmp4[INDEX_RCVD]) ? 0 :
+      (this->icmp4[INDEX_SENT] - this->icmp4[INDEX_RCVD]);
+} /* End of get_icmp4_lost() */
+
+
+u64_t PacketStats::get_icmp6_sent(){
+  return this->icmp6[INDEX_SENT];
+} /* End of get_icmp6_sent() */
+
+
+u64_t PacketStats::get_icmp6_rcvd(){
+  return this->icmp6[INDEX_RCVD];
+} /* End of get_icmp6_rcvd() */
+
+
+u64_t PacketStats::get_icmp6_echoed(){
+  return this->icmp6[INDEX_ECHO];
+} /* End of get_icmp6_echoed() */
+
+
+u64_t PacketStats::get_icmp6_lost(){
+  return (this->icmp6[INDEX_SENT] <= this->icmp6[INDEX_RCVD]) ? 0 :
+      (this->icmp6[INDEX_SENT] - this->icmp6[INDEX_RCVD]);
+} /* End of get_icmp6_lost() */
+
+
+u64_t PacketStats::get_arp_sent(){
+  return this->arp[INDEX_SENT];
+} /* End of get_arp_sent() */
+
+
+u64_t PacketStats::get_arp_rcvd(){
+  return this->arp[INDEX_RCVD];
+} /* End of get_arp_rcvd() */
+
+
+u64_t PacketStats::get_arp_echoed(){
+  return this->arp[INDEX_ECHO];
+} /* End of get_arp_echoed() */
+
+
+u64_t PacketStats::get_arp_lost(){
+  return (this->arp[INDEX_SENT] <= this->arp[INDEX_RCVD]) ? 0 :
+      (this->arp[INDEX_SENT] - this->arp[INDEX_RCVD]);
+} /* End of get_arp_lost() */
+
+
+u64_t PacketStats::get_ip4_sent(){
+  return this->ip4[INDEX_SENT];
+} /* End of get_ip4_sent() */
+
+
+u64_t PacketStats::get_ip4_rcvd(){
+  return this->ip4[INDEX_RCVD];
+} /* End of get_ip4_rcvd() */
+
+
+u64_t PacketStats::get_ip4_echoed(){
+  return this->ip4[INDEX_ECHO];
+} /* End of get_ip4_echoed() */
+
+
+u64_t PacketStats::get_ip6_sent(){
+  return this->ip6[INDEX_SENT];
+} /* End of get_ip6_sent() */
+
+
+u64_t PacketStats::get_ip6_rcvd(){
+  return this->ip6[INDEX_RCVD];
+} /* End of get_ip6_rcvd() */
+
+
+u64_t PacketStats::get_ip6_echoed(){
+  return this->ip6[INDEX_ECHO];
+} /* End of get_ip6_echoed() */
+
+
 u32 PacketStats::get_clients_served(){
   return this->echo_clients_served;
 } /* End of get_clients_served() */
