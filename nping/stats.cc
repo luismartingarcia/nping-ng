@@ -598,6 +598,18 @@ double PacketStats::get_percent_lost(int proto){
 } /* End of get_percent_lost() */
 
 
+double PacketStats::get_percent_not_echoed(int proto){
+  /* Only compute percentage if we actually sent packets, don't do divisions
+   * by zero! (this could happen when user presses CTRL-C and we print the
+   * stats */
+  u64_t not_echoed=this->get_sent(proto)-this->get_echoed(proto);
+  double percentlost=0.0;
+  if(not_echoed!=0 && this->get_sent(proto)!=0)
+    percentlost=((double)not_echoed)/((double)this->get_sent(proto));
+  return percentlost*100;
+} /* End of get_percent_lost() */
+
+
 u32 PacketStats::get_clients_served(){
   return this->echo_clients_served;
 } /* End of get_clients_served() */

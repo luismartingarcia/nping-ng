@@ -273,6 +273,7 @@ class PacketStats {
     u64_t get_echoed(int proto);
     u64_t get_lost(int proto);
     double get_percent_lost(int proto);
+    double get_percent_not_echoed(int proto);
     u32 get_clients_served();
     u64_t get_connects(int proto);
     u64_t get_accepts(int proto);
