@@ -235,6 +235,8 @@ class PacketStats {
 
     int update_packet_count(int index, int ip_version, int proto, u32 pkt_len);
     int update_connection_count(int index, int ip_version, int proto);
+    u64_t *proto2stats(int proto);
+    u64_t get_stat(int proto, int index);
 
  public:
     PacketStats();
@@ -266,32 +268,11 @@ class PacketStats {
     u64_t get_bytes_rcvd();
     u64_t get_pkts_echoed();
     u64_t get_bytes_echoed();
-    u64_t get_tcp_sent();
-    u64_t get_tcp_rcvd();
-    u64_t get_tcp_echoed();
-    u64_t get_tcp_lost();
-    u64_t get_udp_sent();
-    u64_t get_udp_rcvd();
-    u64_t get_udp_echoed();
-    u64_t get_udp_lost();
-    u64_t get_icmp4_sent();
-    u64_t get_icmp4_rcvd();
-    u64_t get_icmp4_echoed();
-    u64_t get_icmp4_lost();
-    u64_t get_icmp6_sent();
-    u64_t get_icmp6_rcvd();
-    u64_t get_icmp6_echoed();
-    u64_t get_icmp6_lost();
-    u64_t get_arp_sent();
-    u64_t get_arp_rcvd();
-    u64_t get_arp_echoed();
-    u64_t get_arp_lost();
-    u64_t get_ip4_sent();
-    u64_t get_ip4_rcvd();
-    u64_t get_ip4_echoed();
-    u64_t get_ip6_sent();
-    u64_t get_ip6_rcvd();
-    u64_t get_ip6_echoed();
+    u64_t get_sent(int proto);
+    u64_t get_rcvd(int proto);
+    u64_t get_echoed(int proto);
+    u64_t get_lost(int proto);
+    double get_percent_lost(int proto);
     u32 get_clients_served();
     u64_t get_connects(int proto);
     u64_t get_accepts(int proto);

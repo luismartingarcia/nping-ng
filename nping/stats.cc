@@ -274,6 +274,41 @@ void PacketStats::reset(){
 } /* End of reset() */
 
 
+/* Takes a protocol and returns the appropriate stats array. */
+u64_t *PacketStats::proto2stats(int proto){
+  switch(proto){
+      case HEADER_TYPE_TCP:
+        return this->tcp;
+      break;
+
+      case HEADER_TYPE_UDP:
+        return this->udp;
+      break;
+
+      case HEADER_TYPE_ICMPv4:
+        return this->icmp4;
+      break;
+
+      case HEADER_TYPE_ICMPv6:
+        return this->icmp6;
+      break;
+
+      case HEADER_TYPE_ARP:
+        return this->arp;
+      break;
+
+      case HEADER_TYPE_IPv4:
+        return this->ip4;
+      break;
+
+      case HEADER_TYPE_IPv6:
+        return this->ip4;
+      break;
+  }
+  return NULL;
+} /* End of proto2stats() */
+
+
 /** Updates packet and byte count for sent/received/echoed packets. This
   * method is meant to be used internally. Use the update_sent(), update_rcvd()
   * and update_echo() instead. */
@@ -523,138 +558,44 @@ u64_t PacketStats::get_bytes_echoed(){
 } /* End of get_bytes_echoed() */
 
 
-u64_t PacketStats::get_tcp_sent(){
-  return this->tcp[INDEX_SENT];
-} /* End of get_tcp_sent() */
+u64_t PacketStats::get_stat(int proto, int index){
+  u64_t *protostats = this->proto2stats(proto);
+  assert(protostats!=NULL);
+  assert(index==INDEX_SENT || index==INDEX_RCVD || index==INDEX_ECHO);
+  return protostats[index];
+} /* End of get_stat() */
 
 
-u64_t PacketStats::get_tcp_rcvd(){
-  return this->tcp[INDEX_RCVD];
-} /* End of get_tcp_rcvd() */
+u64_t PacketStats::get_sent(int proto){
+  return this->get_stat(proto, INDEX_SENT);
+}/* End of get_sent() */
 
 
-u64_t PacketStats::get_tcp_echoed(){
-  return this->tcp[INDEX_ECHO];
-} /* End of get_tcp_echoed() */
+u64_t PacketStats::get_rcvd(int proto){
+  return this->get_stat(proto, INDEX_RCVD);
+}/* End of get_rcvd() */
 
 
-u64_t PacketStats::get_tcp_lost(){
-  return (this->tcp[INDEX_SENT] <= this->tcp[INDEX_RCVD]) ? 0 :
-      (this->tcp[INDEX_SENT] - this->tcp[INDEX_RCVD]);
-} /* End of get_tcp_lost() */
+u64_t PacketStats::get_echoed(int proto){
+  return this->get_stat(proto, INDEX_ECHO);
+}/* End of get_echoed() */
 
 
-u64_t PacketStats::get_udp_sent(){
-  return this->udp[INDEX_SENT];
-} /* End of get_udp_sent() */
+u64_t PacketStats::get_lost(int proto){
+  return (this->get_sent(proto) <= this->get_rcvd(proto)) ? 0 :
+      (this->get_sent(proto) - this->get_rcvd(proto));
+}/* End of get_lost() */
 
 
-u64_t PacketStats::get_udp_rcvd(){
-  return this->udp[INDEX_RCVD];
-} /* End of get_udp_rcvd() */
-
-
-u64_t PacketStats::get_udp_echoed(){
-  return this->udp[INDEX_ECHO];
-} /* End of get_udp_echoed() */
-
-
-u64_t PacketStats::get_udp_lost(){
-  return (this->udp[INDEX_SENT] <= this->udp[INDEX_RCVD]) ? 0 :
-      (this->udp[INDEX_SENT] - this->udp[INDEX_RCVD]);
-} /* End of get_udp_lost() */
-
-u64_t PacketStats::get_icmp4_sent(){
-  return this->icmp4[INDEX_SENT];
-} /* End of get_icmp4_sent() */
-
-
-u64_t PacketStats::get_icmp4_rcvd(){
-  return this->icmp4[INDEX_RCVD];
-} /* End of get_icmp4_rcvd() */
-
-
-u64_t PacketStats::get_icmp4_echoed(){
-  return this->icmp4[INDEX_ECHO];
-} /* End of get_icmp4_echoed() */
-
-
-u64_t PacketStats::get_icmp4_lost(){
-  return (this->icmp4[INDEX_SENT] <= this->icmp4[INDEX_RCVD]) ? 0 :
-      (this->icmp4[INDEX_SENT] - this->icmp4[INDEX_RCVD]);
-} /* End of get_icmp4_lost() */
-
-
-u64_t PacketStats::get_icmp6_sent(){
-  return this->icmp6[INDEX_SENT];
-} /* End of get_icmp6_sent() */
-
-
-u64_t PacketStats::get_icmp6_rcvd(){
-  return this->icmp6[INDEX_RCVD];
-} /* End of get_icmp6_rcvd() */
-
-
-u64_t PacketStats::get_icmp6_echoed(){
-  return this->icmp6[INDEX_ECHO];
-} /* End of get_icmp6_echoed() */
-
-
-u64_t PacketStats::get_icmp6_lost(){
-  return (this->icmp6[INDEX_SENT] <= this->icmp6[INDEX_RCVD]) ? 0 :
-      (this->icmp6[INDEX_SENT] - this->icmp6[INDEX_RCVD]);
-} /* End of get_icmp6_lost() */
-
-
-u64_t PacketStats::get_arp_sent(){
-  return this->arp[INDEX_SENT];
-} /* End of get_arp_sent() */
-
-
-u64_t PacketStats::get_arp_rcvd(){
-  return this->arp[INDEX_RCVD];
-} /* End of get_arp_rcvd() */
-
-
-u64_t PacketStats::get_arp_echoed(){
-  return this->arp[INDEX_ECHO];
-} /* End of get_arp_echoed() */
-
-
-u64_t PacketStats::get_arp_lost(){
-  return (this->arp[INDEX_SENT] <= this->arp[INDEX_RCVD]) ? 0 :
-      (this->arp[INDEX_SENT] - this->arp[INDEX_RCVD]);
-} /* End of get_arp_lost() */
-
-
-u64_t PacketStats::get_ip4_sent(){
-  return this->ip4[INDEX_SENT];
-} /* End of get_ip4_sent() */
-
-
-u64_t PacketStats::get_ip4_rcvd(){
-  return this->ip4[INDEX_RCVD];
-} /* End of get_ip4_rcvd() */
-
-
-u64_t PacketStats::get_ip4_echoed(){
-  return this->ip4[INDEX_ECHO];
-} /* End of get_ip4_echoed() */
-
-
-u64_t PacketStats::get_ip6_sent(){
-  return this->ip6[INDEX_SENT];
-} /* End of get_ip6_sent() */
-
-
-u64_t PacketStats::get_ip6_rcvd(){
-  return this->ip6[INDEX_RCVD];
-} /* End of get_ip6_rcvd() */
-
-
-u64_t PacketStats::get_ip6_echoed(){
-  return this->ip6[INDEX_ECHO];
-} /* End of get_ip6_echoed() */
+double PacketStats::get_percent_lost(int proto){
+  /* Only compute percentage if we actually sent packets, don't do divisions
+   * by zero! (this could happen when user presses CTRL-C and we print the
+   * stats */
+  double percentlost=0.0;
+  if(this->get_lost(proto)!=0 && this->get_sent(proto)!=0)
+    percentlost=((double)this->get_lost(proto))/((double)this->get_sent(proto));
+  return percentlost*100;
+} /* End of get_percent_lost() */
 
 
 u32 PacketStats::get_clients_served(){
