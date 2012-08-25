@@ -1519,6 +1519,37 @@ void NpingOps::displayStatistics(){
       nping_print(QT_1|NO_NEWLINE,"(%s) ", format_bytecount(this->stats.get_bytes_rcvd(), auxbuff, 256));
       nping_print(QT_1|NO_NEWLINE,"| Lost: %llu ", this->stats.get_pkts_lost() );
       nping_print(QT_1,"(%.2lf%%)", this->stats.get_percent_lost() );
+
+      /* If we sent more than one type of packet, print separate stats for each protocol*/
+      if(((int)this->mode(DO_TCP) + (int)this->mode(DO_UDP) + (int)this->mode(DO_ICMP) + (int)this->mode(DO_ARP)) >  1){
+        if(this->mode(DO_TCP)){
+          nping_print(QT_1|NO_NEWLINE, "TCP packets sent: %llu ", this->stats.get_tcp_sent() );
+          nping_print(QT_1|NO_NEWLINE,"| Rcvd: %llu ", this->stats.get_tcp_rcvd() );
+          nping_print(QT_1,"| Lost: %llu ", this->stats.get_tcp_lost() );
+        }
+        if(this->mode(DO_UDP)){
+          nping_print(QT_1|NO_NEWLINE, "UDP packets sent: %llu ", this->stats.get_udp_sent() );
+          nping_print(QT_1|NO_NEWLINE,"| Rcvd: %llu ", this->stats.get_udp_rcvd() );
+          nping_print(QT_1,"| Lost: %llu ", this->stats.get_udp_lost() );
+        }
+        if(this->mode(DO_ICMP)){
+          if(this->stats.get_icmp4_sent()>0){
+            nping_print(QT_1|NO_NEWLINE, "ICMPv4 packets sent: %llu ", this->stats.get_icmp4_sent() );
+            nping_print(QT_1|NO_NEWLINE,"| Rcvd: %llu ", this->stats.get_icmp4_rcvd() );
+            nping_print(QT_1,"| Lost: %llu ", this->stats.get_icmp4_lost() );
+          }
+          if(this->stats.get_icmp6_sent()>0){
+            nping_print(QT_1|NO_NEWLINE, "ICMPv6 packets sent: %llu ", this->stats.get_icmp6_sent() );
+            nping_print(QT_1|NO_NEWLINE,"| Rcvd: %llu ", this->stats.get_icmp6_rcvd() );
+            nping_print(QT_1,"| Lost: %llu ", this->stats.get_icmp6_lost() );
+          }
+        }
+        if(this->mode(DO_ARP)){
+          nping_print(QT_1|NO_NEWLINE, "ARP packets sent: %llu ", this->stats.get_arp_sent() );
+          nping_print(QT_1|NO_NEWLINE,"| Rcvd: %llu ", this->stats.get_arp_rcvd() );
+          nping_print(QT_1,"| Lost: %llu ", this->stats.get_arp_lost() );
+        }
+      }
     }
   }
 #endif
