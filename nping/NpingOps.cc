@@ -1449,14 +1449,9 @@ void NpingOps::displayStatistics(){
   if(this->getRole()!=ROLE_SERVER){
     if(this->target_hosts.size() > 1){
       for(u32 i=0; i<this->target_hosts.size(); i++){
-        nping_print(VB_0|NO_NEWLINE, "Statistics for host %s:\n |_ " , this->target_hosts[i]->getTargetAddress()->toString());
+        nping_print(VB_0|NO_NEWLINE, "Statistics for host %s:\n" , this->target_hosts[i]->getTargetAddress()->toString());
         if(this->mode(DO_TCP) || this->mode(DO_UDP) || this->mode(DO_ICMP) || this->mode(DO_ARP)){
-          nping_print(QT_1|NO_NEWLINE, "Raw packets sent: %llu ", this->target_hosts[i]->stats.get_pkts_sent() );
-          nping_print(QT_1|NO_NEWLINE, "(%s) ", format_bytecount(this->target_hosts[i]->stats.get_bytes_sent(), auxbuff, 256));
-          nping_print(QT_1|NO_NEWLINE,"| Rcvd: %llu ", this->target_hosts[i]->stats.get_pkts_rcvd() );
-          nping_print(QT_1|NO_NEWLINE,"(%s) ", format_bytecount(this->target_hosts[i]->stats.get_bytes_rcvd(), auxbuff, 256));
-          nping_print(QT_1|NO_NEWLINE,"| Lost: %llu ", this->target_hosts[i]->stats.get_pkts_lost() );
-          nping_print(QT_1|NO_NEWLINE,"(%.2lf%%)\n |_ ", this->target_hosts[i]->stats.get_percent_lost() );
+          this->target_hosts[i]->stats.print_proto_stats(HEADER_TYPE_RAW_DATA, " |_ ");
         }
         if(this->mode(DO_TCP_CONNECT)){
           nping_print(QT_1|NO_NEWLINE, "TCP connection attempts: %llu ", this->target_hosts[i]->stats.get_connects(HEADER_TYPE_TCP) );
@@ -1470,10 +1465,10 @@ void NpingOps::displayStatistics(){
           nping_print(QT_1|NO_NEWLINE,"| Failed: %llu ", this->target_hosts[i]->stats.get_pkts_lost() );
           nping_print(QT_1|NO_NEWLINE,"(%.2lf%%)\n |_ ", this->target_hosts[i]->stats.get_percent_lost() );
         }
-        this->target_hosts[i]->stats.print_RTTs();
+
+        /* Print per-target RTT stats */
+        this->target_hosts[i]->stats.print_RTTs(" |_ ");
       }
-    }else{
-      this->target_hosts[0]->stats.print_RTTs();
     }
   }
 #ifdef WIN32
@@ -1513,49 +1508,30 @@ void NpingOps::displayStatistics(){
       nping_print(QT_1|NO_NEWLINE,"(%.2lf%%)\n", this->stats.get_percent_lost() );
     }
     if(this->mode(DO_TCP) || this->mode(DO_UDP) || this->mode(DO_ICMP) || this->mode(DO_ARP)){
-      nping_print(QT_1|NO_NEWLINE, "Raw packets sent: %llu ", this->stats.get_pkts_sent() );
-      nping_print(QT_1|NO_NEWLINE, "(%s) ", format_bytecount(this->stats.get_bytes_sent(), auxbuff, 256));
-      nping_print(QT_1|NO_NEWLINE,"| Rcvd: %llu ", this->stats.get_pkts_rcvd() );
-      nping_print(QT_1|NO_NEWLINE,"(%s) ", format_bytecount(this->stats.get_bytes_rcvd(), auxbuff, 256));
-      nping_print(QT_1|NO_NEWLINE,"| Lost: %llu ", this->stats.get_pkts_lost() );
-      nping_print(QT_1,"(%.2lf%%)", this->stats.get_percent_lost() );
+      this->stats.print_proto_stats(HEADER_TYPE_RAW_DATA, NULL);
 
       /* If we sent more than one type of packet, print separate stats for each protocol*/
       if(((int)this->mode(DO_TCP) + (int)this->mode(DO_UDP) + (int)this->mode(DO_ICMP) + (int)this->mode(DO_ARP)) >  1){
         if(this->mode(DO_TCP)){
-          nping_print(QT_1|NO_NEWLINE, "TCP packets sent: %llu ", this->stats.get_sent(HEADER_TYPE_TCP));
-          nping_print(QT_1|NO_NEWLINE,"| Rcvd: %llu ", this->stats.get_rcvd(HEADER_TYPE_TCP));
-          nping_print(QT_1|NO_NEWLINE,"| Lost: %llu ", this->stats.get_lost(HEADER_TYPE_TCP));
-          nping_print(QT_1,"(%.2lf%%)", this->stats.get_percent_lost(HEADER_TYPE_TCP));
+          this->stats.print_proto_stats(HEADER_TYPE_TCP, NULL);
         }
         if(this->mode(DO_UDP)){
-          nping_print(QT_1|NO_NEWLINE, "UDP packets sent: %llu ", this->stats.get_sent(HEADER_TYPE_UDP));
-          nping_print(QT_1|NO_NEWLINE,"| Rcvd: %llu ", this->stats.get_rcvd(HEADER_TYPE_UDP));
-          nping_print(QT_1|NO_NEWLINE,"| Lost: %llu ", this->stats.get_lost(HEADER_TYPE_UDP));
-          nping_print(QT_1,"(%.2lf%%)", this->stats.get_percent_lost(HEADER_TYPE_UDP));
+          this->stats.print_proto_stats(HEADER_TYPE_UDP, NULL);
         }
         if(this->mode(DO_ARP)){
-          nping_print(QT_1|NO_NEWLINE, "ARP packets sent: %llu ", this->stats.get_sent(HEADER_TYPE_ARP));
-          nping_print(QT_1|NO_NEWLINE,"| Rcvd: %llu ", this->stats.get_rcvd(HEADER_TYPE_ARP));
-          nping_print(QT_1|NO_NEWLINE,"| Lost: %llu ", this->stats.get_lost(HEADER_TYPE_ARP));
-          nping_print(QT_1,"(%.2lf%%)", this->stats.get_percent_lost(HEADER_TYPE_ARP));
+          this->stats.print_proto_stats(HEADER_TYPE_ARP, NULL);
         }
         if(this->mode(DO_ICMP)){
           if(this->stats.get_sent(HEADER_TYPE_ICMPv4)>0){
-            nping_print(QT_1|NO_NEWLINE, "ICMPv4 packets sent: %llu ", this->stats.get_sent(HEADER_TYPE_ICMPv4));
-            nping_print(QT_1|NO_NEWLINE,"| Rcvd: %llu ", this->stats.get_rcvd(HEADER_TYPE_ICMPv4));
-            nping_print(QT_1|NO_NEWLINE,"| Lost: %llu ", this->stats.get_lost(HEADER_TYPE_ICMPv4));
-            nping_print(QT_1,"(%.2lf%%)", this->stats.get_percent_lost(HEADER_TYPE_ICMPv4));
+            this->stats.print_proto_stats(HEADER_TYPE_ICMPv4, NULL);
           }
           if(this->stats.get_sent(HEADER_TYPE_ICMPv6)>0){
-            nping_print(QT_1|NO_NEWLINE, "ICMPv6 packets sent: %llu ", this->stats.get_sent(HEADER_TYPE_ICMPv6));
-            nping_print(QT_1|NO_NEWLINE,"| Rcvd: %llu ", this->stats.get_rcvd(HEADER_TYPE_ICMPv6));
-            nping_print(QT_1|NO_NEWLINE,"| Lost: %llu ", this->stats.get_lost(HEADER_TYPE_ICMPv6));
-            nping_print(QT_1,"(%.2lf%%)", this->stats.get_percent_lost(HEADER_TYPE_ICMPv6));
+            this->stats.print_proto_stats(HEADER_TYPE_ICMPv6, NULL);
           }
         }
       }
     }
+    this->stats.print_RTTs(NULL);
   }
 #endif
   /* Transmission times & rates */

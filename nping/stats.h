@@ -288,7 +288,8 @@ class PacketStats {
     double get_rx_pkt_rate();
     double get_rx_byte_rate();
     int get_max_rtt();
-    int print_RTTs();
+    int print_RTTs(const char *leading_str);
+    int print_proto_stats(int proto, const char *leading_str);
 
 };
 

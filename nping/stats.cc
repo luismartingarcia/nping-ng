@@ -304,6 +304,10 @@ u64_t *PacketStats::proto2stats(int proto){
       case HEADER_TYPE_IPv6:
         return this->ip4;
       break;
+
+      case HEADER_TYPE_RAW_DATA:
+        return this->packets;
+      break;
   }
   return NULL;
 } /* End of proto2stats() */
@@ -758,10 +762,12 @@ int PacketStats::get_max_rtt(){
 
 
 /* Print round trip times */
-int PacketStats::print_RTTs(){
+int PacketStats::print_RTTs(const char *leading_str){
+  if(leading_str==NULL)
+    leading_str="";
   /* Maximum RTT observed */
   if(max_rtt>=0)
-    nping_print(VB_0|NO_NEWLINE,"Max rtt: %.3lfms ", this->max_rtt/1000.0 );
+    nping_print(VB_0|NO_NEWLINE,"%sMax rtt: %.3lfms ", leading_str, this->max_rtt/1000.0 );
   else
     nping_print(VB_0|NO_NEWLINE,"Max rtt: N/A ");
   /* Minimum RTT observed */
@@ -776,3 +782,32 @@ int PacketStats::print_RTTs(){
     nping_print(VB_0,"| Avg rtt: N/A" );
   return OP_SUCCESS;
 } /* End of print_RTTs() */
+
+
+int PacketStats::print_proto_stats(int proto, const char *leading_str){
+  const char *start_str="";
+  char auxbuff[256];
+  memset(auxbuff, 0, 256);
+  if(leading_str==NULL)
+    leading_str="";
+  switch(proto){
+    case HEADER_TYPE_TCP: start_str="TCP"; break;
+    case HEADER_TYPE_UDP: start_str="UDP"; break;
+    case HEADER_TYPE_ICMPv4: start_str="ICMPv4"; break;
+    case HEADER_TYPE_ICMPv6: start_str="ICMPv6"; break;
+    case HEADER_TYPE_ARP: start_str="ARP"; break;
+    case HEADER_TYPE_IPv4: start_str="IPv4"; break;
+    case HEADER_TYPE_IPv6: start_str="IPv6"; break;
+    case HEADER_TYPE_RAW_DATA: start_str="Raw"; break;
+    default: assert(0); break;
+  }
+  nping_print(QT_1|NO_NEWLINE, "%s%s packets sent: %llu ", leading_str, start_str, this->get_sent(proto));
+  if(proto==HEADER_TYPE_RAW_DATA)
+    nping_print(QT_1|NO_NEWLINE, "(%s) ", format_bytecount(this->get_bytes_sent(), auxbuff, 256));
+  nping_print(QT_1|NO_NEWLINE,"| Rcvd: %llu ", this->get_rcvd(proto));
+  if(proto==HEADER_TYPE_RAW_DATA)
+    nping_print(QT_1|NO_NEWLINE,"(%s) ", format_bytecount(this->get_bytes_rcvd(), auxbuff, 256));
+  nping_print(QT_1|NO_NEWLINE,"| Lost: %llu ", this->get_lost(proto));
+  nping_print(QT_1,"(%.2lf%%)", this->get_percent_lost(proto));
+  return OP_SUCCESS;
+} /* End of print_proto_stats() */
