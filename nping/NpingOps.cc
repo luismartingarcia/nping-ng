@@ -1466,6 +1466,27 @@ void NpingOps::displayStatistics(){
           nping_print(QT_1|NO_NEWLINE,"(%.2lf%%)\n |_ ", this->target_hosts[i]->stats.get_percent_lost() );
         }
 
+        /* If we sent more than one type of packet, print separate stats for each protocol*/
+        if(((int)this->mode(DO_TCP) + (int)this->mode(DO_UDP) + (int)this->mode(DO_ICMP) + (int)this->mode(DO_ARP)) >  1){
+          if(this->mode(DO_TCP)){
+            this->target_hosts[i]->stats.print_proto_stats(HEADER_TYPE_TCP, " |_ ");
+          }
+          if(this->mode(DO_UDP)){
+            this->target_hosts[i]->stats.print_proto_stats(HEADER_TYPE_UDP, " |_ ");
+          }
+          if(this->mode(DO_ARP)){
+            this->target_hosts[i]->stats.print_proto_stats(HEADER_TYPE_ARP, " |_ ");
+          }
+          if(this->mode(DO_ICMP)){
+            if(this->target_hosts[i]->stats.get_sent(HEADER_TYPE_ICMPv4)>0){
+              this->target_hosts[i]->stats.print_proto_stats(HEADER_TYPE_ICMPv4, " |_ ");
+            }
+            if(this->target_hosts[i]->stats.get_sent(HEADER_TYPE_ICMPv6)>0){
+              this->target_hosts[i]->stats.print_proto_stats(HEADER_TYPE_ICMPv6, " |_ ");
+            }
+          }
+        }
+
         /* Print per-target RTT stats */
         this->target_hosts[i]->stats.print_RTTs(" |_ ");
       }

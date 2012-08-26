@@ -48,39 +48,6 @@
  * Things that have NOT been done yet                                        *
  *****************************************************************************/
 
-* When pinging multiple hosts using more than one protocol, consider printing
-  per-protocol/per-host stats, not only global per-protocol stats. Now it looks
-  like this:
-
-    Statistics for host 192.168.1.1:
-     |_ Raw packets sent: 20 (900B) | Rcvd: 15 (620B) | Lost: 5 (25.00%)
-     |_ Max rtt: 3.326ms | Min rtt: 1.347ms | Avg rtt: 2.398ms
-    Statistics for host 74.207.254.18:
-     |_ Raw packets sent: 20 (900B) | Rcvd: 4 (224B) | Lost: 16 (80.00%)
-     |_ Max rtt: 28.020ms | Min rtt: 21.469ms | Avg rtt: 24.482ms
-    Statistics for host ::1:
-     |_ Raw packets sent: 15 (780B) | Rcvd: 15 (1.020KB) | Lost: 0 (0.00%)
-     |_ Max rtt: 0.469ms | Min rtt: 0.279ms | Avg rtt: 0.361ms
-    Raw packets sent: 55 (2.580KB) | Rcvd: 34 (1.864KB) | Lost: 21 (38.18%)
-    TCP packets sent: 15 | Rcvd: 10 | Lost: 5 (33.33%)
-    UDP packets sent: 15 | Rcvd: 0 | Lost: 15 (100.00%)
-    ARP packets sent: 10 | Rcvd: 5 | Lost: 5 (50.00%)
-    ICMPv4 packets sent: 10 | Rcvd: 9 | Lost: 1 (10.00%)
-    ICMPv6 packets sent: 5 | Rcvd: 10 | Lost: 0 (0.00%)
-    Tx time: 0.13990s | Tx bytes/s: 18441.74 | Tx pkts/s: 393.14
-    Rx time: 0.25161s | Rx bytes/s: 7408.38 | Rx pkts/s: 135.13
-    Nping done: 3 IP addresses pinged in 0.32 seconds
-
-  but per-host stats could be something like:
-
-    Statistics for host 192.168.1.1:
-     |_ Raw packets sent: 20 (900B) | Rcvd: 15 (620B) | Lost: 5 (25.00%)
-     |_ TCP packets sent: 5 | Rcvd: 1 | Lost: 4 (80.00%)
-     |_ UDP packets sent: 5 | Rcvd: 0 | Lost: 5 (100.00%)
-     |_ ARP packets sent: 5 | Rcvd: 0 | Lost: 5 (100.00%)
-     |_ ICMPv4 packets sent: 5 | Rcvd: 4 | Lost: 1 (20.00%)
-     |_ Max rtt: 3.326ms | Min rtt: 1.347ms | Avg rtt: 2.398ms
-
 * Packets captured seem to include things like the 2-byte Ethernet trailing
   checksum. Check nse_readpcap() is working correctly.
 
@@ -1012,3 +979,36 @@ SENT (1.0580s) ARP who has 192.168.240.139? Tell 192.168.240.1
     Tx time: 0.62958s | Tx bytes/s: 108.01 | Tx pkts/s: 3.18
     Rx time: 0.62958s | Rx bytes/s: 146.13 | Rx pkts/s: 3.18
     Nping done: 1 IP address pinged in 0.70 seconds
+
+[DONE] When pinging multiple hosts using more than one protocol, consider printing
+  per-protocol/per-host stats, not only global per-protocol stats. Now it looks
+  like this:
+
+    Statistics for host 192.168.1.1:
+     |_ Raw packets sent: 20 (900B) | Rcvd: 15 (620B) | Lost: 5 (25.00%)
+     |_ Max rtt: 3.326ms | Min rtt: 1.347ms | Avg rtt: 2.398ms
+    Statistics for host 74.207.254.18:
+     |_ Raw packets sent: 20 (900B) | Rcvd: 4 (224B) | Lost: 16 (80.00%)
+     |_ Max rtt: 28.020ms | Min rtt: 21.469ms | Avg rtt: 24.482ms
+    Statistics for host ::1:
+     |_ Raw packets sent: 15 (780B) | Rcvd: 15 (1.020KB) | Lost: 0 (0.00%)
+     |_ Max rtt: 0.469ms | Min rtt: 0.279ms | Avg rtt: 0.361ms
+    Raw packets sent: 55 (2.580KB) | Rcvd: 34 (1.864KB) | Lost: 21 (38.18%)
+    TCP packets sent: 15 | Rcvd: 10 | Lost: 5 (33.33%)
+    UDP packets sent: 15 | Rcvd: 0 | Lost: 15 (100.00%)
+    ARP packets sent: 10 | Rcvd: 5 | Lost: 5 (50.00%)
+    ICMPv4 packets sent: 10 | Rcvd: 9 | Lost: 1 (10.00%)
+    ICMPv6 packets sent: 5 | Rcvd: 10 | Lost: 0 (0.00%)
+    Tx time: 0.13990s | Tx bytes/s: 18441.74 | Tx pkts/s: 393.14
+    Rx time: 0.25161s | Rx bytes/s: 7408.38 | Rx pkts/s: 135.13
+    Nping done: 3 IP addresses pinged in 0.32 seconds
+
+  but per-host stats could be something like:
+
+    Statistics for host 192.168.1.1:
+     |_ Raw packets sent: 20 (900B) | Rcvd: 15 (620B) | Lost: 5 (25.00%)
+     |_ TCP packets sent: 5 | Rcvd: 1 | Lost: 4 (80.00%)
+     |_ UDP packets sent: 5 | Rcvd: 0 | Lost: 5 (100.00%)
+     |_ ARP packets sent: 5 | Rcvd: 0 | Lost: 5 (100.00%)
+     |_ ICMPv4 packets sent: 5 | Rcvd: 4 | Lost: 1 (20.00%)
+     |_ Max rtt: 3.326ms | Min rtt: 1.347ms | Avg rtt: 2.398ms
