@@ -1012,3 +1012,5 @@ SENT (1.0580s) ARP who has 192.168.240.139? Tell 192.168.240.1
      |_ ARP packets sent: 5 | Rcvd: 0 | Lost: 5 (100.00%)
      |_ ICMPv4 packets sent: 5 | Rcvd: 4 | Lost: 1 (20.00%)
      |_ Max rtt: 3.326ms | Min rtt: 1.347ms | Avg rtt: 2.398ms
+
+[DONE] Fix global RTT statistics.

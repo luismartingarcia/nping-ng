@@ -92,6 +92,9 @@
 
 #include "TargetHost.h"
 #include "output.h"
+#include "NpingOps.h"
+
+extern NpingOps o;
 
 TargetHost::TargetHost(){
   this->reset();
@@ -847,6 +850,7 @@ int TargetHost::is_response(PacketElement *pkt_rcvd, struct timeval *rcvd_time){
        * determine the RTT and update our internal stats. */
       rtt= TIMEVAL_SUBTRACT(now, this->sent_times[i]);
       this->stats.update_rtt(rtt);
+      o.stats.update_rtt(rtt);
       /* Do some cleanup */
       PacketParser::freePacketChain(this->sent_pkts[i]);
       this->sent_pkts.erase(this->sent_pkts.begin()+i, this->sent_pkts.begin()+i+1);
