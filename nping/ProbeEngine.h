@@ -162,7 +162,7 @@ class ProbeEngine  {
     int tcpconnect_handler(nsock_pool nsp, nsock_event nse, void *arg);
     int udpunpriv_handler(nsock_pool nsp, nsock_event nse, void *arg);
     static int delayed_output_handler(nsock_pool nsp, nsock_event nse, void *mydata);
-    static int print_rcvd_pkt(PacketElement *pkt, float timestamp);
+    static int print_rcvd_pkt(PacketElement *pkt, double timestamp);
 
 }; /* End of class ProbeEngine */
 

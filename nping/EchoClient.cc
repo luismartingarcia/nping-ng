@@ -373,7 +373,7 @@ int EchoClient::nep_recv_echo(u8 *packet, size_t packetlen){
   nping_print(DBG_4, "%s(%p, %lu)", __func__, packet, (unsigned long)packetlen);
   EchoHeader pkt_in;
   PacketElement *delayed_pkt=NULL;
-  float delayed_ts=0;
+  double delayed_ts=0;
   nsock_event_id ev_id;
   u8 *pkt=NULL;
   u16 pktlen=0;
@@ -401,26 +401,38 @@ int EchoClient::nep_recv_echo(u8 *packet, size_t packetlen){
    * the packet has so we can update the stats properly. */
   o.stats.update_echo(0,0,pktlen);
 
-  /* Guess the time the packet was captured. We do this computing the RTT
-   * between the last sent packet and the received echo packet. We assume
-   * the packet was captured RTT/2 seconds ago. */
-  double rtt = TIMEVAL_SUBTRACT(now, prob.ts_last_sent)/1000000;
-  double final_time = (TIMEVAL_SUBTRACT(now, prob.start_time)/1000000) + (rtt/2);
-  //printf("RTT=%lf, FT=%lf\n", rtt, final_time);
+  /* Guess the time the packet was captured. Basically we compute the RTT and
+   * assume the packet arrived to the echo server RTT/2 seconds ago. How we
+   * compute the RTT varies. There are two possible ways:
+   *
+   *  - If we already have a RCVD reply for the SENT packet, we determine
+   *    the real RTT (RTT=RCVD_TIME - SENT_TIME).
+   *  - If we don't have any reply, we compute a fake RTT like this:
+   *    RTT=Time_we_got_the_echoed_packet - SENT_TIME
+   */
+  double sent_time = TIMEVAL_SUBTRACT(prob.ts_last_sent, prob.start_time) / (double)1000000.0;
+  double capt_time = TIMEVAL_SUBTRACT(now, prob.start_time) / (double)1000000.0;
+  double display_time=0;
 
-  /* @todo: compute the link layer offset from the DLT type and discard
-   * link layer headers */
-  getPacketStrInfo("IP", pkt, pktlen, pktinfobuffer, 512);
-  nping_print(VB_0,"CAPT (%.4lfs) %s", final_time, pktinfobuffer );
-  if( o.getVerbosity() >= VB_3)
-    luis_hdump((char*)pkt, pktlen);
-
-  /* Check if there is a delayed RCVD packet that is waiting to be printed */
-  if( (delayed_pkt=o.getDelayedRcvd(&delayed_ts, &ev_id))!=NULL ){
+  if((delayed_pkt=o.getDelayedRcvd(&delayed_ts, &ev_id))!=NULL){
+    display_time=(delayed_ts+sent_time)/2;
+    getPacketStrInfo("IP", pkt, pktlen, pktinfobuffer, 512);
+    nping_print(VB_0,"CAPT (%.4lfs) %s", display_time, pktinfobuffer );
     ProbeEngine::print_rcvd_pkt(delayed_pkt, delayed_ts);
     PacketParser::freePacketChain(delayed_pkt);
     nsock_event_cancel(this->nsp, ev_id, 0);
+  /* There is no RCVD packet, just print the CAPT line*/
+  }else{
+    display_time=(capt_time+sent_time)/2;
+    getPacketStrInfo("IP", pkt, pktlen, pktinfobuffer, 512);
+    nping_print(VB_0,"CAPT (%.4lfs) %s", display_time, pktinfobuffer );
   }
+
+  /* @todo: compute the link layer offset from the DLT type and discard
+   * link layer headers */
+  if( o.getVerbosity() >= VB_3)
+    luis_hdump((char*)pkt, pktlen);
+
   return OP_SUCCESS;
 } /* End of nep_recv_echo() */
 

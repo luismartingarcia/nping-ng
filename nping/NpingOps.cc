@@ -1805,7 +1805,7 @@ struct timeval NpingOps::getLastPacketSentTime(){
   * if they take care of printing the RCVD string before the timer goes off.
   * The timestamp parameter is the number to be printed right after the "RCVD"
   * tag (e.g: RCVD (2.0423s) IPv4[127.0.0.1...)*/
-int NpingOps::setDelayedRcvd(PacketElement *pkt, float timestamp, nsock_event_id id){
+int NpingOps::setDelayedRcvd(PacketElement *pkt, double timestamp, nsock_event_id id){
   this->delayed_rcvd_pkt=pkt;
   this->delayed_rcvd_event=id;
   this->delayed_rcvd_ts=timestamp;
@@ -1829,7 +1829,7 @@ int NpingOps::setDelayedRcvd(PacketElement *pkt, float timestamp, nsock_event_id
   * to setDelayedRcvd(). The pointer is not freed, so the caller is responsible
   * for doing that. Note that the proper way to free it is by calling
   * PacketParser::freePacketChain().  */
-PacketElement *NpingOps::getDelayedRcvd(float *timestamp, nsock_event_id *id){
+PacketElement *NpingOps::getDelayedRcvd(double *timestamp, nsock_event_id *id){
   if(delayed_rcvd_pkt_set==false){
     return NULL;
   }else{

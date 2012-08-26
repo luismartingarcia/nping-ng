@@ -724,7 +724,7 @@ int ProbeEngine::packet_capture_handler(nsock_pool nsp, nsock_event nse, void *a
                * that would make comparisons a bit less straightforward. If we
                * are in normal mode, we just call print_rcvd_pkt() and print it
                * right away. */
-              float timestamp=(((double)TIMEVAL_MSEC_SUBTRACT(now, this->start_time)) / 1000);
+              double timestamp=(((double)TIMEVAL_MSEC_SUBTRACT(now, this->start_time)) / 1000.0);
               if( o.getRole() == ROLE_CLIENT ){
                 int delay=(int)MIN(o.getDelay()*0.33, 333);
                 /* Here, we schedule a timing event. When the timer goes off,
@@ -1074,7 +1074,7 @@ int ProbeEngine::udpunpriv_handler(nsock_pool nsp, nsock_event nse, void *mydata
   * compared with the SENT packet. */
 int ProbeEngine::delayed_output_handler(nsock_pool nsp, nsock_event nse, void *mydata){
   PacketElement *pkt=NULL;
-  float ts=0;
+  double ts=0;
   nsock_event_id ev_id;
   if((pkt=o.getDelayedRcvd(&ts, &ev_id))!=NULL){
     ProbeEngine::print_rcvd_pkt(pkt, ts);
@@ -1087,9 +1087,9 @@ int ProbeEngine::delayed_output_handler(nsock_pool nsp, nsock_event nse, void *m
 /** Prints RCVD packets. The result is a line like the following:
   * RCVD (2.0000s) IPv4[127.0.0.1 > 127.0.0.1 ver=4 ihl=5 tos=0x00 iplen=28...
   * The supplied packet is not freed(). The caller is responsible for that. */
-int ProbeEngine::print_rcvd_pkt(PacketElement *pkt, float timestamp){
+int ProbeEngine::print_rcvd_pkt(PacketElement *pkt, double timestamp){
   PacketElement *pkt2print=pkt;
-  nping_print(VB_0|NO_NEWLINE,"RCVD (%.4fs) ", timestamp);
+  nping_print(VB_0|NO_NEWLINE,"RCVD (%.4lfs) ", timestamp);
   /* Skip the Ethernet layer if necessary */
   if(o.showEth()==false && pkt->protocol_id()==HEADER_TYPE_ETHERNET){
     pkt2print=pkt->getNextElement();

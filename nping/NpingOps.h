@@ -292,7 +292,7 @@ class NpingOps {
     PacketElement *delayed_rcvd_pkt; /* Delayed output RCVD packet*/
     bool delayed_rcvd_pkt_set; /* Do we have a delayed pkt?    */
     nsock_event_id delayed_rcvd_event; /* Nsock event for delayed RCVD */
-    float delayed_rcvd_ts;             /* Time delayed pkt was received*/
+    double delayed_rcvd_ts;            /* Time delayed pkt was received*/
 
    private:
     vector<IPAddress *> target_addresses;  /* List of target IP addresses */
@@ -498,8 +498,8 @@ class NpingOps {
     int setLastPacketSentTime(struct timeval t);
     struct timeval getLastPacketSentTime();
 
-    int setDelayedRcvd(PacketElement *pkt, float timestamp, nsock_event_id id);
-    PacketElement *getDelayedRcvd(float *timestamp, nsock_event_id *id);
+    int setDelayedRcvd(PacketElement *pkt, double timestamp, nsock_event_id id);
+    PacketElement *getDelayedRcvd(double *timestamp, nsock_event_id *id);
 
     /* TargetHost handling */
     int addTargetSpec(const char *spec);

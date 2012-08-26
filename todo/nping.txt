@@ -67,16 +67,6 @@
   so multiple types of patches can be matched by the echo server. This could be
   done by allowing one NEP_PACKET_SPEC per transport protocol (IP, TCP, UDP).
 
-* For Echo clients, fix CAPT time calculation and delayed output.
-  Currently it doesn't work:
-
-     ./nping --ec public --tcp echo.nmap.com
-
-    Starting Nping 0.5.61TEST4 ( http://nmap.org/nping ) at 2012-08-05 20:15 CEST
-    SENT (0.0000s) IPv4[192.168.1.171 > 74.207.244.221 ttl=64 id=63688 iplen=40] TCP[26528 > 80 S seq=2773943728 win=1480]
-    RCVD (0.1740s) IPv4[74.207.244.221 > 192.168.1.171 ttl=52 id=0 iplen=44] TCP[80 > 26528 SA seq=2565506202 ack=2773943729 win=14600 <mss 1460>] Payload[2 bytes]
-    CAPT (0.0000s) TCP 83.50.255.169:26528 > 74.207.244.221:80 S ttl=54 id=63688 iplen=40  seq=2773943728 win=1480
-
 * Sometimes, the last response is not printed (or captured). This happens, at
   least when -c1 is passed. Apparently with -c2 it does not happen, but this
   needs to be verified.
@@ -1014,3 +1004,13 @@ SENT (1.0580s) ARP who has 192.168.240.139? Tell 192.168.240.1
      |_ Max rtt: 3.326ms | Min rtt: 1.347ms | Avg rtt: 2.398ms
 
 [DONE] Fix global RTT statistics.
+
+[DONE] For Echo clients, fix CAPT time calculation and delayed output.
+  Currently it doesn't work:
+
+     ./nping --ec public --tcp echo.nmap.com
+
+    Starting Nping 0.5.61TEST4 ( http://nmap.org/nping ) at 2012-08-05 20:15 CEST
+    SENT (0.0000s) IPv4[192.168.1.171 > 74.207.244.221 ttl=64 id=63688 iplen=40] TCP[26528 > 80 S seq=2773943728 win=1480]
+    RCVD (0.1740s) IPv4[74.207.244.221 > 192.168.1.171 ttl=52 id=0 iplen=44] TCP[80 > 26528 SA seq=2565506202 ack=2773943729 win=14600 <mss 1460>] Payload[2 bytes]
+    CAPT (0.0000s) TCP 83.50.255.169:26528 > 74.207.244.221:80 S ttl=54 id=63688 iplen=40  seq=2773943728 win=1480
