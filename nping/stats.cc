@@ -784,7 +784,7 @@ int PacketStats::print_RTTs(const char *leading_str){
 } /* End of print_RTTs() */
 
 
-int PacketStats::print_proto_stats(int proto, const char *leading_str){
+int PacketStats::print_proto_stats(int proto, const char *leading_str, bool print_echoed){
   const char *start_str="";
   char auxbuff[256];
   memset(auxbuff, 0, 256);
@@ -808,6 +808,11 @@ int PacketStats::print_proto_stats(int proto, const char *leading_str){
   if(proto==HEADER_TYPE_RAW_DATA)
     nping_print(QT_1|NO_NEWLINE,"(%s) ", format_bytecount(this->get_bytes_rcvd(), auxbuff, 256));
   nping_print(QT_1|NO_NEWLINE,"| Lost: %llu ", this->get_lost(proto));
-  nping_print(QT_1,"(%.2lf%%)", this->get_percent_lost(proto));
+  nping_print(QT_1|NO_NEWLINE,"(%.2lf%%)", this->get_percent_lost(proto));
+  if(print_echoed){
+    nping_print(QT_1|NO_NEWLINE," | Echoed: %llu ", this->get_echoed(proto) );
+    nping_print(QT_1|NO_NEWLINE,"(%s) ", format_bytecount(this->get_bytes_echoed(), auxbuff, 256));
+  }
+  nping_print(QT_1|NO_NEWLINE,"\n");
   return OP_SUCCESS;
 } /* End of print_proto_stats() */
