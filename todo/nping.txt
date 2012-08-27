@@ -48,6 +48,9 @@
  * Things that have NOT been done yet                                        *
  *****************************************************************************/
 
+* Finish improving void NpingOps::displayStatistics(). We need to move all
+  nping_print() calls to PacketStats::, refactoring whenever possible.
+
 * Packets captured seem to include things like the 2-byte Ethernet trailing
   checksum. Check nse_readpcap() is working correctly.
 
