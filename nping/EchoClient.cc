@@ -377,10 +377,9 @@ int EchoClient::nep_recv_echo(u8 *packet, size_t packetlen){
   nsock_event_id ev_id;
   u8 *pkt=NULL;
   u16 pktlen=0;
-  u8 pktinfobuffer[512+1];
   struct timeval now;
   gettimeofday(&now, NULL);
-  memset(pktinfobuffer, 0, sizeof(pktinfobuffer));
+  PacketElement *parsed_pkt=NULL, *tlayer=NULL;
 
   /* Verify the received packet (this covers authentication etc) */
   if(this->parse_echo(packet, packetlen)!=OP_SUCCESS){
@@ -397,41 +396,54 @@ int EchoClient::nep_recv_echo(u8 *packet, size_t packetlen){
     return OP_FAILURE;
   }
 
-  /* TODO @todo Here find a way to determine which IP and upper layer proto
-   * the packet has so we can update the stats properly. */
-  o.stats.update_echo(0,0,pktlen);
+  /* Parse the received packet so we can update some stats and print its contents */
+  if((parsed_pkt=PacketParser::split(pkt, pktlen, false))!=NULL){
+    /* Find which protocol comes after IP */
+    if((tlayer=PacketParser::find_transport_layer(parsed_pkt))!=NULL){
+      /* @todo If one day we allow connecting to more than one echo server in the same run,
+       * this code needs to update the correct array index. Now we assume [0] because that's
+       * the only host we try to establish a NEP session with. */
+      o.stats.update_echo(o.target_hosts[0]->getTargetAddress()->getVersion(), tlayer->protocol_id(), pktlen);
+      o.target_hosts[0]->stats.update_echo(o.target_hosts[0]->getTargetAddress()->getVersion(), tlayer->protocol_id(), pktlen);
+    }else{
+      nping_warning(QT_2, "%s(): No transport layer found. Please report this bug.", __func__);
+    }
 
-  /* Guess the time the packet was captured. Basically we compute the RTT and
-   * assume the packet arrived to the echo server RTT/2 seconds ago. How we
-   * compute the RTT varies. There are two possible ways:
-   *
-   *  - If we already have a RCVD reply for the SENT packet, we determine
-   *    the real RTT (RTT=RCVD_TIME - SENT_TIME).
-   *  - If we don't have any reply, we compute a fake RTT like this:
-   *    RTT=Time_we_got_the_echoed_packet - SENT_TIME
-   */
-  double sent_time = TIMEVAL_SUBTRACT(prob.ts_last_sent, prob.start_time) / (double)1000000.0;
-  double capt_time = TIMEVAL_SUBTRACT(now, prob.start_time) / (double)1000000.0;
-  double display_time=0;
+    /* Guess the time the packet was captured. Basically we compute the RTT and
+     * assume the packet arrived to the echo server RTT/2 seconds ago. How we
+     * compute the RTT varies. There are two possible ways:
+     *
+     *  - If we already have a RCVD reply for the SENT packet, we determine
+     *    the real RTT (RTT=RCVD_TIME - SENT_TIME).
+     *  - If we don't have any reply, we compute a fake RTT like this:
+     *    RTT=Time_we_got_the_echoed_packet - SENT_TIME
+     */
+    double sent_time = TIMEVAL_SUBTRACT(prob.ts_last_sent, prob.start_time) / (double)1000000.0;
+    double capt_time = TIMEVAL_SUBTRACT(now, prob.start_time) / (double)1000000.0;
+    double display_time=0;
 
-  if((delayed_pkt=o.getDelayedRcvd(&delayed_ts, &ev_id))!=NULL){
-    display_time=(delayed_ts+sent_time)/2;
-    getPacketStrInfo("IP", pkt, pktlen, pktinfobuffer, 512);
-    nping_print(VB_0,"CAPT (%.4lfs) %s", display_time, pktinfobuffer );
-    ProbeEngine::print_rcvd_pkt(delayed_pkt, delayed_ts);
-    PacketParser::freePacketChain(delayed_pkt);
-    nsock_event_cancel(this->nsp, ev_id, 0);
-  /* There is no RCVD packet, just print the CAPT line*/
-  }else{
-    display_time=(capt_time+sent_time)/2;
-    getPacketStrInfo("IP", pkt, pktlen, pktinfobuffer, 512);
-    nping_print(VB_0,"CAPT (%.4lfs) %s", display_time, pktinfobuffer );
+    if((delayed_pkt=o.getDelayedRcvd(&delayed_ts, &ev_id))!=NULL){
+      display_time=(delayed_ts+sent_time)/2;
+      nping_print(VB_0|NO_NEWLINE,"CAPT (%.4lfs) ", display_time);
+      parsed_pkt->print();
+      nping_print(VB_0|NO_NEWLINE,"\n");
+      ProbeEngine::print_rcvd_pkt(delayed_pkt, delayed_ts);
+      PacketParser::freePacketChain(delayed_pkt);
+      nsock_event_cancel(this->nsp, ev_id, 0);
+    /* There is no RCVD packet, just print the CAPT line*/
+    }else{
+      display_time=(capt_time+sent_time)/2;
+      nping_print(VB_0|NO_NEWLINE,"CAPT (%.4lfs) ", display_time);
+      parsed_pkt->print();
+      nping_print(VB_0|NO_NEWLINE,"\n");
+    }
+
+    /* @todo: compute the link layer offset from the DLT type and discard
+     * link layer headers */
+    if( o.getVerbosity() >= VB_3)
+      luis_hdump((char*)pkt, pktlen);
+
   }
-
-  /* @todo: compute the link layer offset from the DLT type and discard
-   * link layer headers */
-  if( o.getVerbosity() >= VB_3)
-    luis_hdump((char*)pkt, pktlen);
 
   return OP_SUCCESS;
 } /* End of nep_recv_echo() */
