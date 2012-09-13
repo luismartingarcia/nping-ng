@@ -47,6 +47,10 @@
 /*****************************************************************************
  * Things that have NOT been done yet                                        *
  *****************************************************************************/
+* Fix stats for UDP unprivileged. "Failed" does not show the correct figures.
+    UDP write operations: 10 | Successful reads: 5 | Failed: 0 (0.00%)
+
+* Make nping able to determine RTTs in TCP-Connect and UDP-Unprivileged modes.
 
 * Mixing --tcp-connect and raw packet modes does not work.
   sudo ./nping google.com nmap.org -c2 1.2.3.4 --tcp-connect --udp
