@@ -828,7 +828,6 @@ int ProbeEngine::tcpconnect_handler(nsock_pool nsp, nsock_event nse, void *mydat
       case NSE_TYPE_CONNECT:
 
         nping_print(VB_0,"RECV (%.4fs) Handshake with %s:%d completed", ((double)TIMEVAL_MSEC_SUBTRACT(now, this->start_time)) / 1000, ipstring, peerport);
-        // TODO @todo Update statistics here!
 
         /* Schedule a read operation so we can determine if the target is
          * sending any data back to us. */
@@ -843,10 +842,7 @@ int ProbeEngine::tcpconnect_handler(nsock_pool nsp, nsock_event nse, void *mydat
          * just established. */
         if(o.getPayloadBuffer()!=NULL){
           nsock_write(nsp, nsi, tcpconnect_handler_wrapper, 10000, tgt, (const char *)o.getPayloadBuffer(), o.getPayloadLen());
-          tgt->stats.update_bytes_written(o.getPayloadLen());
-          o.stats.update_bytes_written(o.getPayloadLen());
         }
-
       break;
 
       case NSE_TYPE_WRITE:
@@ -855,6 +851,9 @@ int ProbeEngine::tcpconnect_handler(nsock_pool nsp, nsock_event nse, void *mydat
           if(o.getVerbosity()>=VB_3 && o.getPayloadBuffer()!=NULL)
             luis_hdump((char *)o.getPayloadBuffer(), o.getPayloadLen()); // TODO @todo Find print_hexdump() and use it!
         }
+        /* Update stats for TCP write() operations. */
+        tgt->stats.update_writes(family, HEADER_TYPE_TCP, o.getPayloadLen());
+        o.stats.update_writes(family, HEADER_TYPE_TCP, o.getPayloadLen());
       break;
 
       case NSE_TYPE_READ:
@@ -869,9 +868,9 @@ int ProbeEngine::tcpconnect_handler(nsock_pool nsp, nsock_event nse, void *mydat
           if(o.getVerbosity()>=VB_3)
             luis_hdump((char *)recvbuff, recvbytes); // TODO @todo Find print_hexdump() and use it!
 
-          /* Update statistics */
-          tgt->stats.update_bytes_read(o.getPayloadLen());
-          o.stats.update_bytes_read(o.getPayloadLen());
+          /* Update statistics for TCP read() operations  */
+          tgt->stats.update_reads(family, HEADER_TYPE_TCP, recvbytes);
+          o.stats.update_reads(family, HEADER_TYPE_TCP, recvbytes);
         }
       break;
 

@@ -198,19 +198,6 @@ class NpingTimer {
 
 };
 
-/* Array indexes for raw packet stats */
-#define INDEX_SENT 0
-#define INDEX_RCVD 1
-#define INDEX_ECHO 2
-
-/* Array indexes for TCP connection stats */
-#define INDEX_CONN_ISSUED   0
-#define INDEX_CONN_ACCEPTED 1
-
-/* Array indexes for UDP unprivileged writes and reads */
-#define INDEX_UDP_WRITES  0
-#define INDEX_UDP_READS   1
-
 /* Stat identifiers for getters */
 #define STATS_TCP                (HEADER_TYPE_TCP)
 #define STATS_UDP                (HEADER_TYPE_UDP)
@@ -228,49 +215,87 @@ class NpingTimer {
 class PacketStats {
 
   private:
-    u64_t packets[3];  /* Packets sent/received/echoed */
-    u64_t bytes[3];    /* Bytes sent/received/echoed */
-    u64_t tcp[3];      /* TCP packets sent/received/echoed */
-    u64_t udp[3];      /* UDP packets sent/received/echoed */
-    u64_t icmp4[3];    /* ICMPv4 packets sent/received/echoed */
-    u64_t icmp6[3];    /* ICMPv6 packets sent/received/echoed */
-    u64_t arp[3];      /* ARP packets sent/received/echoed */
-    u64_t ip4[3];      /* IPv4 packets sent/received/echoed */
-    u64_t ip6[3];      /* IPv6 packets sent/received/echoed */
-    u64_t tcpconn[2];  /* TCP-Unprivileged connections attempted/accepted */
-    u64_t udpunpriv[2];/* UDP-Unprivileged write and read operations */
-  //u64_y sctpconn[2]  /* SCTP-Unprivileged connections attempted/accepted */
 
-    u32 echo_clients_served;
+    /* Array indexes for raw packet stats */
+    #define INDEX_SENT      0
+    #define INDEX_RCVD      1
+    #define INDEX_ECHOED    2
+    #define INDEX_CAPTURED  3
+    #define INDEX_READS     4
+    #define INDEX_WRITES    5
+    #define INDEX_CONNECTS  6
+    #define INDEX_ACCEPTS   7
+
+    u64 packets[8];    /* Packets sent/received/echoed/captured/read()s/write()s/connect()s/accept()s */
+    u64 bytes[6];      /* Bytes sent/received/echoed/captured/read/written */
+    u64 tcp[8];        /* TCP packets sent/received/echoed/captured/read()s/write()s/connect()s/accept()s */
+    u64 udp[8];        /* UDP packets sent/received/echoed/captured/read()s/write()s/connect()s/accept()s */
+    u64 icmp4[4];      /* ICMPv4 packets sent/received/echoed/captured */
+    u64 icmp6[4];      /* ICMPv6 packets sent/received/echoed/captured */
+    u64 arp[4];        /* ARP packets sent/received/echoed/captured */
+    u64 ip4[8];        /* IPv4 packets sent/received/echoed/captured/read()s/write()s/connect()s/accept()s */
+    u64 ip6[8];        /* IPv6 packets sent/received/echoed/captured/read()s/write()s/connect()s/accept()s */
+
+    u64 echo_clients_served;
+    int max_rtt;
+    int min_rtt;
+    int avg_rtt;
 
     NpingTimer tx_timer;  /* Timer for packet transmission.         */
     NpingTimer rx_timer;  /* Timer for packet reception.            */
     NpingTimer run_timer; /* Timer to measure Nping execution time. */
 
-    int max_rtt;
-    int min_rtt;
-    int avg_rtt;
-
-    int update_packet_count(int index, int ip_version, int proto, u32 pkt_len);
-    int update_unprivileged_counts(int index, int ip_version, int proto);
-    u64_t *proto2stats(int proto);
-    u64_t get_stat(int proto, int index);
+    u64 *proto2stats(int proto);
+    int update_count(int index, int ip_version, int proto, u32 pkt_len);
+    u64 get_stat(int proto, int index);
 
  public:
     PacketStats();
     ~PacketStats();
     void reset();
+
+    /* Raw packets sent and received */
     int update_sent(int ip_version, int proto, u32 pkt_len);
     int update_rcvd(int ip_version, int proto, u32 pkt_len);
+    u64 get_sent(int proto);
+    u64 get_rcvd(int proto);
+
+    /* Packets that have been echoed. In echo server mode, number of
+     * packets that have been echoed so far since the server was started.
+     * In echo client mode, number of NEP_ECHO messages received from
+     * the server. */
     int update_echoed(int ip_version, int proto, u32 pkt_len);
+    u64 get_echoed(int proto);
+
+    /* Number of packets captured from the wire */
+    int update_captured(int ip_version, int proto, u32 pkt_len);
+    u64 get_captured(int proto);
+
+    /* Number of echo clients served since the echo server was started */
     int update_clients_served();
+    u64 get_clients_served();
+
+    /* Number of TCP connect() operations */
     int update_connects(int ip_version, int proto);
+    u64 get_connects(int proto);
+
+    /* Number of connect()s that have been accepted */
     int update_accepts(int ip_version, int proto);
+    u64 get_accepts(int proto);
+
+    /* Number of TCP or UDP unprivileged read() and write() operations performed */
     int update_reads(int ip_version, int proto, u32 pkt_len);
     int update_writes(int ip_version, int proto, u32 pkt_len);
-    int update_bytes_read(u32 count);
-    int update_bytes_written(u32 count);
+    u64 get_reads(int proto);
+    u64 get_writes(int proto);
+
+    /* RTTs */
     int update_rtt(int rtt);
+    int get_max_rtt();
+    int get_min_rtt();
+    int get_avg_rtt();
+
+    /* Tx and Rx clocks */
     int start_clocks();
     int stop_clocks();
     int start_tx_clock();
@@ -282,32 +307,27 @@ class PacketStats {
     double get_tx_elapsed();
     double get_rx_elapsed();
     double get_runtime_elapsed(struct timeval *now);
-    u64_t get_pkts_sent();
-    u64_t get_bytes_sent();
-    u64_t get_pkts_rcvd();
-    u64_t get_bytes_rcvd();
-    u64_t get_pkts_echoed();
-    u64_t get_bytes_echoed();
-    u64_t get_sent(int proto);
-    u64_t get_rcvd(int proto);
-    u64_t get_echoed(int proto);
-    u64_t get_lost(int proto);
+
+    u64 get_bytes_sent();
+    u64 get_bytes_rcvd();
+    u64 get_bytes_echoed();
+    u64 get_bytes_captured();
+    u64 get_bytes_read();
+    u64 get_bytes_written();
+
+    u64 get_lost(int proto);
     double get_percent_lost(int proto);
     double get_percent_not_echoed(int proto);
-    u32 get_clients_served();
-    u64_t get_connects(int proto);
-    u64_t get_accepts(int proto);
-    u64_t get_connects_failed(int proto);
+    u64 get_connects_failed(int proto);
     double get_percent_failed(int proto);
-    u64_t get_pkts_lost();
+    u64 get_pkts_lost();
     double get_percent_lost();
-    u64_t get_pkts_unmatched();
+    u64 get_pkts_unmatched();
     double get_percent_unmatched();
     double get_tx_pkt_rate();
     double get_tx_byte_rate();
     double get_rx_pkt_rate();
     double get_rx_byte_rate();
-    int get_max_rtt();
     int print_RTTs(const char *leading_str);
     int print_proto_stats(int proto, const char *leading_str, bool print_echoed);
 

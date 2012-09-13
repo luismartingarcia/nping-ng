@@ -219,66 +219,27 @@ PacketStats::~PacketStats(){
 
 
 void PacketStats::reset(){
-  this->packets[INDEX_SENT]=0;
-  this->packets[INDEX_RCVD]=0;
-  this->packets[INDEX_ECHO]=0;
-
-  this->bytes[INDEX_SENT]=0;
-  this->bytes[INDEX_RCVD]=0;
-  this->bytes[INDEX_ECHO]=0;
-
-  this->tcp[INDEX_SENT]=0;
-  this->tcp[INDEX_RCVD]=0;
-  this->tcp[INDEX_ECHO]=0;
-
-  this->udp[INDEX_SENT]=0;
-  this->udp[INDEX_RCVD]=0;
-  this->udp[INDEX_ECHO]=0;
-
-  this->icmp4[INDEX_SENT]=0;
-  this->icmp4[INDEX_RCVD]=0;
-  this->icmp4[INDEX_ECHO]=0;
-
-  this->icmp6[INDEX_SENT]=0;
-  this->icmp6[INDEX_RCVD]=0;
-  this->icmp6[INDEX_ECHO]=0;
-
-  this->arp[INDEX_SENT]=0;
-  this->arp[INDEX_RCVD]=0;
-  this->arp[INDEX_ECHO]=0;
-
-  this->ip4[INDEX_SENT]=0;
-  this->ip4[INDEX_RCVD]=0;
-  this->ip4[INDEX_ECHO]=0;
-
-  this->ip6[INDEX_SENT]=0;
-  this->ip6[INDEX_RCVD]=0;
-  this->ip6[INDEX_ECHO]=0;
-
-  this->tcpconn[INDEX_CONN_ISSUED]=0;
-  this->tcpconn[INDEX_CONN_ACCEPTED]=0;
-
-  this->udpunpriv[INDEX_UDP_WRITES]=0;
-  this->udpunpriv[INDEX_UDP_READS]=0;
-
-  //this->sctpconn[INDEX_CONN_ISSUED]=0;
-  //this->sctpconn[INDEX_CONN_ACCEPTED]=0;
-
+  memset(&this->packets, 0, sizeof(this->packets));
+  memset(&this->bytes, 0, sizeof(this->bytes));
+  memset(&this->tcp, 0, sizeof(this->tcp));
+  memset(&this->udp, 0, sizeof(this->udp));
+  memset(&this->icmp4, 0, sizeof(this->icmp4));
+  memset(&this->icmp6, 0, sizeof(this->icmp6));
+  memset(&this->arp, 0, sizeof(this->arp));
+  memset(&this->ip4, 0, sizeof(this->ip4));
+  memset(&this->ip6, 0, sizeof(this->ip6));
   this->echo_clients_served=0;
-
-  this->tx_timer.reset();
-  this->rx_timer.reset();
-  this->run_timer.reset();
-
   this->max_rtt=-1;
   this->min_rtt=-1;
   this->avg_rtt=-1;
-
+  this->tx_timer.reset();
+  this->rx_timer.reset();
+  this->run_timer.reset();
 } /* End of reset() */
 
 
 /* Takes a protocol and returns the appropriate stats array. */
-u64_t *PacketStats::proto2stats(int proto){
+u64 *PacketStats::proto2stats(int proto){
   switch(proto){
 
       case STATS_TCP:
@@ -309,14 +270,6 @@ u64_t *PacketStats::proto2stats(int proto){
         return this->ip4;
       break;
 
-      case STATS_TCP_CONNECT:
-        return this->tcpconn;
-      break;
-
-      case STATS_UDP_UNPRIV:
-          return this->udpunpriv;
-      break;
-
       case STATS_TOTAL:
         return this->packets;
       break;
@@ -328,8 +281,8 @@ u64_t *PacketStats::proto2stats(int proto){
 /** Updates packet and byte count for sent/received/echoed packets. This
   * method is meant to be used internally. Use the update_sent(), update_rcvd()
   * and update_echoed() instead. */
-int PacketStats::update_packet_count(int index, int ip_version, int proto, u32 pkt_len){
-  assert(index==INDEX_SENT || index==INDEX_RCVD || index==INDEX_ECHO);
+int PacketStats::update_count(int index, int ip_version, int proto, u32 pkt_len){
+  assert(index>=INDEX_SENT && index<=INDEX_ACCEPTS);
 
   /* General packet and byte count */
   this->packets[index]++;
@@ -364,25 +317,39 @@ int PacketStats::update_packet_count(int index, int ip_version, int proto, u32 p
   }
 
   return OP_SUCCESS;
-} /* End of update_packet_count() */
+} /* End of update_count() */
+
+
+u64 PacketStats::get_stat(int proto, int index){
+  u64 *protostats = this->proto2stats(proto);
+  assert(protostats!=NULL);
+  assert(index>=INDEX_SENT && index<=INDEX_ACCEPTS);
+  return protostats[index];
+} /* End of get_stat() */
 
 
 /* Update the stats for tranmitted packets */
 int PacketStats::update_sent(int ip_version, int proto, u32 pkt_len){
-  return this->update_packet_count(INDEX_SENT, ip_version, proto, pkt_len);
+  return this->update_count(INDEX_SENT, ip_version, proto, pkt_len);
 } /* End of update_sent() */
 
 
 /* Update the stats for received packets */
 int PacketStats::update_rcvd(int ip_version, int proto, u32 pkt_len){
-  return this->update_packet_count(INDEX_RCVD, ip_version, proto, pkt_len);
+  return this->update_count(INDEX_RCVD, ip_version, proto, pkt_len);
 } /* End of update_rcvd() */
 
 
 /* Update the stats for echoed packets (echo mode). */
 int PacketStats::update_echoed(int ip_version, int proto, u32 pkt_len){
-  return this->update_packet_count(INDEX_ECHO, ip_version, proto, pkt_len);
+  return this->update_count(INDEX_ECHOED, ip_version, proto, pkt_len);
 } /* End of update_echoed() */
+
+
+/* Update the stats for the number of packets captured from the wire */
+int PacketStats::update_captured(int ip_version, int proto, u32 pkt_len){
+  return this->update_count(INDEX_CAPTURED, ip_version, proto, pkt_len);
+} /* End of update_captured() */
 
 
 /** Updates count for echo clients served by the echo server. */
@@ -392,44 +359,12 @@ int PacketStats::update_clients_served(){
 } /* End of update_clients_served() */
 
 
-/* Updates connection counters (issued and accepted TCP connections). This
- * method is meant to be used internally. Use the update_connects() and
- * update_accepts() instead. */
-int PacketStats::update_unprivileged_counts(int index, int ip_version, int proto){
-  assert(index==INDEX_CONN_ISSUED || index==INDEX_CONN_ACCEPTED);
-  /* IP stats */
-  switch(ip_version){
-    case AF_INET:
-      this->ip4[index]++;
-    break;
-    case AF_INET6:
-      this->ip6[index]++;
-    break;
-  }
-  /* TCP Connection stats */
-  switch(proto){
-    case HEADER_TYPE_TCP:
-      this->tcpconn[index]++;
-    break;
-
-    case HEADER_TYPE_UDP:
-      this->udpunpriv[index]++;
-    break;
-
-    default:
-      assert(false);
-    break;
-  }
-  return OP_SUCCESS;
-} /* End of update_unprivileged_counts() */
-
-
 /* Update the stats for the number of connections that we have tried to
- * establish. In other words, the number of connect()s that we have issued.
+ * establish. In other words, the number of connect()s calls that we have issued.
  * The "proto" parameter is now redundant but it will make sense if one day
  * we support SCTP connections. */
 int PacketStats::update_connects(int ip_version, int proto){
-  return this->update_unprivileged_counts(INDEX_CONN_ISSUED, ip_version, proto);
+  return this->update_count(INDEX_CONNECTS, ip_version, proto, 0);
 } /* End of update_connects() */
 
 
@@ -437,50 +372,65 @@ int PacketStats::update_connects(int ip_version, int proto){
  * established. The "proto" parameter is now redundant but it will make
  * sense if one day we support SCTP connections. */
 int PacketStats::update_accepts(int ip_version, int proto){
-  return this->update_unprivileged_counts(INDEX_CONN_ACCEPTED, ip_version, proto);
+  return this->update_count(INDEX_ACCEPTS, ip_version, proto, 0);
 } /* End of update_accepts() */
 
 
-/* Update the stats for the number of unprivileged UDP write() operations that we
- * have successfully carried out. The "proto" parameter is now redundant,  since
- * we only measure that for UDP, but maybe we can extend that in the future. */
+/* Update the stats for the number of unprivileged UDP/TCP read() operations
+ * that we have successfully carried out. */
 int PacketStats::update_reads(int ip_version, int proto, u32 pkt_len){
-  return this->update_unprivileged_counts(INDEX_UDP_READS, ip_version, proto);
+  return this->update_count(INDEX_READS, ip_version, proto, pkt_len);
 } /* End of update_reads() */
 
 
-/* Update the stats for the number of unprivileged UDP read() operations */
+/* Update the stats for the number of unprivileged UDP/TCP read() operations */
 int PacketStats::update_writes(int ip_version, int proto, u32 pkt_len){
-  return this->update_unprivileged_counts(INDEX_UDP_WRITES, ip_version, proto);
+  return this->update_count(INDEX_WRITES, ip_version, proto, pkt_len);
 } /* End of update_writes() */
 
 
-/* Update the number of bytes read. Note that this method is public only because
- * it is used to update byte counts for TCP connections. Also, note that we
- * are reusing the same this->bytes variable that holds byte counts for
- * raw packets. However, as Nping shouldn't mix privileged and unprivileged
- * operation modes, this should be OK for now. */
-int PacketStats::update_bytes_read(u32 count){
-  this->bytes[INDEX_RCVD]+=count;
-  return OP_SUCCESS;
-} /* End of update_bytes_read() */
+u64 PacketStats::get_sent(int proto){
+  return this->get_stat(proto, INDEX_SENT);
+}/* End of get_sent() */
 
 
-/* Update the number of bytes written. Note that this method is public only
- * because it is used to update byte counts for TCP connections where we had
- * some payload to send. Also, note that we are reusing the same this->bytes
- * variable that holds byte counts for raw packets. However, as Nping shouldn't
- * mix privileged and unprivileged operation modes, this should be OK for
- * now. */
-int PacketStats::update_bytes_written(u32 count){
-  this->bytes[INDEX_SENT]+=count;
-  return OP_SUCCESS;
-} /* End of update_bytes_written() */
+u64 PacketStats::get_rcvd(int proto){
+  return this->get_stat(proto, INDEX_RCVD);
+}/* End of get_rcvd() */
 
 
-/* Assumes that the counter for received packets has NOT been incremented yet. */
+u64 PacketStats::get_echoed(int proto){
+  return this->get_stat(proto, INDEX_ECHOED);
+}/* End of get_echoed() */
+
+
+u64 PacketStats::get_captured(int proto){
+  return this->get_stat(proto, INDEX_CAPTURED);
+}/* End of get_captured() */
+
+
+u64 PacketStats::get_reads(int proto){
+  return this->get_stat(proto, INDEX_READS);
+}/* End of get_reads() */
+
+
+u64 PacketStats::get_writes(int proto){
+  return this->get_stat(proto, INDEX_WRITES);
+}/* End of get_writes() */
+
+
+u64 PacketStats::get_connects(int proto){
+  return this->get_stat(proto, INDEX_CONNECTS);
+} /* End of get_connects() */
+
+
+u64 PacketStats::get_accepts(int proto){
+  return this->get_stat(proto, INDEX_ACCEPTS);
+} /* End of get_accepts() */
+
+
+/* @warning Assumes that the counter for received packets has NOT been incremented yet. */
 int PacketStats::update_rtt(int rtt){
-
   /* Update Max RTT */
   if(rtt > this->max_rtt || this->max_rtt<0){
     this->max_rtt=rtt;
@@ -563,60 +513,37 @@ double PacketStats::get_runtime_elapsed(struct timeval *now){
 } /* End of get_runtime_elapsed() */
 
 
-u64_t PacketStats::get_pkts_sent(){
-  return this->packets[INDEX_SENT];
-} /* End of get_pkts_sent() */
-
-
-u64_t PacketStats::get_bytes_sent(){
+u64 PacketStats::get_bytes_sent(){
   return this->bytes[INDEX_SENT];
 } /* End of get_bytes_sent() */
 
 
-u64_t PacketStats::get_pkts_rcvd(){
-  return this->packets[INDEX_RCVD];
-} /* End of get pkts_rcvd() */
-
-
-u64_t PacketStats::get_bytes_rcvd(){
+u64 PacketStats::get_bytes_rcvd(){
   return this->bytes[INDEX_RCVD];
 } /* End of get_bytes_rcvd() */
 
 
-u64_t PacketStats::get_pkts_echoed(){
-  return this->packets[INDEX_ECHO];
-} /* End of get_pkts_echoed() */
-
-
-u64_t PacketStats::get_bytes_echoed(){
-  return this->bytes[INDEX_ECHO];
+u64 PacketStats::get_bytes_echoed(){
+  return this->bytes[INDEX_ECHOED];
 } /* End of get_bytes_echoed() */
 
 
-u64_t PacketStats::get_stat(int proto, int index){
-  u64_t *protostats = this->proto2stats(proto);
-  assert(protostats!=NULL);
-  assert(index==INDEX_SENT || index==INDEX_RCVD || index==INDEX_ECHO);
-  return protostats[index];
-} /* End of get_stat() */
+u64 PacketStats::get_bytes_captured(){
+  return this->bytes[INDEX_CAPTURED];
+} /* End of get_bytes_captured() */
 
 
-u64_t PacketStats::get_sent(int proto){
-  return this->get_stat(proto, INDEX_SENT);
-}/* End of get_sent() */
+u64 PacketStats::get_bytes_read(){
+  return this->bytes[INDEX_READS];
+} /* End of get_bytes_read() */
 
 
-u64_t PacketStats::get_rcvd(int proto){
-  return this->get_stat(proto, INDEX_RCVD);
-}/* End of get_rcvd() */
+u64 PacketStats::get_bytes_written(){
+  return this->bytes[INDEX_WRITES];
+} /* End of get_bytes_written() */
 
 
-u64_t PacketStats::get_echoed(int proto){
-  return this->get_stat(proto, INDEX_ECHO);
-}/* End of get_echoed() */
-
-
-u64_t PacketStats::get_lost(int proto){
+u64 PacketStats::get_lost(int proto){
   return (this->get_sent(proto) <= this->get_rcvd(proto)) ? 0 :
       (this->get_sent(proto) - this->get_rcvd(proto));
 }/* End of get_lost() */
@@ -637,7 +564,7 @@ double PacketStats::get_percent_not_echoed(int proto){
   /* Only compute percentage if we actually sent packets, don't do divisions
    * by zero! (this could happen when user presses CTRL-C and we print the
    * stats */
-  u64_t not_echoed=this->get_sent(proto)-this->get_echoed(proto);
+  u64 not_echoed=this->get_sent(proto)-this->get_echoed(proto);
   double percentlost=0.0;
   if(not_echoed!=0 && this->get_sent(proto)!=0)
     percentlost=((double)not_echoed)/((double)this->get_sent(proto));
@@ -645,47 +572,19 @@ double PacketStats::get_percent_not_echoed(int proto){
 } /* End of get_percent_lost() */
 
 
-u32 PacketStats::get_clients_served(){
+u64 PacketStats::get_clients_served(){
   return this->echo_clients_served;
 } /* End of get_clients_served() */
 
 
-u64_t PacketStats::get_connects(int proto){
+u64 PacketStats::get_connects_failed(int proto){
   /* TCP Connection stats */
   switch(proto){
     case HEADER_TYPE_TCP:
-      return this->tcpconn[INDEX_CONN_ISSUED];
-    break;
-    default:
-      assert(false);
-    break;
-  }
-  return 0;
-} /* End of get_connects() */
-
-
-u64_t PacketStats::get_accepts(int proto){
-  /* TCP Connection stats */
-  switch(proto){
-    case HEADER_TYPE_TCP:
-      return this->tcpconn[INDEX_CONN_ACCEPTED];
-    break;
-    default:
-      assert(false);
-    break;
-  }
-  return 0;
-} /* End of get_accepts() */
-
-
-u64_t PacketStats::get_connects_failed(int proto){
-  /* TCP Connection stats */
-  switch(proto){
-    case HEADER_TYPE_TCP:
-      if(this->tcpconn[INDEX_CONN_ISSUED] <= this->tcpconn[INDEX_CONN_ACCEPTED])
+      if(this->tcp[INDEX_CONNECTS] <= this->tcp[INDEX_ACCEPTS])
         return 0;
       else
-        return this->tcpconn[INDEX_CONN_ISSUED] - this->tcpconn[INDEX_CONN_ACCEPTED];
+        return this->tcp[INDEX_CONNECTS] - this->tcp[INDEX_ACCEPTS];
     break;
     default:
       assert(false);
@@ -709,7 +608,7 @@ double PacketStats::get_percent_failed(int proto){
 } /* End of get_percent_lost() */
 
 
-u64_t PacketStats::get_pkts_lost(){
+u64 PacketStats::get_pkts_lost(){
   if(this->packets[INDEX_SENT] <= this->packets[INDEX_RCVD])
     return 0;
   else
@@ -731,17 +630,17 @@ double PacketStats::get_percent_lost(){
 } /* End of get_percent_lost() */
 
 
-u64_t PacketStats::get_pkts_unmatched(){
-  if(this->packets[INDEX_RCVD] <= this->packets[INDEX_ECHO])
+u64 PacketStats::get_pkts_unmatched(){
+  if(this->packets[INDEX_RCVD] <= this->packets[INDEX_ECHOED])
     return 0;
   else
-    return this->packets[INDEX_RCVD] - this->packets[INDEX_ECHO];
+    return this->packets[INDEX_RCVD] - this->packets[INDEX_ECHOED];
 } /* End of get_pkts_unmatched() */
 
 
 double PacketStats::get_percent_unmatched(){
   u32 pkt_captured=this->packets[INDEX_RCVD];
-  u32 pkt_echoed=this->packets[INDEX_ECHO];
+  u32 pkt_echoed=this->packets[INDEX_ECHOED];
   u32 pkt_unmatched=(pkt_captured<=pkt_echoed) ? 0 : (u32)(pkt_captured-pkt_echoed);
   double percentunmatched=0.0;
   if( pkt_unmatched!=0 && pkt_captured!=0)
@@ -792,23 +691,35 @@ int PacketStats::get_max_rtt(){
 } /* End of get_max_rtt() */
 
 
+/* Returns min RTT observed for this host */
+int PacketStats::get_min_rtt(){
+  return this->min_rtt;
+} /* End of get_min_rtt() */
+
+
+/* Returns the average RTT observed for this host */
+int PacketStats::get_avg_rtt(){
+  return this->avg_rtt;
+} /* End of get_avg_rtt() */
+
+
 /* Print round trip times */
 int PacketStats::print_RTTs(const char *leading_str){
   if(leading_str==NULL)
     leading_str="";
   /* Maximum RTT observed */
   if(max_rtt>=0)
-    nping_print(VB_0|NO_NEWLINE,"%sMax rtt: %.3lfms ", leading_str, this->max_rtt/1000.0 );
+    nping_print(VB_0|NO_NEWLINE,"%sMax rtt: %.3lfms ", leading_str, this->get_max_rtt()/1000.0 );
   else
-    nping_print(VB_0|NO_NEWLINE,"Max rtt: N/A ");
+    nping_print(VB_0|NO_NEWLINE,"%sMax rtt: N/A ", leading_str);
   /* Minimum RTT observed */
   if(min_rtt>=0)
-    nping_print(VB_0|NO_NEWLINE,"| Min rtt: %.3lfms ", this->min_rtt/1000.0 );
+    nping_print(VB_0|NO_NEWLINE,"| Min rtt: %.3lfms ", this->get_min_rtt()/1000.0 );
   else
     nping_print(VB_0|NO_NEWLINE,"| Min rtt: N/A " );
   /* Average RTT */
   if(avg_rtt>=0)
-    nping_print(VB_0,"| Avg rtt: %.3lfms", this->avg_rtt/1000.0 );
+    nping_print(VB_0,"| Avg rtt: %.3lfms", this->get_avg_rtt()/1000.0 );
   else
     nping_print(VB_0,"| Avg rtt: N/A" );
   return OP_SUCCESS;
@@ -822,14 +733,14 @@ int PacketStats::print_proto_stats(int proto, const char *leading_str, bool prin
   if(leading_str==NULL)
     leading_str="";
   switch(proto){
-    case HEADER_TYPE_TCP: start_str="TCP"; break;
-    case HEADER_TYPE_UDP: start_str="UDP"; break;
-    case HEADER_TYPE_ICMPv4: start_str="ICMPv4"; break;
-    case HEADER_TYPE_ICMPv6: start_str="ICMPv6"; break;
-    case HEADER_TYPE_ARP: start_str="ARP"; break;
-    case HEADER_TYPE_IPv4: start_str="IPv4"; break;
-    case HEADER_TYPE_IPv6: start_str="IPv6"; break;
-    case HEADER_TYPE_RAW_DATA: start_str="Raw"; break;
+    case STATS_TCP: start_str="TCP"; break;
+    case STATS_UDP: start_str="UDP"; break;
+    case STATS_ICMPv4: start_str="ICMPv4"; break;
+    case STATS_ICMPv6: start_str="ICMPv6"; break;
+    case STATS_ARP: start_str="ARP"; break;
+    case STATS_IPv4: start_str="IPv4"; break;
+    case STATS_IPv6: start_str="IPv6"; break;
+    case STATS_TOTAL: start_str="Raw"; break;
     default: assert(0); break;
   }
   nping_print(QT_1|NO_NEWLINE, "%s%s packets sent: %llu ", leading_str, start_str, this->get_sent(proto));
