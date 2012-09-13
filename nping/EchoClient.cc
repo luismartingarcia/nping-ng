@@ -403,8 +403,8 @@ int EchoClient::nep_recv_echo(u8 *packet, size_t packetlen){
       /* @todo If one day we allow connecting to more than one echo server in the same run,
        * this code needs to update the correct array index. Now we assume [0] because that's
        * the only host we try to establish a NEP session with. */
-      o.stats.update_echo(o.target_hosts[0]->getTargetAddress()->getVersion(), tlayer->protocol_id(), pktlen);
-      o.target_hosts[0]->stats.update_echo(o.target_hosts[0]->getTargetAddress()->getVersion(), tlayer->protocol_id(), pktlen);
+      o.stats.update_echoed(o.target_hosts[0]->getTargetAddress()->getVersion(), tlayer->protocol_id(), pktlen);
+      o.target_hosts[0]->stats.update_echoed(o.target_hosts[0]->getTargetAddress()->getVersion(), tlayer->protocol_id(), pktlen);
     }else{
       nping_warning(QT_2, "%s(): No transport layer found. Please report this bug.", __func__);
     }

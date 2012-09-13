@@ -930,7 +930,7 @@ int EchoServer::nep_capture_handler(nsock_pool nsp, nsock_event nse, void *param
       nsock_write(nsp, clnt_iod, echo_handler, NSOCK_INFINITE, NULL, (const char *)pkt_out.getBinaryBuffer(), pkt_out.getLen());
       /* TODO @todo Here find a way to determine which IP and upper layer proto
        * the packet has so we can update the stats properly. */
-      o.stats.update_echo(0,0,packetlen);
+      o.stats.update_echoed(0,0,packetlen);
   }
   return OP_SUCCESS;
 } /* End of nep_capture_handler() */

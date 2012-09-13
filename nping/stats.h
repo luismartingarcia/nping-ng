@@ -262,7 +262,7 @@ class PacketStats {
     void reset();
     int update_sent(int ip_version, int proto, u32 pkt_len);
     int update_rcvd(int ip_version, int proto, u32 pkt_len);
-    int update_echo(int ip_version, int proto, u32 pkt_len);
+    int update_echoed(int ip_version, int proto, u32 pkt_len);
     int update_clients_served();
     int update_connects(int ip_version, int proto);
     int update_accepts(int ip_version, int proto);

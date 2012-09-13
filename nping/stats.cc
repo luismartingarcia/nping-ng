@@ -327,7 +327,7 @@ u64_t *PacketStats::proto2stats(int proto){
 
 /** Updates packet and byte count for sent/received/echoed packets. This
   * method is meant to be used internally. Use the update_sent(), update_rcvd()
-  * and update_echo() instead. */
+  * and update_echoed() instead. */
 int PacketStats::update_packet_count(int index, int ip_version, int proto, u32 pkt_len){
   assert(index==INDEX_SENT || index==INDEX_RCVD || index==INDEX_ECHO);
 
@@ -380,9 +380,9 @@ int PacketStats::update_rcvd(int ip_version, int proto, u32 pkt_len){
 
 
 /* Update the stats for echoed packets (echo mode). */
-int PacketStats::update_echo(int ip_version, int proto, u32 pkt_len){
+int PacketStats::update_echoed(int ip_version, int proto, u32 pkt_len){
   return this->update_packet_count(INDEX_ECHO, ip_version, proto, pkt_len);
-} /* End of update_echo() */
+} /* End of update_echoed() */
 
 
 /** Updates count for echo clients served by the echo server. */
