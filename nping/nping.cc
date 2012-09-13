@@ -186,8 +186,11 @@ int main(int argc, char *argv[] ){
   #endif
 
   /* Let's parse and validate user supplied args */
+  nping_print(DBG_3,"Parsing command-line arguments...");
   a.parseArguments(argc, argv);
+  nping_print(DBG_3,"Arguments parsed. Validating them...");
   o.validateOptions();
+  nping_print(DBG_3,"Arguments valid. Starting Nping...");
 
   /* ISO 8601 date/time -- http://www.cl.cam.ac.uk/~mgk25/iso-time.html */
   if ( strftime(tbuf, sizeof(tbuf), "%Y-%m-%d %H:%M %Z", tm) <= 0)

@@ -1888,6 +1888,7 @@ int NpingOps::addTargetSpec(const char *spec){
 /* Processes the internal array of specs and turns it into an array of
  * TargetHosts. */
 int NpingOps::setupTargetHosts(){
+  nping_print(DBG_4, "%s()", __func__);
   const char *errmsg=NULL;
   TargetHost *newhost=NULL;
   NetworkInterface *newiface=NULL;
@@ -1905,23 +1906,32 @@ int NpingOps::setupTargetHosts(){
   }
 
   /* Turn each target spec into an array of addresses */
+  nping_print(DBG_4, "Parsing target specs...");
   for(u32 i=0; i<this->target_specs.size(); i++){
     assert(this->af()==AF_INET || this->af()==AF_INET6 || this->af()==AF_UNSPEC);
+    nping_print(DBG_4, "Parsing target spec #%u (%s)", i, this->target_specs[i]);
     /* We always use spec_to_addresses() but we call it in different ways depending
      * on the address family that we want to use. */
     if(starts_with(this->target_specs[i], "ipv4://")){
+      nping_print(DBG_4, "Explicit IPv4 target (ipv4://)");
       errmsg=spec_to_addresses( this->target_specs[i]+strlen("ipv4://"), AF_INET, this->target_addresses, MAX_IPv4_NETMASK_ALLOWED);
     }else if(starts_with(this->target_specs[i], "ipv6://")){
+      nping_print(DBG_4, "Explicit IPv6 target (ipv6://)");
       errmsg=spec_to_addresses( this->target_specs[i]+strlen("ipv6://"), AF_INET6, this->target_addresses, MAX_IPv6_NETMASK_ALLOWED);
     }else if(IPAddress::isIPv4Address(this->target_specs[i])){
+      nping_print(DBG_4, "Explicit IPv4 address");
       errmsg=spec_to_addresses( this->target_specs[i], AF_INET, this->target_addresses, MAX_IPv4_NETMASK_ALLOWED);
     }else if(IPAddress::isIPv6Address(this->target_specs[i])){
+      nping_print(DBG_4, "Explicit IPv6 address");
       errmsg=spec_to_addresses( this->target_specs[i], AF_INET6, this->target_addresses, MAX_IPv6_NETMASK_ALLOWED);
     }else if(this->af()==AF_INET){
+      nping_print(DBG_4, "AF_INET set");
       errmsg=spec_to_addresses( this->target_specs[i], AF_INET, this->target_addresses, MAX_IPv4_NETMASK_ALLOWED);
     }else if(this->af()==AF_INET6){
+      nping_print(DBG_4, "AF_INET6 set");
       errmsg=spec_to_addresses( this->target_specs[i], AF_INET6, this->target_addresses, MAX_IPv6_NETMASK_ALLOWED);
     }else{ // AF_UNSPEC
+      nping_print(DBG_4, "No address family set. Using OS default.");
       errmsg=spec_to_addresses(this->target_specs[i], AF_UNSPEC, this->target_addresses, 0);
     }
     if(errmsg!=NULL){
@@ -1933,6 +1943,7 @@ int NpingOps::setupTargetHosts(){
    * packets to it. If we have, turn the address into a full TargetHost object
    * and store it in the list of targets */
   for(u32 i=0; i<this->target_addresses.size(); i++){
+    nping_print(DBG_4, "Determine route for target #%u", i);
     memset(&dst_ss, 0, sizeof(struct sockaddr_storage));
     memset(&route, 0, sizeof(struct route_nfo));
     this->target_addresses[i]->getAddress(&dst_ss);
@@ -1941,15 +1952,19 @@ int NpingOps::setupTargetHosts(){
     if(route_dst(&dst_ss, &route, this->device_set ? this->device : NULL, this->spoof_addr!=NULL ? &src_ss : NULL) == 1 ){  // TODO: implement spoofsrc
       /* Yes, we can! Extract the info returned by route_dst() and store it
        * in the target's class */
+      nping_print(DBG_4, "Route found!");
 
       /* Destination IP address */
+      nping_print(DBG_4, "Instantiate new TargetHost.");
       newhost= new TargetHost();
       newhost->setTargetAddress(this->target_addresses[i]);
 
       /* Source IP address */
       if(this->spoof_addr!=NULL){
+        nping_print(DBG_4, "Setting spoofed address.");
         newhost->setSourceAddress(this->spoof_addr);
       }else{
+        nping_print(DBG_4, "Setting source address.");
         auxaddr=new IPAddress();
         auxaddr->setAddress(route.srcaddr);
         newhost->setSourceAddress(auxaddr);
@@ -1957,8 +1972,10 @@ int NpingOps::setupTargetHosts(){
 
       /* Network distance */
       if(route.direct_connect!=0){
+        nping_print(DBG_4, "Target host is directly connected.");
         newhost->setNetworkDistance(DISTANCE_DIRECT);
       }else{
+        nping_print(DBG_4, "Target host is more than one hop away.");
         auxaddr=new IPAddress();
         auxaddr->setAddress(route.nexthop);
         newhost->setNextHopAddress(auxaddr);
@@ -2019,6 +2036,7 @@ int NpingOps::setupTargetHosts(){
       /* If we have determined that we should send at the Ethernet level and
        * we still don't have a next hop MAC address, we need to resolve it. */
       if(do_eth){
+        nping_print(DBG_4, "Target will be reached sending packets at the Ethernet level...");
         /* Do not resolve it if the user passed a specific MAC address */
         if(!this->eth.dst.is_set()){
           /* First of all let's determine which IP address we need to use for
@@ -2034,10 +2052,12 @@ int NpingOps::setupTargetHosts(){
           assert(address2resolve!=NULL);
 
           /* Now do the actual ARP/ND resolution */
+          nping_print(DBG_4, "Attempting ARP/ND resolution...");
           if(mac_resolve(address2resolve, newhost->getSourceAddress(),newhost->getInterface(), &destmac)!=OP_SUCCESS){
             nping_warning(QT_1, "Failed to resolve MAC address for %s. Skipping target host %s", address2resolve->toString(),newhost->getTargetAddress()->toString());
             continue;
           }
+          nping_print(DBG_4, "ARP/ND resolution done!");
         }
         /* Now set up the eth info and associate it with the current host */
         EthernetHeaderTemplate myeth;
@@ -2070,6 +2090,7 @@ int NpingOps::setupTargetHosts(){
        * of fields of the headers we plan to send and we change their behavior
        * to make sure they keep constant (FILED_TYPE_CONSTANT).*/
       if(this->getRole()==ROLE_CLIENT){
+        nping_print(DBG_4, "Preventing variable protocol fields in Echo client mode.");
         this->ip4.id.setBehavior(FIELD_TYPE_CONSTANT);
         this->tcp.sport.setBehavior(FIELD_TYPE_CONSTANT);
         this->tcp.seq.setBehavior(FIELD_TYPE_CONSTANT);
@@ -2081,6 +2102,7 @@ int NpingOps::setupTargetHosts(){
       /* Now, tell the target host which packets it has to send. Note that when
        * we are doing ARP, the IP header is useless, but we still pass it. This
        * is OK, TargetHosts will ignore the header in this case. */
+      nping_print(DBG_4, "Storing packet info in the TargetHost...");
       if(this->target_addresses[i]->getVersion()==AF_INET){
         newhost->setIPv4(&this->ip4);
       }else{

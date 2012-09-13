@@ -174,6 +174,7 @@ void IPAddress::setVersion6(){
     decimal-dot notation. The code was inspired by a post in 
     http://bytes.com/topic/c/answers/212174-code-validating-ipv4-address */
 bool IPAddress::isIPv4Address(const char *val){
+  assert(val!=NULL);
   uint32_t oct1=0, oct2=0, oct3=0, oct4=0;
   char dummy=0;
 
@@ -198,6 +199,7 @@ bool IPAddress::isIPv4Address(const char *val){
   * the stantard IPv6 notation. */
 bool IPAddress::isIPv6Address(const char *val){
   struct in6_addr dummy;
+  assert(val!=NULL);
   if( inet_pton(AF_INET6, val, &dummy) == 0 )
     return false;
   else
@@ -208,6 +210,7 @@ bool IPAddress::isIPv6Address(const char *val){
 /** Returns true if string pointed by "val" is either a valid IPv4
   * address or a valid IPv6 address */
 bool IPAddress::isIPAddress(const char *val){
+  assert(val!=NULL);
   if( isIPv4Address(val) || isIPv6Address(val) )
     return true;
   else
@@ -224,6 +227,7 @@ bool IPAddress::isIPAddress(const char *val){
   * length is > 0 etc. If you need this kind of tests, you'll have to perform
   * them before calling this method. */
 bool IPAddress::isHostname(const char *val){
+  assert(val!=NULL);
   return !isIPAddress(val);
 } /* End of isHostname() */
 
@@ -253,6 +257,7 @@ const char *IPAddress::toString(){
   *     eg: printf("My ip is %s", ip.toString(mybuff, 512));*/
 const char *IPAddress::toString(char *buffer, size_t bufferlen){
   const char *result=NULL;
+  assert(buffer!=NULL);
   if( this->getVersion() == AF_INET ){
     result=inet_ntop(AF_INET, &this->ip4, buffer, bufferlen);
   }else if (this->getVersion() == AF_INET6 ){
@@ -337,6 +342,7 @@ const char *IPAddress::toString(struct sockaddr_storage ss){
   * holds a NULL terminated string with the IP address in it.
   * @return NULL in case of error. */
 const char *IPAddress::toString(struct sockaddr_in *s4){
+  assert(s4!=NULL);
   return IPAddress::toString(s4->sin_addr);
 } /* End of toString() */
 
@@ -359,6 +365,7 @@ const char *IPAddress::toString(struct sockaddr_in s4){
   * holds a NULL terminated string with the IP address in it.
   * @return NULL in case of error. */
 const char *IPAddress::toString(struct sockaddr_in6 *s6){
+  assert(s6!=NULL);
   return IPAddress::toString(s6->sin6_addr);
 } /* End of toString() */
 
@@ -379,6 +386,7 @@ const char *IPAddress::toString(struct sockaddr_in6 s6){
   * or a hostname, in which case, IPv4 resolution will be attempted.
   * @return OP_SUCCESS on success or OP_FAILURE in case of error. */
 int IPAddress::setAddress(const char *val){
+  assert(val!=NULL);
   /* If supplied parameter is an IPv6 address, set IPv6 */
   if( this->isIPv6Address(val) ){
     return setIPv6Address(val);    
@@ -430,14 +438,14 @@ void IPAddress::setAddress(struct sockaddr_in6 val){
 
 /** Sets the IP Address (version 4).  */
 void IPAddress::setAddress(struct sockaddr_in *val){
-  assert(val);
+  assert(val!=NULL);
   return this->setAddress(*val);
 }
 
 
 /** Sets the IP Address (version 4).  */
 void IPAddress::setAddress(struct sockaddr_in6 *val){
-  assert(val);
+  assert(val!=NULL);
   return this->setAddress(*val);
 }
 
@@ -448,6 +456,7 @@ void IPAddress::setAddress(struct sockaddr_in6 *val){
   * @return OP_SUCCESS on success or OP_FAILURE in case of error. */
 int IPAddress::setIPv4Address(const char *val){
   struct in_addr myaddr;
+  assert(val!=NULL);
   memset(&myaddr, 0, sizeof(struct in_addr));
   /* Resolve it and store the address */
   if( this->str2in_addr(val, &myaddr)==OP_SUCCESS ){
@@ -466,6 +475,7 @@ int IPAddress::setIPv4Address(const char *val){
   * @return OP_SUCCESS on success or OP_FAILURE in case of error. */
 int IPAddress::setIPv6Address(const char *val){
   struct in6_addr myaddr;
+  assert(val!=NULL);
   memset(&myaddr, 0, sizeof(struct in6_addr));
   /* Resolve it and store the address */
   if( this->str2in6_addr(val, &myaddr)==OP_SUCCESS ){
@@ -565,6 +575,8 @@ int IPAddress::getAddress(struct sockaddr_storage *val){
 int IPAddress::str2in_addr(const char *hostname, struct in_addr *address){
   struct sockaddr_in i;
   unsigned int stlen=0;
+  assert(hostname!=NULL);
+  assert(address!=NULL);
   if ( resolve(hostname, (sockaddr_storage*)&i, (size_t *)&stlen , AF_INET) != OP_SUCCESS )
     return OP_FAILURE;
    *address=i.sin_addr;
@@ -582,6 +594,8 @@ int IPAddress::str2in_addr(const char *hostname, struct in_addr *address){
 int IPAddress::str2in6_addr(const char *hostname, struct in6_addr *address){
   struct sockaddr_in6 i;
   unsigned int stlen=0;
+  assert(hostname!=NULL);
+  assert(address!=NULL);
   if ( resolve(hostname, (sockaddr_storage*)&i, (size_t *)&stlen , AF_INET6) != OP_SUCCESS )
     return OP_FAILURE;
    *address=i.sin6_addr;
