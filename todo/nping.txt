@@ -52,6 +52,9 @@
 
 * Make nping able to determine RTTs in TCP-Connect and UDP-Unprivileged modes.
 
+* In NpingOps::setupTargetHosts() consider skipping things like route_dst() if
+  we are doing TCP-Connect or UDP-Unprivileged.
+
 * Mixing --tcp-connect and raw packet modes does not work.
   sudo ./nping google.com nmap.org -c2 1.2.3.4 --tcp-connect --udp
 
