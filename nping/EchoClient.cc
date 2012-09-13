@@ -440,8 +440,8 @@ int EchoClient::nep_recv_echo(u8 *packet, size_t packetlen){
 
     /* @todo: compute the link layer offset from the DLT type and discard
      * link layer headers */
-    if( o.getVerbosity() >= VB_3)
-      print_hexdump(VB_0|NO_NEWLINE, pkt, pktlen);
+    if(o.getVerbosity() >= VB_3)
+      print_hexdump(VB_3|NO_NEWLINE, pkt, pktlen);
 
   }
 
