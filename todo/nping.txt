@@ -48,6 +48,9 @@
  * Things that have NOT been done yet                                        *
  *****************************************************************************/
 
+* Mixing --tcp-connect and raw packet modes does not work.
+  sudo ./nping google.com nmap.org -c2 1.2.3.4 --tcp-connect --udp
+
 * Finish improving void NpingOps::displayStatistics(). We need to move all
   nping_print() calls to PacketStats::, refactoring whenever possible.
 
