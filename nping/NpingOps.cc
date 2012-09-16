@@ -1410,6 +1410,23 @@ void NpingOps::validateOptions() {
     /* Check the echo client only produces TCP/UDP/ICMP packets */
     if(this->mode(DO_ARP))
       nping_fatal(QT_3, "The echo client can't be run with protocols other than TCP, UDP or ICMP.");
+
+    /* Now let's check if we are running in echo client mode. In this case
+     * the protocol fields cannot vary. Otherwise packets would differ from
+     * the specification passed to the server during the session
+     * establishment (NEP_PACKET_SPEC), and the matching engine wouldn't be
+     * able to identify and echo them. For this reason, in Echo Client mode,
+     * we need to avoid ProbeFields with the FIELD_TYPE_INCREMENTAL behavior
+     * (See HeaderTemplates.cc for details). So here, we go over the list
+     * of fields of the headers we plan to send and we change their behavior
+     * to make sure they keep constant (FILED_TYPE_CONSTANT).*/
+      nping_print(DBG_4, "Preventing variable protocol fields in Echo client mode.");
+      this->ip4.id.setBehavior(FIELD_TYPE_CONSTANT);
+      this->tcp.sport.setBehavior(FIELD_TYPE_CONSTANT);
+      this->tcp.seq.setBehavior(FIELD_TYPE_CONSTANT);
+      this->udp.sport.setBehavior(FIELD_TYPE_CONSTANT);
+      this->icmp4.seq.setBehavior(FIELD_TYPE_CONSTANT);
+      this->icmp6.seq.setBehavior(FIELD_TYPE_CONSTANT);
   }
   #ifndef HAVE_OPENSSL
   if(this->getRole()==ROLE_CLIENT || this->getRole()==ROLE_SERVER ){
@@ -2116,25 +2133,6 @@ int NpingOps::setupTargetHosts(){
           myeth.type=this->eth.type;
         }// Don't set it if the user didn't pass an explicit value
         newhost->setEth(&myeth);
-      }
-
-      /* Now let's check if we are running in echo client mode. In this case
-       * the protocol fields cannot vary. Otherwise packets would differ from
-       * the specification passed to the server during the session
-       * establishment (NEP_PACKET_SPEC), and the matching engine wouldn't be
-       * able to identify and echo them. For this reason, in Echo Client mode,
-       * we need to avoid ProbeFields with the FIELD_TYPE_INCREMENTAL behavior
-       * (See HeaderTemplates.cc for details). So here, we go over the list
-       * of fields of the headers we plan to send and we change their behavior
-       * to make sure they keep constant (FILED_TYPE_CONSTANT).*/
-      if(this->getRole()==ROLE_CLIENT){
-        nping_print(DBG_4, "Preventing variable protocol fields in Echo client mode.");
-        this->ip4.id.setBehavior(FIELD_TYPE_CONSTANT);
-        this->tcp.sport.setBehavior(FIELD_TYPE_CONSTANT);
-        this->tcp.seq.setBehavior(FIELD_TYPE_CONSTANT);
-        this->udp.sport.setBehavior(FIELD_TYPE_CONSTANT);
-        this->icmp4.seq.setBehavior(FIELD_TYPE_CONSTANT);
-        this->icmp6.seq.setBehavior(FIELD_TYPE_CONSTANT);
       }
 
       /* Now, tell the target host which packets it has to send. Note that when
