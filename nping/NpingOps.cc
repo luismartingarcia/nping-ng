@@ -325,20 +325,30 @@ bool NpingOps::issetMode(){
  * has been set. */
 bool NpingOps::mode(u16 test_value){
   if(test_value==MODE_IS_PRIVILEGED){
-    return !this->mode(MODE_IS_UNPRIVILEGED);
-  }else if(test_value==MODE_IS_UNPRIVILEGED){
-    /* Return true when only TCP connect or UDP Unpriv is set. Both
-     * can be set, but no other mode should be set in order to return
-     * true. */
-    if(this->modes==DO_TCP_CONNECT || this->modes==DO_UDP_UNPRIV ||
-       this->modes==(DO_TCP_CONNECT|DO_UDP_UNPRIV)){
+    if(test_value & DO_TCP)
       return true;
-    }else{
-      return false;
-    }
+    if(test_value & DO_UDP)
+      return true;
+    if(test_value & DO_ICMP)
+      return true;
+    if(test_value & DO_ARP)
+      return true;
+    if(test_value & DO_TRACEROUTE)
+      return true;
+    if(test_value & DO_EXT_HOPOPT)
+      return true;
+    if(test_value & DO_EXT_ROUTING)
+      return true;
+    if(test_value & DO_EXT_DOPT)
+      return true;
+    if(test_value & DO_EXT_FRAGMENT)
+      return true;
+  }else if(test_value==MODE_IS_UNPRIVILEGED){
+      return !this->mode(MODE_IS_PRIVILEGED);
   }else{
     return (this->modes & test_value);
   }
+  return false;
 } /* End of mode() */
 
 
@@ -349,44 +359,80 @@ bool NpingOps::mode(u16 test_value){
  *          string containing "Unknown probe" in case of failure.
  * */
 const char *NpingOps::mode2Ascii(u16 md){
-  switch(md){
-    case DO_TCP_CONNECT:
-      return "TCP-Connect";
-    break;
-    case DO_UDP_UNPRIV:
-      return "UDP-Unprivileged";
-    break;
-    case DO_TCP:
-      return "TCP";
-    break;
-    case DO_UDP:
-      return "UDP";
-    break;
-    case DO_ICMP:
-      return "ICMP";
-    break;
-    case DO_ARP:
-      return "ARP";
-    break;
-    case DO_TRACEROUTE:
-      return "Traceroute";
-    break;
-    case DO_EXT_HOPOPT:
-      return "IPv6-HopByHop";
-    break;
-    case DO_EXT_ROUTING:
-      return "IPv6-Routing";
-    break;
-    case DO_EXT_DOPT:
-      return "IPv6-DestOpts";
-    break;
-    case DO_EXT_FRAGMENT:
-      return "IPv6-Fragment";
-    break;
-    default:
-      return "Unknown Mode";
-    break;
- }
+  int n=0;
+  static char modestr[256];
+  memset(modestr,0,256);
+
+  strncat(modestr,"{", 255);
+
+  if(md & DO_TCP_CONNECT){
+    strncat(modestr,"TCP-Connect", 255);
+    n++;
+  }
+  if(md & DO_UDP_UNPRIV){
+    if(n>0)
+      strncat(modestr," + ", 255);
+    strncat(modestr,"UDP-Unprivileged", 255);
+    n++;
+  }
+  if(md & DO_TCP){
+    if(n>0)
+      strncat(modestr," + ", 255);
+    strncat(modestr,"TCP", 255);
+    n++;
+  }
+  if(md & DO_UDP){
+    if(n>0)
+      strncat(modestr," + ", 255);
+    strncat(modestr,"UDP", 255);
+    n++;
+  }
+  if(md & DO_ICMP){
+    if(n>0)
+      strncat(modestr," + ", 255);
+    strncat(modestr,"ICMP", 255);
+    n++;
+  }
+  if(md & DO_ARP){
+    if(n>0)
+      strncat(modestr," + ", 255);
+    strncat(modestr,"ARP", 255);
+    n++;
+  }
+  if(md & DO_TRACEROUTE){
+    if(n>0)
+      strncat(modestr," + ", 255);
+    strncat(modestr,"Traceroute", 255);
+    n++;
+  }
+  if(md & DO_EXT_HOPOPT){
+    if(n>0)
+      strncat(modestr," + ", 255);
+    strncat(modestr,"IPv6-HopByHop", 255);
+    n++;
+  }
+  if(md & DO_EXT_ROUTING){
+    if(n>0)
+      strncat(modestr," + ", 255);
+    strncat(modestr,"IPv6-Routing", 255);
+    n++;
+  }
+  if(md & DO_EXT_DOPT){
+    if(n>0)
+      strncat(modestr," + ", 255);
+    strncat(modestr,"IPv6-DestOpts", 255);
+    n++;
+  }
+  if(md & DO_EXT_FRAGMENT){
+    if(n>0)
+      strncat(modestr," + ", 255);
+    strncat(modestr,"IPv6-Fragment", 255);
+    n++;
+  }
+  /* Make sure we received something valid. Otherwise it's a bug */
+  assert(n>0);
+  strncat(modestr,"}", 255);
+  return modestr;
 } /* End of mode2Ascii() */
 
 /******************************************************************************
