@@ -1501,12 +1501,14 @@ void NpingOps::displayStatistics(){
           this->target_hosts[i]->stats.print_proto_stats(STATS_TOTAL, " |_ ", print_echoed);
         }
         if(this->mode(DO_TCP_CONNECT)){
+          this->target_hosts[i]->stats.print_proto_stats(STATS_TCP_CONNECT, " |_ ", print_echoed);
           nping_print(QT_1|NO_NEWLINE, " |_ TCP connection attempts: %llu ", this->target_hosts[i]->stats.get_connects(STATS_TCP));
           nping_print(QT_1|NO_NEWLINE,"| Successful connections: %llu ", this->target_hosts[i]->stats.get_accepts(STATS_TCP));
           nping_print(QT_1|NO_NEWLINE,"| Failed: %llu ", this->target_hosts[i]->stats.get_connects_failed(STATS_TCP));
           nping_print(QT_1|NO_NEWLINE,"(%.2lf%%)\n", this->target_hosts[i]->stats.get_percent_failed(STATS_TCP));
         }
         if(this->mode(DO_UDP_UNPRIV)){
+          this->target_hosts[i]->stats.print_proto_stats(STATS_UDP_UNPRIV, " |_ ", print_echoed);
           nping_print(QT_1|NO_NEWLINE, " |_ UDP write operations: %llu ", this->target_hosts[i]->stats.get_writes(STATS_UDP) );
           nping_print(QT_1|NO_NEWLINE,"| Successful reads: %llu ", this->target_hosts[i]->stats.get_reads(STATS_UDP) );
           nping_print(QT_1|NO_NEWLINE,"| Failed: %llu ", this->target_hosts[i]->stats.get_pkts_lost() ); //TODO: Fix
@@ -1546,27 +1548,17 @@ void NpingOps::displayStatistics(){
 
   /* Sent/Recv/Echoed Packets */
   if(this->getRole()==ROLE_CLIENT){
-    this->stats.print_proto_stats(HEADER_TYPE_RAW_DATA, NULL, print_echoed);
+    this->stats.print_proto_stats(STATS_TOTAL, NULL, print_echoed);
   }else if(this->getRole()==ROLE_SERVER){
-    nping_print(QT_1|NO_NEWLINE, "Raw packets captured: %llu ", this->stats.get_captured(STATS_TOTAL) );
-    nping_print(QT_1|NO_NEWLINE, "(%s) ", format_bytecount(this->stats.get_bytes_captured(), auxbuff, 256));
-    nping_print(QT_1|NO_NEWLINE,"| Echoed: %llu ", this->stats.get_echoed(STATS_TOTAL) );
-    nping_print(QT_1|NO_NEWLINE,"(%s) ", format_bytecount(this->stats.get_bytes_echoed(), auxbuff, 256));
-    nping_print(QT_1|NO_NEWLINE,"| Not Matched: %llu ", this->stats.get_pkts_unmatched() );
-    nping_print(QT_1|NO_NEWLINE,"(%s) ", format_bytecount(this->stats.get_bytes_rcvd()-this->stats.get_bytes_echoed(), auxbuff, 256));
-    nping_print(QT_1,"(%.2lf%%)", this->stats.get_percent_unmatched() );
+    this->stats.print_proto_stats(STATS_ECHO_SERVER, NULL, false);
   }else if(this->getRole()==ROLE_NORMAL){
     if(this->mode(DO_TCP_CONNECT)){
-      nping_print(QT_1|NO_NEWLINE, "TCP connection attempts: %llu ", this->stats.get_connects(STATS_TCP));
-      nping_print(QT_1|NO_NEWLINE,"| Successful connections: %llu ", this->stats.get_accepts(STATS_TCP));
-      nping_print(QT_1|NO_NEWLINE,"| Failed: %llu ", this->stats.get_connects_failed(STATS_TCP)); // TODO: FIX
-      nping_print(QT_1,"(%.2lf%%)", this->stats.get_percent_failed(STATS_TCP)); // TODO: FIX
+      this->stats.print_proto_stats(STATS_TCP_CONNECT, NULL, false);
+
     }
     if(this->mode(DO_UDP_UNPRIV)){
-      nping_print(QT_1|NO_NEWLINE, "UDP write operations: %llu ", this->stats.get_writes(STATS_UDP) );
-      nping_print(QT_1|NO_NEWLINE,"| Successful reads: %llu ", this->stats.get_reads(STATS_UDP) );
-      nping_print(QT_1|NO_NEWLINE,"| Failed: %llu ", this->stats.get_pkts_lost() ); // TODO: Fix
-      nping_print(QT_1|NO_NEWLINE,"(%.2lf%%)\n", this->stats.get_percent_lost() ); // TODO: Fix
+      this->stats.print_proto_stats(STATS_UDP_UNPRIV, NULL, false);
+
     }
     if(this->mode(DO_TCP) || this->mode(DO_UDP) || this->mode(DO_ICMP) || this->mode(DO_ARP)){
       this->stats.print_proto_stats(STATS_TOTAL, NULL, print_echoed);

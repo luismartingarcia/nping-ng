@@ -58,9 +58,6 @@
 * Mixing --tcp-connect and raw packet modes does not work.
   sudo ./nping google.com nmap.org -c2 1.2.3.4 --tcp-connect --udp
 
-* Finish improving void NpingOps::displayStatistics(). We need to move all
-  nping_print() calls to PacketStats::, refactoring whenever possible.
-
 * Packets captured seem to include things like the 2-byte Ethernet trailing
   checksum. Check nse_readpcap() is working correctly.
 
@@ -1032,3 +1029,6 @@ SENT (1.0580s) ARP who has 192.168.240.139? Tell 192.168.240.1
 [DONE] Fix this:
   nping --tcp --tcp-connect localhost
   Mode Unknown Mode requires root privileges.
+
+[DONE] Finish improving void NpingOps::displayStatistics(). We need to move all
+  nping_print() calls to PacketStats::, refactoring whenever possible.

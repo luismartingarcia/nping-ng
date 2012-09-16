@@ -328,6 +328,24 @@ u64 PacketStats::get_stat(int proto, int index){
 } /* End of get_stat() */
 
 
+u64 PacketStats::get_difference(int proto, int index_expected, int index_actual){
+  if(this->get_stat(proto, index_expected) <= this->get_stat(proto, index_actual))
+    return 0;
+  else
+    return this->get_stat(proto, index_expected) - this->get_stat(proto, index_actual);
+} /* End of get_difference() */
+
+
+double PacketStats::get_percentage(int proto, int index_expected, int index_actual){
+  u64 pkts_expected=this->get_stat(proto, index_expected);
+  u64 pkts_actual=this->get_stat(proto, index_actual);
+  double percent_ok=0.0;
+  if(pkts_actual!=0 && pkts_expected!=0)
+    percent_ok=((double)pkts_actual)/((double)pkts_expected);
+  return percent_ok*100;
+} /* End of get_percentage() */
+
+
 /* Update the stats for tranmitted packets */
 int PacketStats::update_sent(int ip_version, int proto, u32 pkt_len){
   return this->update_count(INDEX_SENT, ip_version, proto, pkt_len);
@@ -630,25 +648,6 @@ double PacketStats::get_percent_lost(){
 } /* End of get_percent_lost() */
 
 
-u64 PacketStats::get_pkts_unmatched(){
-  if(this->packets[INDEX_RCVD] <= this->packets[INDEX_ECHOED])
-    return 0;
-  else
-    return this->packets[INDEX_RCVD] - this->packets[INDEX_ECHOED];
-} /* End of get_pkts_unmatched() */
-
-
-double PacketStats::get_percent_unmatched(){
-  u32 pkt_captured=this->packets[INDEX_RCVD];
-  u32 pkt_echoed=this->packets[INDEX_ECHOED];
-  u32 pkt_unmatched=(pkt_captured<=pkt_echoed) ? 0 : (u32)(pkt_captured-pkt_echoed);
-  double percentunmatched=0.0;
-  if( pkt_unmatched!=0 && pkt_captured!=0)
-    percentunmatched=((double)pkt_unmatched)/((double)pkt_captured);
-  return percentunmatched*100;
-} /* End of get_percent_unmatched() */
-
-
 double PacketStats::get_tx_pkt_rate(){
   double elapsed = this->tx_timer.elapsed(NULL);
   if(elapsed <= 0.0)
@@ -732,29 +731,53 @@ int PacketStats::print_proto_stats(int proto, const char *leading_str, bool prin
   memset(auxbuff, 0, 256);
   if(leading_str==NULL)
     leading_str="";
-  switch(proto){
-    case STATS_TCP: start_str="TCP"; break;
-    case STATS_UDP: start_str="UDP"; break;
-    case STATS_ICMPv4: start_str="ICMPv4"; break;
-    case STATS_ICMPv6: start_str="ICMPv6"; break;
-    case STATS_ARP: start_str="ARP"; break;
-    case STATS_IPv4: start_str="IPv4"; break;
-    case STATS_IPv6: start_str="IPv6"; break;
-    case STATS_TOTAL: start_str="Raw"; break;
-    default: assert(0); break;
-  }
-  nping_print(QT_1|NO_NEWLINE, "%s%s packets sent: %llu ", leading_str, start_str, this->get_sent(proto));
-  if(proto==HEADER_TYPE_RAW_DATA)
-    nping_print(QT_1|NO_NEWLINE, "(%s) ", format_bytecount(this->get_bytes_sent(), auxbuff, 256));
-  nping_print(QT_1|NO_NEWLINE,"| Rcvd: %llu ", this->get_rcvd(proto));
-  if(proto==HEADER_TYPE_RAW_DATA)
-    nping_print(QT_1|NO_NEWLINE,"(%s) ", format_bytecount(this->get_bytes_rcvd(), auxbuff, 256));
-  nping_print(QT_1|NO_NEWLINE,"| Lost: %llu ", this->get_lost(proto));
-  nping_print(QT_1|NO_NEWLINE,"(%.2lf%%)", this->get_percent_lost(proto));
-  if(print_echoed){
-    nping_print(QT_1|NO_NEWLINE," | Echoed: %llu ", this->get_echoed(proto) );
+
+  if(proto==STATS_ECHO_SERVER){
+    nping_print(QT_1|NO_NEWLINE, "%sRaw packets captured: %llu ", leading_str, this->get_captured(STATS_TOTAL));
+    nping_print(QT_1|NO_NEWLINE, "(%s) ", format_bytecount(this->get_bytes_captured(), auxbuff, 256));
+    nping_print(QT_1|NO_NEWLINE,"| Echoed: %llu ", this->get_echoed(STATS_TOTAL));
     nping_print(QT_1|NO_NEWLINE,"(%s) ", format_bytecount(this->get_bytes_echoed(), auxbuff, 256));
+    nping_print(QT_1|NO_NEWLINE,"| Not Matched: %llu ", this->get_difference(STATS_TOTAL, INDEX_CAPTURED, INDEX_ECHOED));
+    nping_print(QT_1|NO_NEWLINE,"(%s) ", format_bytecount(this->get_bytes_captured()-this->get_bytes_echoed(), auxbuff, 256));
+    nping_print(QT_1,"(%.2lf%%)", this->get_percentage(STATS_TOTAL, INDEX_CAPTURED, INDEX_ECHOED));
+  }else if(proto==STATS_TCP_CONNECT){
+    nping_print(QT_1|NO_NEWLINE, "%sTCP connection attempts: %llu ", leading_str, this->get_connects(STATS_TCP));
+    nping_print(QT_1|NO_NEWLINE,"| Successful connections: %llu ", this->get_accepts(STATS_TCP));
+    nping_print(QT_1|NO_NEWLINE,"| Failed: %llu ", this->get_difference(STATS_TCP, INDEX_CONNECTS, INDEX_ACCEPTS));
+    nping_print(QT_1,"(%.2lf%%)", this->get_percentage(STATS_TCP, INDEX_CONNECTS, INDEX_ACCEPTS));
+  }else if(proto==STATS_UDP_UNPRIV){
+    nping_print(QT_1|NO_NEWLINE, "%sUDP write operations: %llu ", leading_str, this->get_writes(STATS_UDP));
+    nping_print(QT_1|NO_NEWLINE,"| Successful reads: %llu ", this->get_reads(STATS_UDP));
+    nping_print(QT_1|NO_NEWLINE,"| Failed: %llu ", this->get_difference(STATS_UDP, INDEX_WRITES, INDEX_READS));
+    nping_print(QT_1|NO_NEWLINE,"(%.2lf%%)\n", this->get_percentage(STATS_UDP, INDEX_WRITES, INDEX_READS));
+  }else{
+    switch(proto){
+      case STATS_TCP: start_str="TCP"; break;
+      case STATS_UDP: start_str="UDP"; break;
+      case STATS_ICMPv4: start_str="ICMPv4"; break;
+      case STATS_ICMPv6: start_str="ICMPv6"; break;
+      case STATS_ARP: start_str="ARP"; break;
+      case STATS_IPv4: start_str="IPv4"; break;
+      case STATS_IPv6: start_str="IPv6"; break;
+      case STATS_TOTAL: start_str="Raw"; break;
+      default: assert(0); break;
+    }
+    nping_print(QT_1|NO_NEWLINE, "%s%s packets sent: %llu ", leading_str, start_str, this->get_sent(proto));
+    if(proto==STATS_TOTAL)
+      nping_print(QT_1|NO_NEWLINE, "(%s) ", format_bytecount(this->get_bytes_sent(), auxbuff, 256));
+    nping_print(QT_1|NO_NEWLINE,"| Rcvd: %llu ", this->get_rcvd(proto));
+    if(proto==STATS_TOTAL)
+      nping_print(QT_1|NO_NEWLINE,"(%s) ", format_bytecount(this->get_bytes_rcvd(), auxbuff, 256));
+    if(print_echoed){
+      nping_print(QT_1|NO_NEWLINE,"| Unanswered: %llu ", this->get_difference(proto, INDEX_SENT, INDEX_RCVD));
+      nping_print(QT_1|NO_NEWLINE,"(%.2lf%%)", 100 - this->get_percentage(proto, INDEX_SENT, INDEX_RCVD));
+      nping_print(QT_1|NO_NEWLINE," | Echoed: %llu ", this->get_echoed(proto));
+      nping_print(QT_1|NO_NEWLINE,"(%.2lf%%)", this->get_percentage(proto, INDEX_SENT, INDEX_ECHOED));
+    }else{
+      nping_print(QT_1|NO_NEWLINE,"| Lost: %llu ", this->get_difference(proto, INDEX_SENT, INDEX_RCVD));
+      nping_print(QT_1|NO_NEWLINE,"(%.2lf%%)", 100 - this->get_percentage(proto, INDEX_SENT, INDEX_RCVD));
+    }
+    nping_print(QT_1|NO_NEWLINE,"\n");
   }
-  nping_print(QT_1|NO_NEWLINE,"\n");
   return OP_SUCCESS;
 } /* End of print_proto_stats() */

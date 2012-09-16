@@ -248,6 +248,8 @@ class PacketStats {
     u64 *proto2stats(int proto);
     int update_count(int index, int ip_version, int proto, u32 pkt_len);
     u64 get_stat(int proto, int index);
+    u64 get_difference(int proto, int index_expected, int index_actual);
+    double get_percentage(int proto, int index_expected, int index_actual);
 
  public:
     PacketStats();
@@ -322,8 +324,6 @@ class PacketStats {
     double get_percent_failed(int proto);
     u64 get_pkts_lost();
     double get_percent_lost();
-    u64 get_pkts_unmatched();
-    double get_percent_unmatched();
     double get_tx_pkt_rate();
     double get_tx_byte_rate();
     double get_rx_pkt_rate();
