@@ -327,7 +327,8 @@ int ProbeEngine::start(vector<TargetHost *> &Targets, vector<NetworkInterface *>
               do_udp_unpriv(Targets[t], DEFAULT_UDP_TARGET_PORT, curr_spt, &now);
             }
           }
-        }else{
+        }
+        if(o.mode(DO_TCP) || o.mode(DO_UDP) || o.mode(DO_ICMP) || o.mode(DO_ARP)){
           /* Obtain a list of packets to send (each TargetHost adds whatever
            * packets it wants to send to the supplied vector) */
           Targets[t]->getNextPacketBatch(Packets);
