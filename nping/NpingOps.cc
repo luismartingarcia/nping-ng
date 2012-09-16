@@ -1569,10 +1569,6 @@ void NpingOps::displayStatistics(){
       }
     }
   }
-#ifdef WIN32
- /* TODO: Implement print statements in Windows. We use 64-bit integers and Windows requires the
-  * using the %I64u format specifier, instead of %llu */
-#else
 
   /* Sent/Recv/Echoed Packets */
   if(this->getRole()==ROLE_CLIENT){
@@ -1614,7 +1610,7 @@ void NpingOps::displayStatistics(){
     }
     this->stats.print_RTTs(NULL);
   }
-#endif
+
   /* Transmission times & rates */
   nping_print(QT_1|NO_NEWLINE,"Tx time: %.5lfs ", this->stats.get_tx_elapsed() );
   nping_print(QT_1|NO_NEWLINE,"| Tx bytes/s: %.2lf ", this->stats.get_tx_byte_rate() );

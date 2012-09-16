@@ -732,6 +732,12 @@ int PacketStats::print_proto_stats(int proto, const char *leading_str, bool prin
   if(leading_str==NULL)
     leading_str="";
 
+#ifdef WIN32
+ /* TODO: Implement print statements in Windows. We use 64-bit integers and Windows requires the
+  * using the %I64u format specifier, instead of %llu */
+#else
+#endif
+
   if(proto==STATS_ECHO_SERVER){
     nping_print(QT_1|NO_NEWLINE, "%sRaw packets captured: %llu ", leading_str, this->get_captured(STATS_TOTAL));
     nping_print(QT_1|NO_NEWLINE, "(%s) ", format_bytecount(this->get_bytes_captured(), auxbuff, 256));
