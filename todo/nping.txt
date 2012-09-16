@@ -47,8 +47,6 @@
 /*****************************************************************************
  * Things that have NOT been done yet                                        *
  *****************************************************************************/
-* Fix stats for UDP unprivileged. "Failed" does not show the correct figures.
-    UDP write operations: 10 | Successful reads: 5 | Failed: 0 (0.00%)
 
 * Make nping able to determine RTTs in TCP-Connect and UDP-Unprivileged modes.
 
@@ -143,7 +141,7 @@
 
 * In the packet capture handler, when we iterate over the list of target hosts,
   it would be great if we could skip those hosts that are not reachable through
-  the network interface where the captured packet came from.ç
+  the network interface where the captured packet came from.
 
 + Document the ability of Nping to send payloads in TCP Connect mode. Use the
   example of this payload: --data "474554202f20485454502f312e300d0a0d0a", which
@@ -1032,3 +1030,6 @@ SENT (1.0580s) ARP who has 192.168.240.139? Tell 192.168.240.1
 
 [DONE] Finish improving void NpingOps::displayStatistics(). We need to move all
   nping_print() calls to PacketStats::, refactoring whenever possible.
+
+[DONE] Fix stats for UDP unprivileged. "Failed" does not show the correct figures.
+    UDP write operations: 10 | Successful reads: 5 | Failed: 0 (0.00%)
