@@ -1026,9 +1026,9 @@ bool NpingOps::issetTargetPorts(){
 
 
 /* Returns true if the operation mode can use the -p or -g options (target and source ports) */
-bool NpingOps::scan_mode_uses_target_ports(){
-  return(this->mode(DO_TCP_CONNECT) || this->mode(DO_TCP) || this->mode(DO_UDP) || this->mode(DO_UDP_UNPRIV));
-} /*End of scan_mode_uses_target_ports*/
+bool NpingOps::mode_uses_ports(){
+  return (this->mode(DO_TCP_CONNECT) || this->mode(DO_TCP) || this->mode(DO_UDP) || this->mode(DO_UDP_UNPRIV));
+} /* End of mode_uses_ports */
 
 
 /** Sets TCP/UPD source ports.
@@ -1467,7 +1467,7 @@ void NpingOps::validateOptions() {
   /*If nping is called on something that doesn't take port scanning
    * we should alert the user that their port command is going to be ignored
    * I choose to print out a Fatal error since the scan doesn't make sense. */
-  if((this->issetTargetPorts() || this->issetSourcePorts()) && !this>scan_mode_uses_target_ports()){
+  if(!this->mode_uses_ports()){
     if(this->issetTargetPorts())
       nping_fatal(QT_3, "You cannot use -p (explicit port selection) in your current scan mode.\n(Perhaps you meant to use --tcp or --udp)");
     else if(this->issetSourcePorts())
