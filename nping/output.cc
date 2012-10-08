@@ -151,11 +151,11 @@ int nping_fatal(int level, const char *str, ...) {
   int current_vb_level= o.getVerbosity();
   int current_dbg_level= o.getDebugging();
 
-  if ( (level>=QT_3 && level<=VB_4) || (level>=DBG_1 && level<=DBG_9) ){
+  /* If supplied level is more than current level, do nothing */
+  if((level>=QT_4 && level<=VB_4 && level<=current_vb_level) ||  (level>=DBG_0 && level<=DBG_9 && level<=current_dbg_level)){
     vfprintf(stderr, str, list);
     fprintf(stderr,"\n"); /* Print to stderr */
   }
-
   va_end(list);
   exit(EXIT_FAILURE);
 } /* End of nping_fatal() */
