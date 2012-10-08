@@ -615,7 +615,7 @@ int NpingOps::getDetailLevel(){
 int NpingOps::setRounds(u64 val){
   /* If zero is supplied, set highest value */
   if(val==0)
-    this->rounds=0xFFFFFFFFFFFFFFFF;
+    this->rounds=(~0);
   else
     this->rounds=val;
   this->rounds_set=true;
