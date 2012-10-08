@@ -1514,7 +1514,7 @@ void NpingOps::displayNpingDoneMsg(){
               );
   }else{
     nping_print(QT_1, "Nping done: %lu %s pinged in %.2f seconds",
-               this->target_hosts.size(),
+               (long unsigned int)this->target_hosts.size(),
                (this->target_hosts.size() == 1)? "IP address" : "IP addresses",
                this->stats.get_runtime_elapsed(NULL)
               );
