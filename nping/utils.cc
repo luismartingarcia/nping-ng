@@ -459,3 +459,17 @@ bool starts_with(const char *string, const char *start){
   else
     return false;
 } /* End of starts_with() */
+
+
+/* Returns the ASCII representation of the supplied 64-bit unsigned integer.
+ * Note that it returns a pointer to a static buffer that subsequent calls
+ * will overwrite. */
+const char *u64tostr(u64 number){
+  static char mynumber[32];
+  #ifdef WIN32
+    snprintf(mynumber, 32, "%I64u", number);
+  #else
+    snprintf(mynumber, 32, "%llu", number);
+  #endif
+  return mynumber;
+} /* End of u64tostr() */
