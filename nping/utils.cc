@@ -469,7 +469,7 @@ const char *u64tostr(u64 number){
   #ifdef WIN32
     snprintf(mynumber, 32, "%I64u", number);
   #else
-    snprintf(mynumber, 32, "%llu", number);
+    snprintf(mynumber, 32, "%llu", (long long unsigned int) number);
   #endif
   return mynumber;
 } /* End of u64tostr() */
