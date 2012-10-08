@@ -1540,16 +1540,16 @@ void NpingOps::displayStatistics(){
         }
         if(this->mode(DO_TCP_CONNECT)){
           this->target_hosts[i]->stats.print_proto_stats(STATS_TCP_CONNECT, " |_ ", print_echoed);
-          nping_print(QT_1|NO_NEWLINE, " |_ TCP connection attempts: %llu ", this->target_hosts[i]->stats.get_connects(STATS_TCP));
-          nping_print(QT_1|NO_NEWLINE,"| Successful connections: %llu ", this->target_hosts[i]->stats.get_accepts(STATS_TCP));
-          nping_print(QT_1|NO_NEWLINE,"| Failed: %llu ", this->target_hosts[i]->stats.get_connects_failed(STATS_TCP));
+          nping_print(QT_1|NO_NEWLINE, " |_ TCP connection attempts: %s ", u64tostr(this->target_hosts[i]->stats.get_connects(STATS_TCP)));
+          nping_print(QT_1|NO_NEWLINE,"| Successful connections: %s ", u64tostr(this->target_hosts[i]->stats.get_accepts(STATS_TCP)));
+          nping_print(QT_1|NO_NEWLINE,"| Failed: %s ", u64tostr(this->target_hosts[i]->stats.get_connects_failed(STATS_TCP)));
           nping_print(QT_1|NO_NEWLINE,"(%.2lf%%)\n", this->target_hosts[i]->stats.get_percent_failed(STATS_TCP));
         }
         if(this->mode(DO_UDP_UNPRIV)){
           this->target_hosts[i]->stats.print_proto_stats(STATS_UDP_UNPRIV, " |_ ", print_echoed);
-          nping_print(QT_1|NO_NEWLINE, " |_ UDP write operations: %llu ", this->target_hosts[i]->stats.get_writes(STATS_UDP) );
-          nping_print(QT_1|NO_NEWLINE,"| Successful reads: %llu ", this->target_hosts[i]->stats.get_reads(STATS_UDP) );
-          nping_print(QT_1|NO_NEWLINE,"| Failed: %llu ", this->target_hosts[i]->stats.get_pkts_lost() ); //TODO: Fix
+          nping_print(QT_1|NO_NEWLINE, " |_ UDP write operations: %s ", u64tostr(this->target_hosts[i]->stats.get_writes(STATS_UDP)));
+          nping_print(QT_1|NO_NEWLINE,"| Successful reads: %s ", u64tostr(this->target_hosts[i]->stats.get_reads(STATS_UDP)));
+          nping_print(QT_1|NO_NEWLINE,"| Failed: %s ", u64tostr(this->target_hosts[i]->stats.get_pkts_lost())); //TODO: Fix
           nping_print(QT_1|NO_NEWLINE,"(%.2lf%%)\n", this->target_hosts[i]->stats.get_percent_lost() ); //TODO: Fix
         }
 
