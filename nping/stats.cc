@@ -126,6 +126,7 @@
 #include "stats.h"
 #include "NpingOps.h"
 #include "output.h"
+#include "utils.h"
 
 
 
@@ -739,22 +740,22 @@ int PacketStats::print_proto_stats(int proto, const char *leading_str, bool prin
 #endif
 
   if(proto==STATS_ECHO_SERVER){
-    nping_print(QT_1|NO_NEWLINE, "%sRaw packets captured: %llu ", leading_str, this->get_captured(STATS_TOTAL));
+    nping_print(QT_1|NO_NEWLINE, "%sRaw packets captured: %s ", leading_str, u64tostr(this->get_captured(STATS_TOTAL)));
     nping_print(QT_1|NO_NEWLINE, "(%s) ", format_bytecount(this->get_bytes_captured(), auxbuff, 256));
-    nping_print(QT_1|NO_NEWLINE,"| Echoed: %llu ", this->get_echoed(STATS_TOTAL));
+    nping_print(QT_1|NO_NEWLINE,"| Echoed: %s ", u64tostr(this->get_echoed(STATS_TOTAL)));
     nping_print(QT_1|NO_NEWLINE,"(%s) ", format_bytecount(this->get_bytes_echoed(), auxbuff, 256));
-    nping_print(QT_1|NO_NEWLINE,"| Not Matched: %llu ", this->get_difference(STATS_TOTAL, INDEX_CAPTURED, INDEX_ECHOED));
+    nping_print(QT_1|NO_NEWLINE,"| Not Matched: %s ", u64tostr(this->get_difference(STATS_TOTAL, INDEX_CAPTURED, INDEX_ECHOED)));
     nping_print(QT_1|NO_NEWLINE,"(%s) ", format_bytecount(this->get_bytes_captured()-this->get_bytes_echoed(), auxbuff, 256));
     nping_print(QT_1,"(%.2lf%%)", this->get_percentage(STATS_TOTAL, INDEX_CAPTURED, INDEX_ECHOED));
   }else if(proto==STATS_TCP_CONNECT){
-    nping_print(QT_1|NO_NEWLINE, "%sTCP connection attempts: %llu ", leading_str, this->get_connects(STATS_TCP));
-    nping_print(QT_1|NO_NEWLINE,"| Successful connections: %llu ", this->get_accepts(STATS_TCP));
-    nping_print(QT_1|NO_NEWLINE,"| Failed: %llu ", this->get_difference(STATS_TCP, INDEX_CONNECTS, INDEX_ACCEPTS));
+    nping_print(QT_1|NO_NEWLINE, "%sTCP connection attempts: %s ", leading_str, u64tostr(this->get_connects(STATS_TCP)));
+    nping_print(QT_1|NO_NEWLINE,"| Successful connections: %s ", u64tostr(this->get_accepts(STATS_TCP)));
+    nping_print(QT_1|NO_NEWLINE,"| Failed: %s ", u64tostr(this->get_difference(STATS_TCP, INDEX_CONNECTS, INDEX_ACCEPTS)));
     nping_print(QT_1,"(%.2lf%%)", this->get_percentage(STATS_TCP, INDEX_CONNECTS, INDEX_ACCEPTS));
   }else if(proto==STATS_UDP_UNPRIV){
-    nping_print(QT_1|NO_NEWLINE, "%sUDP write operations: %llu ", leading_str, this->get_writes(STATS_UDP));
-    nping_print(QT_1|NO_NEWLINE,"| Successful reads: %llu ", this->get_reads(STATS_UDP));
-    nping_print(QT_1|NO_NEWLINE,"| Failed: %llu ", this->get_difference(STATS_UDP, INDEX_WRITES, INDEX_READS));
+    nping_print(QT_1|NO_NEWLINE, "%sUDP write operations: %s ", leading_str, u64tostr(this->get_writes(STATS_UDP)));
+    nping_print(QT_1|NO_NEWLINE,"| Successful reads: %s ", u64tostr(this->get_reads(STATS_UDP)));
+    nping_print(QT_1|NO_NEWLINE,"| Failed: %s ", u64tostr(this->get_difference(STATS_UDP, INDEX_WRITES, INDEX_READS)));
     nping_print(QT_1|NO_NEWLINE,"(%.2lf%%)\n", this->get_percentage(STATS_UDP, INDEX_WRITES, INDEX_READS));
   }else{
     switch(proto){
@@ -768,19 +769,19 @@ int PacketStats::print_proto_stats(int proto, const char *leading_str, bool prin
       case STATS_TOTAL: start_str="Raw"; break;
       default: assert(0); break;
     }
-    nping_print(QT_1|NO_NEWLINE, "%s%s packets sent: %llu ", leading_str, start_str, this->get_sent(proto));
+    nping_print(QT_1|NO_NEWLINE, "%s%s packets sent: %s ", leading_str, start_str, u64tostr(this->get_sent(proto)));
     if(proto==STATS_TOTAL)
       nping_print(QT_1|NO_NEWLINE, "(%s) ", format_bytecount(this->get_bytes_sent(), auxbuff, 256));
-    nping_print(QT_1|NO_NEWLINE,"| Rcvd: %llu ", this->get_rcvd(proto));
+    nping_print(QT_1|NO_NEWLINE,"| Rcvd: %s ", u64tostr(this->get_rcvd(proto)));
     if(proto==STATS_TOTAL)
       nping_print(QT_1|NO_NEWLINE,"(%s) ", format_bytecount(this->get_bytes_rcvd(), auxbuff, 256));
     if(print_echoed){
-      nping_print(QT_1|NO_NEWLINE,"| Unanswered: %llu ", this->get_difference(proto, INDEX_SENT, INDEX_RCVD));
+      nping_print(QT_1|NO_NEWLINE,"| Unanswered: %s ", u64tostr(this->get_difference(proto, INDEX_SENT, INDEX_RCVD)));
       nping_print(QT_1|NO_NEWLINE,"(%.2lf%%)", 100 - this->get_percentage(proto, INDEX_SENT, INDEX_RCVD));
-      nping_print(QT_1|NO_NEWLINE," | Echoed: %llu ", this->get_echoed(proto));
+      nping_print(QT_1|NO_NEWLINE," | Echoed: %s ", u64tostr(this->get_echoed(proto)));
       nping_print(QT_1|NO_NEWLINE,"(%.2lf%%)", this->get_percentage(proto, INDEX_SENT, INDEX_ECHOED));
     }else{
-      nping_print(QT_1|NO_NEWLINE,"| Lost: %llu ", this->get_difference(proto, INDEX_SENT, INDEX_RCVD));
+      nping_print(QT_1|NO_NEWLINE,"| Lost: %s ", u64tostr(this->get_difference(proto, INDEX_SENT, INDEX_RCVD)));
       nping_print(QT_1|NO_NEWLINE,"(%.2lf%%)", 100 - this->get_percentage(proto, INDEX_SENT, INDEX_RCVD));
     }
     nping_print(QT_1|NO_NEWLINE,"\n");
