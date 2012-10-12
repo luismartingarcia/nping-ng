@@ -2019,7 +2019,12 @@ int NpingOps::setupTargetHosts(){
     /* Instantiate a new target host */
     nping_print(DBG_4, "Instantiate new TargetHost.");
     newhost = new TargetHost();
+    /* Setup target and source addresses (if applicable) */
     newhost->setTargetAddress(this->target_addresses[i]);
+    if(this->spoof_addr!=NULL){
+      nping_print(DBG_4, "Setting spoofed address.");
+      newhost->setSourceAddress(this->spoof_addr);
+    }
 
     /* If we are running some mode that requires raw sockets, perform
      * route determination so we can fill up the TargetHost object with
@@ -2037,11 +2042,9 @@ int NpingOps::setupTargetHosts(){
          * in the target's class */
         nping_print(DBG_4, "Route found!");
 
-        /* Source IP address */
-        if(this->spoof_addr!=NULL){
-          nping_print(DBG_4, "Setting spoofed address.");
-          newhost->setSourceAddress(this->spoof_addr);
-        }else{
+        /* Set the source IP address. Note that we handle the case where
+         * we have a spoof address above */
+        if(this->spoof_addr==NULL){
           nping_print(DBG_4, "Setting source address.");
           auxaddr=new IPAddress();
           auxaddr->setAddress(route.srcaddr);
