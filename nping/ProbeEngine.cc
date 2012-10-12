@@ -590,6 +590,7 @@ int ProbeEngine::do_unprivileged(int proto, TargetHost *tgt, u16 tport, u16 spor
   struct sockaddr_storage ss;      /* Source address */
   struct sockaddr_storage to;      /* Destination address                     */
   size_t sslen=0;                  /* Destination address length              */
+  IPAddress *srcaddr=NULL;         /* To store target's source address        */
 
   /* Initializations */
   memset(&to, 0, sizeof(struct sockaddr_storage));
@@ -597,7 +598,7 @@ int ProbeEngine::do_unprivileged(int proto, TargetHost *tgt, u16 tport, u16 spor
   assert(tgt!=NULL);
   tgt->getTargetAddress()->getAddress(&to);
 
- /* Try to determine the max number of opened descriptors. If the limit is
+  /* Try to determine the max number of opened descriptors. If the limit is
    * less than than we need, try to increase it. */
   if(fds==NULL){
     max_iods=get_max_open_descriptors()-RESERVED_DESCRIPTORS;
@@ -635,8 +636,14 @@ int ProbeEngine::do_unprivileged(int proto, TargetHost *tgt, u16 tport, u16 spor
   /* Create new IOD for connects */
   if ((fds[packetno%max_iods] = nsi_new(nsp, NULL)) == NULL)
     nping_fatal(QT_3, "%s(): Failed to create new nsock_iod.\n", __func__);
-  /* Set socket source address. This allows setting things like custom source port */
-  tgt->getSourceAddress()->getAddress(&ss);
+
+  /* If we have a source address, set it. This allows setting things like custom source port */
+  if((srcaddr=tgt->getSourceAddress())!=NULL){
+    srcaddr->getAddress(&ss);
+  }else{
+    setsockaddrfamily(&ss, tgt->getTargetAddress()->getVersion());
+    setsockaddrany(&ss);
+  }
   if(sport!=0){
     setsockaddrport(&ss, sport);
   }
