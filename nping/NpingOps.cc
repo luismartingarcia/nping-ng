@@ -2015,185 +2015,194 @@ int NpingOps::setupTargetHosts(){
    * packets to it. If we have, turn the address into a full TargetHost object
    * and store it in the list of targets */
   for(u32 i=0; i<this->target_addresses.size(); i++){
-    nping_print(DBG_4, "Determine route for target #%u", i);
-    memset(&dst_ss, 0, sizeof(struct sockaddr_storage));
-    memset(&route, 0, sizeof(struct route_nfo));
-    this->target_addresses[i]->getAddress(&dst_ss);
 
-    /* Let's see if we can route packets to the current target. */
-    if(route_dst(&dst_ss, &route, this->device_set ? this->device : NULL, this->spoof_addr!=NULL ? &src_ss : NULL) == 1 ){  // TODO: implement spoofsrc
-      /* Yes, we can! Extract the info returned by route_dst() and store it
-       * in the target's class */
-      nping_print(DBG_4, "Route found!");
+    /* Instantiate a new target host */
+    nping_print(DBG_4, "Instantiate new TargetHost.");
+    newhost = new TargetHost();
+    newhost->setTargetAddress(this->target_addresses[i]);
 
-      /* Destination IP address */
-      nping_print(DBG_4, "Instantiate new TargetHost.");
-      newhost= new TargetHost();
-      newhost->setTargetAddress(this->target_addresses[i]);
+    /* If we are running some mode that requires raw sockets, perform
+     * route determination so we can fill up the TargetHost object with
+     * extra info for later. If we are not, we just store it in the the global
+     * NpingOps::target_hosts array right away. */
+    if(this->mode(MODE_IS_PRIVILEGED)){
+      nping_print(DBG_4, "Determine route for target #%u", i);
+      memset(&dst_ss, 0, sizeof(struct sockaddr_storage));
+      memset(&route, 0, sizeof(struct route_nfo));
+      this->target_addresses[i]->getAddress(&dst_ss);
 
-      /* Source IP address */
-      if(this->spoof_addr!=NULL){
-        nping_print(DBG_4, "Setting spoofed address.");
-        newhost->setSourceAddress(this->spoof_addr);
-      }else{
-        nping_print(DBG_4, "Setting source address.");
-        auxaddr=new IPAddress();
-        auxaddr->setAddress(route.srcaddr);
-        newhost->setSourceAddress(auxaddr);
-      }
+      /* Let's see if we can route packets to the current target. */
+      if(route_dst(&dst_ss, &route, this->device_set ? this->device : NULL, this->spoof_addr!=NULL ? &src_ss : NULL) == 1 ){  // TODO: implement spoofsrc
+        /* Yes, we can! Extract the info returned by route_dst() and store it
+         * in the target's class */
+        nping_print(DBG_4, "Route found!");
 
-      /* Network distance */
-      if(route.direct_connect!=0){
-        nping_print(DBG_4, "Target host is directly connected.");
-        newhost->setNetworkDistance(DISTANCE_DIRECT);
-      }else{
-        nping_print(DBG_4, "Target host is more than one hop away.");
-        auxaddr=new IPAddress();
-        auxaddr->setAddress(route.nexthop);
-        newhost->setNextHopAddress(auxaddr);
-      }
-
-      /* Interface information. Let's see if we previously found a target that
-       * requires the same interface. */
-      iface_found=false;
-      for(u32 k=0; k<this->interfaces.size(); k++){
-        if(!strcmp(this->interfaces[k]->getName(), route.ii.devname) ){
-          iface_found=true;
-          this->interfaces[k]->addAssociatedHost();
-          newhost->setInterface(this->interfaces[k]);
-          nping_print(DBG_4, "Same interface required. Reusing %s", route.ii.devname);
-          break;
+        /* Source IP address */
+        if(this->spoof_addr!=NULL){
+          nping_print(DBG_4, "Setting spoofed address.");
+          newhost->setSourceAddress(this->spoof_addr);
+        }else{
+          nping_print(DBG_4, "Setting source address.");
+          auxaddr=new IPAddress();
+          auxaddr->setAddress(route.srcaddr);
+          newhost->setSourceAddress(auxaddr);
         }
-      }
-      /* If we haven't seen that interface before, instance a new NetworkInterface
-       * and store it in the interface vector. */
-      if(iface_found==false){
-        newiface=new NetworkInterface(route.ii);
-        newiface->addAssociatedHost();
-        newhost->setInterface(newiface);
-        this->interfaces.push_back(newiface);
-        nping_print(DBG_4, "New interface required: %s", route.ii.devname);
-      }
 
-      /* Now let's see if we need to do address resolution on the target */
-      do_eth=false;
+        /* Network distance */
+        if(route.direct_connect!=0){
+          nping_print(DBG_4, "Target host is directly connected.");
+          newhost->setNetworkDistance(DISTANCE_DIRECT);
+        }else{
+          nping_print(DBG_4, "Target host is more than one hop away.");
+          auxaddr=new IPAddress();
+          auxaddr->setAddress(route.nexthop);
+          newhost->setNextHopAddress(auxaddr);
+        }
+
+        /* Interface information. Let's see if we previously found a target that
+         * requires the same interface. */
+        iface_found=false;
+        for(u32 k=0; k<this->interfaces.size(); k++){
+          if(!strcmp(this->interfaces[k]->getName(), route.ii.devname) ){
+            iface_found=true;
+            this->interfaces[k]->addAssociatedHost();
+            newhost->setInterface(this->interfaces[k]);
+            nping_print(DBG_4, "Same interface required. Reusing %s", route.ii.devname);
+            break;
+          }
+        }
+        /* If we haven't seen that interface before, instance a new NetworkInterface
+         * and store it in the interface vector. */
+        if(iface_found==false){
+          newiface=new NetworkInterface(route.ii);
+          newiface->addAssociatedHost();
+          newhost->setInterface(newiface);
+          this->interfaces.push_back(newiface);
+          nping_print(DBG_4, "New interface required: %s", route.ii.devname);
+        }
+
+        /* Now let's see if we need to do address resolution on the target */
+        do_eth=false;
 	  /* In Windows, we always try sending packets at the Ethernet level, unless
 	   * the user passed --send-ip.*/
 	  if(this->win32() && this->getSendPreference()==PACKET_SEND_NOPREF){
-        if(newhost->getInterface()->getType()!=devt_ethernet){
-          nping_fatal(QT_3, "Ethernet device required on Windows platforms. Target host only reachable through a non-Ethernet network interface (%s).", newhost->getInterface()->getName());
-        }else{
-          do_eth=true;
-        }
-	  }else if(this->getSendPreference()==PACKET_SEND_NOPREF){
-        /* For IPv6 we always try to send at the Ethernet level because many
-         * systems impose big limitations on raw IPv6 sockets. We want to be
-         * able to produce our own IPv6 headers and injecting packets at
-         * the Ethernet level is the best way to do that.
-         *
-         * If the target is IPv4 then we don't need to make our life more
-         * difficult resolving mac addresses, we just send through a raw
-         * socket. */
-        if(this->target_addresses[i]->getVersion()==AF_INET6){
-          /* Of course, the network interface must be Ethernet.*/
-          if(newhost->getInterface()->getType()==devt_ethernet)
-            do_eth=true;
-        }
-        /* If we are doing ARP, we need Ethernet... */
-        if(this->mode(DO_ARP) && this->target_addresses[i]->getVersion()==AF_INET){
-          do_eth=true;
-        }
-      /* If the user explicitly requested Ethernet, go for it... */
-      }else if(this->getSendPreference()==PACKET_SEND_ETH){
-        /* ...unless the device is not Ethernet*/
-        if(newhost->getInterface()->getType()!=devt_ethernet){
-          nping_fatal(QT_3, "Ethernet requested for a host that is only reachable through a non-Ethernet network interface (%s).", newhost->getInterface()->getName());
-        }else{
-          do_eth=true;
-        }
-      }
-
-      /* If we have determined that we should send at the Ethernet level and
-       * we still don't have a next hop MAC address, we need to resolve it. */
-      if(do_eth){
-        nping_print(DBG_4, "Target will be reached sending packets at the Ethernet level...");
-        /* Do not resolve it if the user passed a specific MAC address */
-        if(!this->eth.dst.is_set()){
-          /* First of all let's determine which IP address we need to use for
-           * the MAC resolution. If we are directly connected to the host
-           * then it's the host's address the one we are interested in. Otherwise
-           * we'll use the address of the default gateway */
-          IPAddress *address2resolve=NULL;;
-          if(newhost->getNetworkDistance()==DISTANCE_DIRECT){
-            address2resolve=newhost->getTargetAddress();
+          if(newhost->getInterface()->getType()!=devt_ethernet){
+            nping_fatal(QT_3, "Ethernet device required on Windows platforms. Target host only reachable through a non-Ethernet network interface (%s).", newhost->getInterface()->getName());
           }else{
-            address2resolve=newhost->getNextHopAddress();
+            do_eth=true;
           }
-          assert(address2resolve!=NULL);
-
-          /* Now do the actual ARP/ND resolution */
-          nping_print(DBG_4, "Attempting ARP/ND resolution...");
-          if(mac_resolve(address2resolve, newhost->getSourceAddress(),newhost->getInterface(), &destmac)!=OP_SUCCESS){
-            nping_warning(QT_1, "Failed to resolve MAC address for %s. Skipping target host %s", address2resolve->toString(),newhost->getTargetAddress()->toString());
-            continue;
+	  }else if(this->getSendPreference()==PACKET_SEND_NOPREF){
+          /* For IPv6 we always try to send at the Ethernet level because many
+           * systems impose big limitations on raw IPv6 sockets. We want to be
+           * able to produce our own IPv6 headers and injecting packets at
+           * the Ethernet level is the best way to do that.
+           *
+           * If the target is IPv4 then we don't need to make our life more
+           * difficult resolving mac addresses, we just send through a raw
+           * socket. */
+          if(this->target_addresses[i]->getVersion()==AF_INET6){
+            /* Of course, the network interface must be Ethernet.*/
+            if(newhost->getInterface()->getType()==devt_ethernet)
+              do_eth=true;
           }
-          nping_print(DBG_4, "ARP/ND resolution done!");
+          /* If we are doing ARP, we need Ethernet... */
+          if(this->mode(DO_ARP) && this->target_addresses[i]->getVersion()==AF_INET){
+            do_eth=true;
+          }
+        /* If the user explicitly requested Ethernet, go for it... */
+        }else if(this->getSendPreference()==PACKET_SEND_ETH){
+          /* ...unless the device is not Ethernet*/
+          if(newhost->getInterface()->getType()!=devt_ethernet){
+            nping_fatal(QT_3, "Ethernet requested for a host that is only reachable through a non-Ethernet network interface (%s).", newhost->getInterface()->getName());
+          }else{
+            do_eth=true;
+          }
         }
-        /* Now set up the eth info and associate it with the current host */
-        EthernetHeaderTemplate myeth;
-        /* Source MAC address */
-        if(this->eth.src.is_set()){
-          myeth.src=this->eth.src;
-        }else{
-          myeth.src=newhost->getInterface()->getAddress();
-        }
-        /* Destination MAC address */
-        if(this->eth.dst.is_set()){
-          myeth.dst=this->eth.dst;
-        }else{
-          myeth.dst=destmac; /* This was provided by mac_resolve() */
-        }
-        /* Ether type */
-        if(this->eth.type.is_set()){
-          myeth.type=this->eth.type;
-        }// Don't set it if the user didn't pass an explicit value
-        newhost->setEth(&myeth);
-      }
 
-      /* Now, tell the target host which packets it has to send. Note that when
-       * we are doing ARP, the IP header is useless, but we still pass it. This
-       * is OK, TargetHosts will ignore the header in this case. */
-      nping_print(DBG_4, "Storing packet info in the TargetHost...");
-      if(this->target_addresses[i]->getVersion()==AF_INET){
-        newhost->setIPv4(&this->ip4);
-      }else{
-        newhost->setIPv6(&this->ip6);
-      }
-      if(this->mode(DO_ICMP)){
+        /* If we have determined that we should send at the Ethernet level and
+         * we still don't have a next hop MAC address, we need to resolve it. */
+        if(do_eth){
+          nping_print(DBG_4, "Target will be reached sending packets at the Ethernet level...");
+          /* Do not resolve it if the user passed a specific MAC address */
+          if(!this->eth.dst.is_set()){
+            /* First of all let's determine which IP address we need to use for
+             * the MAC resolution. If we are directly connected to the host
+             * then it's the host's address the one we are interested in. Otherwise
+             * we'll use the address of the default gateway */
+            IPAddress *address2resolve=NULL;;
+            if(newhost->getNetworkDistance()==DISTANCE_DIRECT){
+              address2resolve=newhost->getTargetAddress();
+            }else{
+              address2resolve=newhost->getNextHopAddress();
+            }
+            assert(address2resolve!=NULL);
+
+            /* Now do the actual ARP/ND resolution */
+            nping_print(DBG_4, "Attempting ARP/ND resolution...");
+            if(mac_resolve(address2resolve, newhost->getSourceAddress(),newhost->getInterface(), &destmac)!=OP_SUCCESS){
+              nping_warning(QT_1, "Failed to resolve MAC address for %s. Skipping target host %s", address2resolve->toString(),newhost->getTargetAddress()->toString());
+              continue;
+            }
+            nping_print(DBG_4, "ARP/ND resolution done!");
+          }
+          /* Now set up the eth info and associate it with the current host */
+          EthernetHeaderTemplate myeth;
+          /* Source MAC address */
+          if(this->eth.src.is_set()){
+            myeth.src=this->eth.src;
+          }else{
+            myeth.src=newhost->getInterface()->getAddress();
+          }
+          /* Destination MAC address */
+          if(this->eth.dst.is_set()){
+            myeth.dst=this->eth.dst;
+          }else{
+            myeth.dst=destmac; /* This was provided by mac_resolve() */
+          }
+          /* Ether type */
+          if(this->eth.type.is_set()){
+            myeth.type=this->eth.type;
+          }// Don't set it if the user didn't pass an explicit value
+          newhost->setEth(&myeth);
+        }
+
+        /* Now, tell the target host which packets it has to send. Note that when
+         * we are doing ARP, the IP header is useless, but we still pass it. This
+         * is OK, TargetHosts will ignore the header in this case. */
+        nping_print(DBG_4, "Storing packet info in the TargetHost...");
         if(this->target_addresses[i]->getVersion()==AF_INET){
-          newhost->setICMPv4(&this->icmp4);
+          newhost->setIPv4(&this->ip4);
         }else{
-          newhost->setICMPv6(&this->icmp6);
+          newhost->setIPv6(&this->ip6);
         }
+        if(this->mode(DO_ICMP)){
+          if(this->target_addresses[i]->getVersion()==AF_INET){
+            newhost->setICMPv4(&this->icmp4);
+          }else{
+            newhost->setICMPv6(&this->icmp6);
+          }
+        }
+        if(this->mode(DO_TCP))
+          newhost->setTCP(&this->tcp);
+        if(this->mode(DO_UDP))
+          newhost->setUDP(&this->udp);
+        if(this->mode(DO_ARP) && this->target_addresses[i]->getVersion()==AF_INET)
+          newhost->setARP(&this->arp);
+        if(this->payload_buff!=NULL)
+          newhost->setPayload(this->payload_buff, this->payload_len);
+      }else{
+        /* We failed to determine a valid route for the target so we can't do anything but to skip it*/
+        delete newhost;
+        nping_warning(QT_1, "WARNING: Cannot find route for %s. Skipping that target host...", this->target_addresses[i]->toString());
+        continue;
       }
-      if(this->mode(DO_TCP))
-        newhost->setTCP(&this->tcp);
-      if(this->mode(DO_UDP))
-        newhost->setUDP(&this->udp);
-      if(this->mode(DO_ARP) && this->target_addresses[i]->getVersion()==AF_INET)
-        newhost->setARP(&this->arp);
-      if(this->payload_buff!=NULL)
-        newhost->setPayload(this->payload_buff, this->payload_len);
-
-      /* We have all the info we need. Now, just add the new host to the list of
-       * target hosts. */
-      this->target_hosts.push_back(newhost);
-      nping_print(DBG_2, "Added target host %s.", this->target_addresses[i]->toString() );
-    }else{
-      nping_warning(QT_1, "WARNING: Cannot find route for %s. Skipping that target host...", this->target_addresses[i]->toString());
     }
-  }
 
+    /* Now we have all the info we need, so just add the new host to the globla
+     * list of target hosts. */
+    this->target_hosts.push_back(newhost);
+    nping_print(DBG_2, "Added target host %s.", this->target_addresses[i]->toString() );
+  }
   return OP_SUCCESS;
 }/* End of setupTargetHosts() */
 
