@@ -326,23 +326,23 @@ bool NpingOps::issetMode(){
  * has been set. */
 bool NpingOps::mode(u16 test_value){
   if(test_value==MODE_IS_PRIVILEGED){
-    if(test_value & DO_TCP)
+    if(this->modes & DO_TCP)
       return true;
-    if(test_value & DO_UDP)
+    if(this->modes & DO_UDP)
       return true;
-    if(test_value & DO_ICMP)
+    if(this->modes & DO_ICMP)
       return true;
-    if(test_value & DO_ARP)
+    if(this->modes & DO_ARP)
       return true;
-    if(test_value & DO_TRACEROUTE)
+    if(this->modes & DO_TRACEROUTE)
       return true;
-    if(test_value & DO_EXT_HOPOPT)
+    if(this->modes & DO_EXT_HOPOPT)
       return true;
-    if(test_value & DO_EXT_ROUTING)
+    if(this->modes & DO_EXT_ROUTING)
       return true;
-    if(test_value & DO_EXT_DOPT)
+    if(this->modes & DO_EXT_DOPT)
       return true;
-    if(test_value & DO_EXT_FRAGMENT)
+    if(this->modes & DO_EXT_FRAGMENT)
       return true;
   }else if(test_value==MODE_IS_UNPRIVILEGED){
       return !this->mode(MODE_IS_PRIVILEGED);
