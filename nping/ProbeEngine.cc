@@ -594,6 +594,7 @@ int ProbeEngine::do_unprivileged(int proto, TargetHost *tgt, u16 tport, u16 spor
 
   /* Initializations */
   memset(&to, 0, sizeof(struct sockaddr_storage));
+  memset(&ss, 0, sizeof(struct sockaddr_storage));
 
   assert(tgt!=NULL);
   tgt->getTargetAddress()->getAddress(&to);
@@ -637,18 +638,19 @@ int ProbeEngine::do_unprivileged(int proto, TargetHost *tgt, u16 tport, u16 spor
   if ((fds[packetno%max_iods] = nsi_new(nsp, NULL)) == NULL)
     nping_fatal(QT_3, "%s(): Failed to create new nsock_iod.\n", __func__);
 
-  /* If we have a source address, set it. This allows setting things like custom source port */
-  if((srcaddr=tgt->getSourceAddress())!=NULL){
-    srcaddr->getAddress(&ss);
-  }else{
-    setsockaddrfamily(&ss, tgt->getTargetAddress()->getVersion());
-    setsockaddrany(&ss);
+  /* If we have a source port or a source address, bind it to the socket. */
+  if(((srcaddr=tgt->getSourceAddress())!=NULL) || sport!=0){
+    if(srcaddr!=NULL){
+      srcaddr->getAddress(&ss);
+    }else{
+      setsockaddrfamily(&ss, tgt->getTargetAddress()->getVersion());
+      setsockaddrany(&ss);
+    }
+    if(sport!=0){
+      setsockaddrport(&ss, sport);
+    }
+    nsi_set_localaddr(fds[packetno%max_iods], &ss, sslen);
   }
-  if(sport!=0){
-    setsockaddrport(&ss, sport);
-  }
-  nsi_set_localaddr(fds[packetno%max_iods], &ss, sslen);
-
   if(proto==DO_TCP_CONNECT){
     nsock_connect_tcp(nsp, fds[packetno%max_iods], tcpconnect_handler_wrapper, 100000, tgt, (struct sockaddr *)&to, sslen, tport);
     if( o.showSentPackets() ){
