@@ -50,14 +50,10 @@
 
 * Make nping able to determine RTTs in TCP-Connect and UDP-Unprivileged modes.
 
-* In NpingOps::setupTargetHosts() consider skipping things like route_dst() if
-  we are doing TCP-Connect or UDP-Unprivileged.
-
-* Mixing --tcp-connect and raw packet modes does not work.
-  sudo ./nping google.com nmap.org -c2 1.2.3.4 --tcp-connect --udp
-
 * Packets captured seem to include things like the 2-byte Ethernet trailing
   checksum. Check nse_readpcap() is working correctly.
+  UPDATE: It seems to be the linux cooked capture. We need to investigate this
+  in more detail to see if we can introduce some code to handle it.
 
     sudo ./nping google.com --tcp
 
@@ -156,9 +152,6 @@
 * Now UDP unpriv sends 0 bytes, not 4. Change that in Nping's test script and
   also check references to that in the man page.
 
-* Investigate an IPv6-related core dump reported by Vasiliy Kulikov.
-  More info: http://seclists.org/nmap-dev/2011/q3/567
-
 * Consider using Nmap's proto-dependant payloads for UDP packets. According
   to David's tests, better results are obtained when sending UDP probes with a
   payload specific to the protocol.
@@ -252,24 +245,6 @@
     Rx time: 2.00193s | Rx bytes/s: 0.00 | Rx pkts/s: 0.00
     Nping done: 1 IP address pinged in 9.33 seconds
 
-* Sometimes Nping displays a couple of error messages (related to cleanup of
-  Nsock events), even though everything went fine.
-
-    luis@Aberdeen:~$ sudo nping --ec public echo.nmap.org -p90 --tcp --count 1
-
-    Starting Nping 0.5.52.IPv6.Beta2 ( http://nmap.org/nping ) at 2011-07-05 12:51 CEST
-    SENT (1.8965s) TCP 163.117.203.253:64288 > 74.207.244.221:90 S ttl=64
-    CAPT (2.0293s) TCP 163.117.203.253:64288 > 74.207.244.221:90 S ttl=54
-    RCVD (2.1233s) TCP 74.207.244.221:90 > 163.117.203.253:64288 RA ttl=51
-    nping_event_handler(): READ-PCAP killed: Resource temporarily unavailable
-    nping_event_handler(): TIMER killed: Resource temporarily unavailable
-     
-    Max rtt: 226.762ms | Min rtt: 226.762ms | Avg rtt: 226.762ms
-    Raw packets sent: 1 (40B) | Rcvd: 1 (40B) | Lost: 0 (0.00%)| Echoed: 1 (40B) 
-    Tx time: 0.00136s | Tx bytes/s: 29411.76 | Tx pkts/s: 735.29
-    Rx time: 1.00082s | Rx bytes/s: 39.97 | Rx pkts/s: 1.00
-    Nping done: 1 IP address pinged in 2.93 seconds
-       
 * Investigate about warning on old version of gcc like g++ 4.1.2 20080704
   (Red Hat 4.1.2-48). No warnings are shown on newer version but it would be
   nice to get rid of them if possible. There are some of them:
@@ -325,8 +300,6 @@
    terms of how high the values of packets per second can get and still
    work reliably.>>
 
-* Stats for ARP packets.
-
 * Do more testing on Mac
 
 * Support pre defined probe rates: --fast, --faster, --flood, --slow,
@@ -363,8 +336,6 @@
 * Implement --data-file option. What should we do if file is big? Read the
   first X bytes? Send consecutive chunks?
 
-* Implement ICMP address mask
-
 * Implement entire ICMP Traceroute message opts.
 
 * Research on default IP Identification value. Kernel does not seem to like
@@ -386,15 +357,6 @@
  39     SKIP                                              [Markson]
  40     Photuris                                          [RFC2521]
 
-* Implement checks in function that handles received packets:
-    Fyodor: 
-    <<You can't assume that the filter always works right, so you do need to
-    validate the information anyway. For example, on windows in some cases
-    we have to change the filter to "" because it doesn't work otherwise
-    so, in actuality, I often end up with rather broad pcap filters and then
-    do the checking by hand, but tightening the pcap filter can improve
-    performance a bit.>>
-
 * Implement "-iL inputfilename (Input from list) " and the case where "-" is
   supplied and target specs need to be read from stdin.  
   
@@ -406,27 +368,13 @@
   
 * At some point we should support nmap-like MAC specification. 
 
-* When implementing IPv6, check MAX_TCP_PAYLOAD_LEN constant and method 
-  TCPHeader::setSum(). Because with IPv6 the max payload length should be 20
-  bytes less than with the IPv4 header.
-
 * When using payloads, take into account that the IP and TCP headers may 
   contain options and therefore, the maximum payload len should be
   65535 - 20(ip header) - 40 (ip options) -20(tcp header) -20(tcp options);
 
-* Make sure randomnly generated checksums in IPv6-TCP/UDP are in fact invalid
-  and don't match the correct checksum. 
-
 * Fyodor:
   <<in some cases it might be nice to have an option which sends all 
   probes (all ports to all hosts) at the same time.>>
-
-* ARP mode does not support payload specification. However, users may
-  want to do things like appending null bytes at the end of an ARP
-  packet to test some device behaviour, etc. Adding support for
-  payload to this mode is really trivial, would make the payload spec
-  more consistent with the rest of the modes, and may be a nice to have
-  feature.
 
 * [EM] For CAPT packets, decide if we want to print the full info or
   just the fields that have changed in transit (or both).  Note that
@@ -446,17 +394,10 @@
   a standard encoding or not. The logic that parses this in Nping needs
   to be reviewed.
 
-* Split up libnetutil.cc into different source files.
-
 * Investigate on nping's version of devname2ipaddr. Think about side
   effects on using that in Nmap.
 
-* Consider adding multi-packet support.
-  o Example: tell nping to send 4 tcp packets, 5 icmp packets and 3 udp packets
-
 * Consider adding RFC-style output for send/recv packets.
-
-* Consider adding more detailed stats for the Echo Mode.
 
 * [EM] Handle DLT types. Currently the server always sets the null DLT value
   that indicates that no data link header is included.
@@ -1036,3 +977,65 @@ SENT (1.0580s) ARP who has 192.168.240.139? Tell 192.168.240.1
 
 [DONE] Finish --traceroute. currently it does not start from TTL=1, but from TTL=64.
   If I pass --ttl 30, then it starts from 30. Investigate this.
+
+[DONE] Consider adding multi-packet support.
+  Example: tell nping to send 4 tcp packets, 5 icmp packets and 3 udp packets
+
+[DONE] Consider adding more detailed stats for the Echo Mode.
+
+[DONE] Split up libnetutil.cc into different source files.
+
+[DONE] ARP mode does not support payload specification. However, users may
+  want to do things like appending null bytes at the end of an ARP
+  packet to test some device behaviour, etc. Adding support for
+  payload to this mode is really trivial, would make the payload spec
+  more consistent with the rest of the modes, and may be a nice to have
+  feature.
+
+[DONE] Make sure randomnly generated checksums in IPv6-TCP/UDP are in fact invalid
+  and don't match the correct checksum.
+
+[DONE] When implementing IPv6, check MAX_TCP_PAYLOAD_LEN constant and method
+  TCPHeader::setSum(). Because with IPv6 the max payload length should be 20
+  bytes less than with the IPv4 header.
+
+
+[DONE] Implement checks in function that handles received packets:
+    Fyodor:
+    <<You can't assume that the filter always works right, so you do need to
+    validate the information anyway. For example, on windows in some cases
+    we have to change the filter to "" because it doesn't work otherwise
+    so, in actuality, I often end up with rather broad pcap filters and then
+    do the checking by hand, but tightening the pcap filter can improve
+    performance a bit.>>
+
+[DONE] Implement ICMP address mask
+
+[DONE] Stats for ARP packets.
+
+[DONE] Sometimes Nping displays a couple of error messages (related to cleanup of
+  Nsock events), even though everything went fine.
+
+    luis@Aberdeen:~$ sudo nping --ec public echo.nmap.org -p90 --tcp --count 1
+
+    Starting Nping 0.5.52.IPv6.Beta2 ( http://nmap.org/nping ) at 2011-07-05 12:51 CEST
+    SENT (1.8965s) TCP 163.117.203.253:64288 > 74.207.244.221:90 S ttl=64
+    CAPT (2.0293s) TCP 163.117.203.253:64288 > 74.207.244.221:90 S ttl=54
+    RCVD (2.1233s) TCP 74.207.244.221:90 > 163.117.203.253:64288 RA ttl=51
+    nping_event_handler(): READ-PCAP killed: Resource temporarily unavailable
+    nping_event_handler(): TIMER killed: Resource temporarily unavailable
+
+    Max rtt: 226.762ms | Min rtt: 226.762ms | Avg rtt: 226.762ms
+    Raw packets sent: 1 (40B) | Rcvd: 1 (40B) | Lost: 0 (0.00%)| Echoed: 1 (40B)
+    Tx time: 0.00136s | Tx bytes/s: 29411.76 | Tx pkts/s: 735.29
+    Rx time: 1.00082s | Rx bytes/s: 39.97 | Rx pkts/s: 1.00
+    Nping done: 1 IP address pinged in 2.93 seconds
+
+[DONE] In NpingOps::setupTargetHosts() consider skipping things like route_dst() if
+  we are doing TCP-Connect or UDP-Unprivileged.
+
+[DONE] Mixing --tcp-connect and raw packet modes does not work.
+  sudo ./nping google.com nmap.org -c2 1.2.3.4 --tcp-connect --udp
+
+[DONE] Investigate an IPv6-related core dump reported by Vasiliy Kulikov.
+  More info: http://seclists.org/nmap-dev/2011/q3/567
