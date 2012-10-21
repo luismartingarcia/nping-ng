@@ -739,6 +739,7 @@ ICMPv4Header *TargetHost::getICMPv4Header(){
 
 ICMPv6Header *TargetHost::getICMPv6Header(){
   ICMPv6Header *myicmp6=NULL;
+  u8 aux8=0;
   assert(this->icmp6!=NULL);
   myicmp6=new ICMPv6Header();
 
@@ -761,6 +762,33 @@ ICMPv6Header *TargetHost::getICMPv6Header(){
       myicmp6->setPointer(this->icmp6->pointer.getNextValue());
     break;
 
+    case ICMPv6_ROUTERADVERT:
+      /* Router Advertisement flags */
+      aux8=0;
+      /* Extract flag info from the template and set the appropriate bits on
+       * an 8-bit aux variable */
+      if(this->icmp6->ra_M.getNextValue()==true)
+        aux8= aux8 | ICMPv6_RA_FLAG_M;
+      if(this->icmp6->ra_O.getNextValue()==true)
+        aux8= aux8 | ICMPv6_RA_FLAG_O;
+      if(this->icmp6->ra_H.getNextValue()==true)
+        aux8= aux8 | ICMPv6_RA_FLAG_H;
+      if(this->icmp6->ra_P.getNextValue()==true)
+        aux8= aux8 | ICMPv6_RA_FLAG_P;
+      if(this->icmp6->ra_R1.getNextValue()==true)
+        aux8= aux8 | ICMPv6_RA_FLAG_R1;
+      if(this->icmp6->ra_R2.getNextValue()==true)
+        aux8= aux8 | ICMPv6_RA_FLAG_R2;
+      /* Finally, set the flag on the ICMPv6 header */
+      myicmp6->setFlags(aux8);
+      /* Rest of the fields: */
+      myicmp6->setCurrentHopLimit(this->icmp6->ra_hlim.getNextValue());
+      myicmp6->setRouterLifetime(this->icmp6->ra_lifetime.getNextValue());
+      myicmp6->setReachableTime(this->icmp6->ra_reachtime.getNextValue());
+      myicmp6->setRetransmissionTimer(this->icmp6->ra_retrtimer.getNextValue());
+    break;
+
+
     case ICMPv6_UNREACH:
     case ICMPv6_TIMXCEED:
 
@@ -768,7 +796,7 @@ ICMPv6Header *TargetHost::getICMPv6Header(){
     case ICMPv6_GRPMEMBREP:
     case ICMPv6_GRPMEMBRED:
     case ICMPv6_ROUTERSOLICIT:
-    case ICMPv6_ROUTERADVERT:
+
     case ICMPv6_NGHBRSOLICIT:
     case ICMPv6_NGHBRADVERT:
     case ICMPv6_REDIRECT:

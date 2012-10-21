@@ -48,6 +48,10 @@
  * Things that have NOT been done yet                                        *
  *****************************************************************************/
 
+* Implement Options in ICMPv6 Router Advertisement
+
+* Implement the "Prf" 2-bit flag for ICMPv6 Router Advertisement.
+
 * Make nping able to determine RTTs in TCP-Connect and UDP-Unprivileged modes.
 
 * Packets captured seem to include things like the 2-byte Ethernet trailing

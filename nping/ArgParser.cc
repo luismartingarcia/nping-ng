@@ -226,6 +226,11 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
   {"icmp6-seq", required_argument, 0, 0},
   {"icmp6-param-pointer", required_argument, 0, 0},
   {"icmp6-mtu", required_argument, 0, 0},
+  {"icmp6-ra-flags", required_argument, 0, 0},
+  {"icmp6-ra-hlim", required_argument, 0, 0},
+  {"icmp6-ra-lifetime", required_argument, 0, 0},
+  {"icmp6-ra-reachtime", required_argument, 0, 0},
+  {"icmp6-ra-retrtimer", required_argument, 0, 0},
 
   /* ARP */
   {"arp-type",  required_argument, 0, 0},
@@ -645,6 +650,80 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
         o.icmp6.mtu.setConstant(aux32);
       }else{
         nping_fatal(QT_3, "Invalid ICMPv6 Packet Too Big MTU. Value must be 0<=N<2^32.");
+      }
+    /* ICMPv6 Router Advertisement Flags */
+    } else if (optcmp(long_options[option_index].name, "icmp6-ra-flags") == 0) {
+      o.addMode(DO_ICMP);
+      aux8=0;
+      int Rflags=0, ra_flags=0;
+      for(size_t f=0; f<strlen(optarg); f++){
+        switch(optarg[f]){
+          case 'M': case 'm':
+            o.icmp6.ra_M.setConstant(true);
+            ra_flags++;
+          break;
+          case 'O': case 'o':
+            o.icmp6.ra_O.setConstant(true);
+            ra_flags++;
+          break;
+          case 'H': case 'h':
+            o.icmp6.ra_H.setConstant(true);
+            ra_flags++;
+          break;
+          case 'P': case 'p':
+            o.icmp6.ra_P.setConstant(true);
+            ra_flags++;
+          break;
+          case 'R': case 'r':
+            /* First R we get, we set the reserved flag on the second bit
+             * If we get more Rs, then we set the one on the first bit. */
+              if(Rflags==0){
+                o.icmp6.ra_R1.setConstant(true);
+                Rflags++;
+                ra_flags++;
+              }else{
+                o.icmp6.ra_R2.setConstant(true);
+                ra_flags++;
+              }
+          break;
+          default:
+            nping_fatal(QT_3, "Invalid ICMPv6 Router Advertisement flags supplied (%c). Possible flags: M, O, H, P, R.", optarg[f]);
+          break;
+        }
+      }
+      if(ra_flags==0)
+        nping_fatal(QT_3, "No ICMPv6 Router Advertisement flags supplied. Possible flags: M, O, H, P, R.");
+    /* ICMPv6 Router Advertisement Hop Limit */
+    } else if (optcmp(long_options[option_index].name, "icmp6-ra-hlim") == 0) {
+      o.addMode(DO_ICMP);
+      if(parse_u8(optarg, &aux8) == OP_SUCCESS){
+        o.icmp6.ra_hlim.setConstant(aux8);
+      }else{
+        nping_fatal(QT_3, "Invalid ICMPv6 Router Advertisement Hop Limit. Value must be 0<=N<=255.");
+      }
+    /* ICMPv6 Router Advertisement Lifetime */
+    } else if (optcmp(long_options[option_index].name, "icmp6-ra-lifetime") == 0) {
+      o.addMode(DO_ICMP);
+      if(parse_u16(optarg, &aux16) == OP_SUCCESS){
+        o.icmp6.ra_lifetime.setConstant(aux16);
+      }else{
+        nping_fatal(QT_3, "Invalid ICMPv6 Router Advertisement Lifetime. Value must be 0<=N<=65535.");
+      }
+    /* ICMPv6 Router Advertisement Reachable Time*/
+    } else if (optcmp(long_options[option_index].name, "icmp6-ra-reachtime") == 0) {
+      o.addMode(DO_ICMP);
+      if(parse_u32(optarg, &aux32) == OP_SUCCESS){
+        o.icmp6.ra_reachtime.setConstant(aux32);
+      }else{
+        nping_fatal(QT_3, "Invalid ICMPv6 Router Advertisement Reachable Time. Value must be 0<=N<2^32.");
+      }
+    /* ICMPv6 Router Advertisement Retransmission Timer*/
+    } else if (optcmp(long_options[option_index].name, "icmp6-ra-retrtimer") == 0) {
+      o.addMode(DO_ICMP);
+      if(parse_u32(optarg, &aux32) == OP_SUCCESS){
+        o.icmp6.ra_retrtimer.setConstant(aux32);
+      }else{
+        nping_fatal(QT_3, "Invalid ICMPv6 Router Advertisement Retransmission Timer. Value must be 0<=N<2^32.");
       }
 
 /* ARP OPTIONS ***************************************************************/

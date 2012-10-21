@@ -282,6 +282,41 @@ int ICMPv6Header::print(FILE *output, int detail) const {
       }
     break;
 
+    case ICMPv6_ROUTERADVERT:
+      if(this->getFlags()!=0){
+        fprintf(output, " flags=");
+        if(this->getFlags() & ICMPv6_RA_FLAG_M)
+          fprintf(output, "M");
+        if(this->getFlags() & ICMPv6_RA_FLAG_O)
+          fprintf(output, "O");
+        if(this->getFlags() & ICMPv6_RA_FLAG_H)
+          fprintf(output, "H");
+        if(this->getFlags() & ICMPv6_RA_FLAG_P)
+          fprintf(output, "P");
+        if(this->getFlags() & ICMPv6_RA_FLAG_R1)
+          fprintf(output, "R");
+        if(this->getFlags() & ICMPv6_RA_FLAG_R2)
+          fprintf(output, "R");
+         
+        if(this->getFlags() & 0x18 ){ /* RFC 4191 */
+          if((this->getFlags() & (ICMPv6_RA_FLAG_PRF1|ICMPv6_RA_FLAG_PRF2))==0x18)
+             fprintf(output, " Pref=Low");
+          else if((this->getFlags() & (ICMPv6_RA_FLAG_PRF1|ICMPv6_RA_FLAG_PRF2))==0x08)
+            fprintf(output, " Pref=High");
+          else if((this->getFlags() & (ICMPv6_RA_FLAG_PRF1|ICMPv6_RA_FLAG_PRF2))==0x10)
+            fprintf(output, " Pref=10");
+        }
+      }
+      if(detail>=PRINT_DETAIL_MED){
+        fprintf(output, " hlim=%u", this->getCurrentHopLimit());
+        fprintf(output, " lifetime=%u", this->getRouterLifetime());
+      }
+      if(detail>=PRINT_DETAIL_HIGH){
+        fprintf(output, " reachtime=%lu", (long unsigned int)this->getReachableTime());
+        fprintf(output, " retrtimer=%lu", (long unsigned int)this->getRetransmissionTimer());
+      }
+    break;           
+    
     default:
         /* Print nothing */
     break;

@@ -299,7 +299,15 @@
 /* This must the MAX() of all values defined above*/
 #define ICMPv6_MAX_MESSAGE_BODY     (ICMPv6_REDIRECT_LEN-ICMPv6_COMMON_HEADER_LEN)
 
-
+/* Router Advertisement flag bitmaks */
+#define ICMPv6_RA_FLAG_M    0x80
+#define ICMPv6_RA_FLAG_O    0x40
+#define ICMPv6_RA_FLAG_H    0x20
+#define ICMPv6_RA_FLAG_PRF1 0x10
+#define ICMPv6_RA_FLAG_PRF2 0x08
+#define ICMPv6_RA_FLAG_P    0x04
+#define ICMPv6_RA_FLAG_R1   0x02
+#define ICMPv6_RA_FLAG_R2   0x01
 
 /* Node Information flag bitmaks */
 #define ICMPv6_NI_FLAG_T    0x01

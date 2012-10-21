@@ -314,7 +314,7 @@ class ICMPv6HeaderTemplate : public HeaderTemplate{
     ProtoField_bool ra_R2;          /* Reserved flag                 */
     ProtoField_u16 ra_lifetime;     /* Router lifetime               */
     ProtoField_u32 ra_reachtime;    /* Reachable time                */
-    ProtoField_u32 ra_retrtime;     /* Retrans time                  */
+    ProtoField_u32 ra_retrtimer;    /* Retransmission timer           */
 
     /* Neighbor advertisement */
     ProtoField_bool na_R;           /* Router flag                   */
