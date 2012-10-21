@@ -808,6 +808,11 @@ ICMPv6Header *TargetHost::getICMPv6Header(){
       myicmp6->setTargetAddress(this->icmp6->ns_addr.getNextValue());
     break;
 
+    case ICMPv6_REDIRECT:
+      myicmp6->setTargetAddress(this->icmp6->redir_gw.getNextValue());
+      myicmp6->setDestinationAddress(this->icmp6->redir_dest.getNextValue());
+    break;
+
     case ICMPv6_UNREACH:
     case ICMPv6_TIMXCEED:
 
@@ -818,7 +823,6 @@ ICMPv6Header *TargetHost::getICMPv6Header(){
 
 
 
-    case ICMPv6_REDIRECT:
     case ICMPv6_RTRRENUM:
     case ICMPv6_NODEINFOQUERY:
     case ICMPv6_NODEINFORESP:

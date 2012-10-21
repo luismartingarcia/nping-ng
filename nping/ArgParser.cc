@@ -235,6 +235,8 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
   {"icmp6-na-flags", required_argument, 0, 0},
   {"icmp6-na-addr", required_argument, 0, 0},
   {"icmp6-ns-addr", required_argument, 0, 0},
+  {"icmp6-redir-gw", required_argument, 0, 0},
+  {"icmp6-redir-dest", required_argument, 0, 0},
 
   /* ARP */
   {"arp-type",  required_argument, 0, 0},
@@ -779,6 +781,31 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
           o.icmp6.ns_addr.setConstant(aux_ip6.getIPv6Address());
         }
       }
+    /* ICMPv6 Redirect Target Address (gateway to use in order to reach a destination) */
+    } else if (optcmp(long_options[option_index].name, "icmp6-redir-gw") == 0) {
+      o.addMode(DO_ICMP);
+      if(meansRandom(optarg)){
+        o.icmp6.redir_gw.setBehavior(FIELD_TYPE_RANDOM);
+      }else{
+        if(aux_ip6.setIPv6Address(optarg) != OP_SUCCESS){
+          nping_fatal(QT_3, "Could not resolve specified ICMPv6 Redirect Gateway.");
+        }else{
+          o.icmp6.redir_gw.setConstant(aux_ip6.getIPv6Address());
+        }
+      }
+     /* ICMPv6 Redirect Target Address (gateway to use in order to reach a destination) */
+    } else if (optcmp(long_options[option_index].name, "icmp6-redir-dest") == 0) {
+      o.addMode(DO_ICMP);
+      if(meansRandom(optarg)){
+        o.icmp6.redir_dest.setBehavior(FIELD_TYPE_RANDOM);
+      }else{
+        if(aux_ip6.setIPv6Address(optarg) != OP_SUCCESS){
+          nping_fatal(QT_3, "Could not resolve specified ICMPv6 Redirect Destination.");
+        }else{
+          o.icmp6.redir_dest.setConstant(aux_ip6.getIPv6Address());
+        }
+      }
+
 /* ARP OPTIONS ***************************************************************/
     /* Operation code */
     }else if (optcmp(long_options[option_index].name, "arp-type") == 0){

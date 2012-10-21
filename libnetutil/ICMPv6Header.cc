@@ -345,6 +345,18 @@ int ICMPv6Header::print(FILE *output, int detail) const {
       fprintf(output, " %s", ipstring);
     break;
 
+    case ICMPv6_REDIRECT:
+      if(detail>=PRINT_DETAIL_HIGH)
+        fprintf(output, " reserved=%lu", (long unsigned int)this->getReserved());
+      memset(ipstring, 0, 256);
+      addr=this->getTargetAddress();
+      inet_ntop(AF_INET6, &addr, ipstring, sizeof(ipstring));
+      fprintf(output, " gw=%s", ipstring);
+      addr=this->getDestinationAddress();
+      inet_ntop(AF_INET6, &addr, ipstring, sizeof(ipstring));
+      fprintf(output, " dst=%s", ipstring);
+    break;
+
     default:
         /* Print nothing */
     break;

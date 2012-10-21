@@ -325,6 +325,10 @@ class ICMPv6HeaderTemplate : public HeaderTemplate{
     /* Neighbor solicitation */
     ProtoField_in6addr ns_addr;     /* Target address                */
 
+    /* Redirect */
+    ProtoField_in6addr redir_gw;     /* Redirect gateway              */
+    ProtoField_in6addr redir_dest;   /* Destination                   */
+
     ICMPv6HeaderTemplate();
     ~ICMPv6HeaderTemplate();
     void reset();
