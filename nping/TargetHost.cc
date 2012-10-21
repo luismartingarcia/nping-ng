@@ -804,6 +804,10 @@ ICMPv6Header *TargetHost::getICMPv6Header(){
       myicmp6->setTargetAddress(this->icmp6->na_addr.getNextValue());
     break;
 
+    case ICMPv6_NGHBRSOLICIT:
+      myicmp6->setTargetAddress(this->icmp6->ns_addr.getNextValue());
+    break;
+
     case ICMPv6_UNREACH:
     case ICMPv6_TIMXCEED:
 
@@ -812,7 +816,7 @@ ICMPv6Header *TargetHost::getICMPv6Header(){
     case ICMPv6_GRPMEMBRED:
     case ICMPv6_ROUTERSOLICIT:
 
-    case ICMPv6_NGHBRSOLICIT:
+
 
     case ICMPv6_REDIRECT:
     case ICMPv6_RTRRENUM:

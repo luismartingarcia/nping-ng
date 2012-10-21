@@ -322,6 +322,8 @@ class ICMPv6HeaderTemplate : public HeaderTemplate{
     ProtoField_bool na_O;           /* Override flag                 */
     ProtoField_in6addr na_addr;     /* Target address                */
 
+    /* Neighbor solicitation */
+    ProtoField_in6addr ns_addr;     /* Target address                */
 
     ICMPv6HeaderTemplate();
     ~ICMPv6HeaderTemplate();
