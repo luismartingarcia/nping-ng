@@ -364,8 +364,8 @@ int removecolon(char *string){
   * @param dst should be the address of an unsigned long variable.
   * @return OP_SUCCESS if conversion was successful or OP_FAILURE in
   * case of error. */
-static int parse_unsigned_number(const char *str, unsigned long min, unsigned long max, unsigned long *dst){
-  unsigned long int result;
+static int parse_unsigned_number(const char *str, u64 min, u64 max, u64 *dst){
+  u64 result;
   char *tail=NULL;
 
   if(str==NULL || dst==NULL)
@@ -377,14 +377,16 @@ static int parse_unsigned_number(const char *str, unsigned long min, unsigned lo
 
   /* Case 1: User wants a random value */
   if(!strcasecmp(str, "rand") || !strcasecmp(str, "random")){
-    u32 r = get_random_u32();
-    *dst = min + (unsigned long) ((max - min + 1) * ((double) r / 0xffffffffUL));
+    u64 r = get_random_u64();
+    if(max<0xffffffffffffffffULL)
+      r =  min + r%(max-min+1);
+    *dst=r;
     return OP_SUCCESS;
   }
 
   /* Case 2: User supplied an actual number */
   errno=0;
-  result=strtoul(str, &tail, 0);
+  result=strtoull(str, &tail, 0);
   if(errno!=0 || tail==str || *tail!='\0')
     return OP_FAILURE;
 
@@ -403,13 +405,13 @@ static int parse_unsigned_number(const char *str, unsigned long min, unsigned lo
   * "dstbuff". Returns OP_SUCCESS if conversion was successful or
   * OP_FAILURE in case of error.*/
 int parse_u8(const char *str, u8 *dst){
-  unsigned long ul;
+  u64 ull;
   int ret;
-  ret = parse_unsigned_number(str, 0UL, 0xffUL, &ul);
+  ret = parse_unsigned_number(str, 0ULL, 0xffULL, &ull);
   if (ret == OP_SUCCESS)
-    *dst = ul;
+    *dst = ull;
   return ret;
-}
+} /* End of parse_u8() */
 
 
 /** Takes a string representing a 16-bit number and converts it into an
@@ -417,13 +419,13 @@ int parse_u8(const char *str, u8 *dst){
   * "dstbuff". Returns OP_SUCCESS if conversion was successful or
   * OP_FAILURE in case of error.*/
 int parse_u16(const char *str, u16 *dst){
-  unsigned long ul;
+  u64 ull;
   int ret;
-  ret = parse_unsigned_number(str, 0UL, 0xffffUL, &ul);
+  ret = parse_unsigned_number(str, 0ULL, 0xffffULL, &ull);
   if (ret == OP_SUCCESS)
-    *dst = ul;
+    *dst = ull;
   return ret;
-}
+} /* End of parse_u16() */
 
 
 /** Takes a string representing a 32-bit number and converts it into an
@@ -431,13 +433,27 @@ int parse_u16(const char *str, u16 *dst){
   * "dstbuff". Returns OP_SUCCESS if conversion was successful or
   * OP_FAILURE in case of error.*/
 int parse_u32(const char *str, u32 *dst){
-  unsigned long ul;
+  u64 ull;
   int ret;
-  ret = parse_unsigned_number(str, 0UL, 0xffffffffUL, &ul);
+  ret = parse_unsigned_number(str, 0ULL, 0xffffffffULL, &ull);
   if (ret == OP_SUCCESS)
-    *dst = ul;
+    *dst = ull;
   return ret;
-}
+} /* End of parse_u32() */
+
+
+/** Takes a string representing a 64-bit number and converts it into an
+  * actual integer. The result is stored in memory area pointed by
+  * "dstbuff". Returns OP_SUCCESS if conversion was successful or
+  * OP_FAILURE in case of error.*/
+int parse_u64(const char *str, u64 *dst){
+  u64 ull;
+  int ret;
+  ret = parse_unsigned_number(str, 0ULL, 0xffffffffffffffffULL, &ull);
+  if (ret == OP_SUCCESS)
+    *dst = ull;
+  return ret;
+} /* End of parse_u64() */
 
 
 /** Prints the hexadecimal dump of the supplied buffer to standard output */
