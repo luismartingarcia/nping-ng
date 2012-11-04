@@ -48,10 +48,16 @@
  * Things that have NOT been done yet                                        *
  *****************************************************************************/
 
+* Provide a way to pass Node Information data. Currently users can use
+  --data-string, --data-len or --data, but there is no way to, for example,
+  pass an IPv6 address.
 
 * Provide a way to set no flags at all in a ICMPv6 router renumbering header.
   Currently, the HeaderTemplate sets the T, R flags, and there is no way to
   say "no flags at all" from the command line.
+
+* Do endianness conversion in ICMPv6 Node Information nonces. For some reason,
+  be64toh() and htobe64() do not seem to work well on my machine.
 
 * Implement IMCPv6 Options.
 
