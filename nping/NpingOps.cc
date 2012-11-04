@@ -156,6 +156,8 @@ NpingOps::NpingOps() {
 
   show_eth=false;
 
+  show_all_stats=false;
+
   /* Operation and Performance */
   rounds=DEFAULT_PACKET_ROUNDS;
   rounds_set=false;
@@ -591,6 +593,20 @@ int NpingOps::setShowEth(bool val){
 bool NpingOps::showEth(){
   return this->show_eth;
 } /* End of showEth() */
+
+
+/** Control whether the stats for unresponsive hosts are printed out or not.
+ *  @return OP_SUCCESS on success and OP_FAILURE in case of error.           */
+int NpingOps::setShowAllStats(bool val){
+  this->show_all_stats=val;
+  return OP_SUCCESS;
+} /* End of setShowAllStats() */
+
+
+/** Returns true if the ethernet headers need to be printed.  */
+bool NpingOps::showAllStats(){
+  return this->show_all_stats;
+} /* End of showAllStats() */
 
 
 /* Returns the level of detail to use when printing packets. The returned
@@ -1534,6 +1550,18 @@ void NpingOps::displayStatistics(){
   if(this->getRole()!=ROLE_SERVER){
     if(this->target_hosts.size() > 1){
       for(u32 i=0; i<this->target_hosts.size(); i++){
+
+        /* First, check if we got any response from this target host. If we
+         * didn't, there is no point on printing invidual stats (unless the
+         * user passed --show-all-stats, of course. */
+        if(this->showAllStats()==false){
+          if(this->target_hosts[i]->stats.get_accepts(STATS_TCP)==0 &&
+             this->target_hosts[i]->stats.get_reads(STATS_UDP)==0 &&
+             this->target_hosts[i]->stats.get_rcvd(STATS_TOTAL)==0)
+              /* Host is unresponsive, skip its stats */
+              continue;
+        }
+
         nping_print(VB_0|NO_NEWLINE, "Statistics for host %s" , this->target_hosts[i]->getTargetAddress()->toString());
         if(!IPAddress::isIPAddress(this->target_hosts[i]->getHostname()))
           nping_print(VB_0|NO_NEWLINE, " (%s)", this->target_hosts[i]->getHostname());

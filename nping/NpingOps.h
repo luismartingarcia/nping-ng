@@ -204,7 +204,8 @@ class NpingOps {
     bool dbg_set;
     bool show_sent_pkts;      /* Print packets sent by Nping?          */
     bool show_sent_pkts_set;
-    bool show_eth;
+    bool show_eth;            /* Print link layer headers?             */
+    bool show_all_stats;      /* Print stats of hosts that didnt reply?*/
 
     /* Operation and Performance */
     u64 rounds;               /* No of times a host is targeted        */
@@ -344,6 +345,9 @@ class NpingOps {
 
     int setShowEth(bool val);
     bool showEth();
+
+    int setShowAllStats(bool val);
+    bool showAllStats();
 
     int getDetailLevel();
 
