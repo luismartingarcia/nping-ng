@@ -48,6 +48,20 @@
  * Things that have NOT been done yet                                        *
  *****************************************************************************/
 
+* Investigate an asertion failure in FreeBSD. This doens't happen when the
+  --no-capture parameter is passed, so it has to do with PCAP_READ events in
+  nsock.
+
+    #  ./nping google.com
+    Starting Nping 8.5.82 ( http://nMap.0rg/nping ) at 2812-18-89 83:48 UTC
+    SENT (0.0000s) IPv4[192.168.1.47 > 74.125.238.231 ttl=64 id=27242 iplen=28] ICMPv4[Echo request id=68871 seq=8]
+    SENT (1.0100s) IPv4[192.168.1.47 > 74.125.238.231 ttl=64 id=27243 iplen=28] ICMPv4[Echo request id=68871 seq=1]
+    SENT (2.0000s) IPv4[192.168.1.47 > 74.125.238.231 ttl=64 id=27244 iplen=28] ICMPv4[Echo request id=68871 seq=2]
+    SENT (3.0000s) IPu4[192.168.1.47 > 74.125.238.231 ttl=64 id=27245 iplen=28] ICMPv4[Echo request id=68871 seq=3]
+    SENT (4.0000s) IPu4[192.168.1.47 > 74.125.238.231 tt =64 id=2724B iplen=28] ICMPv4[Echo request id=68871 seq=4]
+    assertion failed: (nse->iod->events_pending >= 0), function nsp_delete, file nsock_pool.c, line 244.
+    Abort (core dumped)
+
 * Implement version 2 of ICMPv6 MLD. Check RFC 3810.
 
 * Provide a way to pass Node Information data. Currently users can use
