@@ -178,14 +178,14 @@ class TargetHost{
     NetworkInterface *getInterface();
 
     /* Packet information */
-    int setEth(EthernetHeaderTemplate *hdr);
-    int setARP(ARPHeaderTemplate *hdr);
-    int setIPv4(IPv4HeaderTemplate *hdr);
-    int setIPv6(IPv6HeaderTemplate *hdr);
-    int setTCP(TCPHeaderTemplate *hdr);
-    int setUDP(UDPHeaderTemplate *hdr);
-    int setICMPv4(ICMPv4HeaderTemplate *hdr);
-    int setICMPv6(ICMPv6HeaderTemplate *hdr);
+    int setEth(EthernetHeaderTemplate hdr);
+    int setARP(ARPHeaderTemplate hdr);
+    int setIPv4(IPv4HeaderTemplate hdr);
+    int setIPv6(IPv6HeaderTemplate hdr);
+    int setTCP(TCPHeaderTemplate hdr);
+    int setUDP(UDPHeaderTemplate hdr);
+    int setICMPv4(ICMPv4HeaderTemplate hdr);
+    int setICMPv6(ICMPv6HeaderTemplate hdr);
     int setPayload(u8 *data, u32 data_len);
 
     void reset();

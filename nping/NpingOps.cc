@@ -2166,7 +2166,7 @@ int NpingOps::setupTargetHosts(){
           if(this->eth.type.is_set()){
             myeth.type=this->eth.type;
           }// Don't set it if the user didn't pass an explicit value
-          newhost->setEth(&myeth);
+          newhost->setEth(myeth);
         }
 
         /* Now, tell the target host which packets it has to send. Note that when
@@ -2174,23 +2174,23 @@ int NpingOps::setupTargetHosts(){
          * is OK, TargetHosts will ignore the header in this case. */
         nping_print(DBG_4, "Storing packet info in the TargetHost...");
         if(this->target_addresses[i]->getVersion()==AF_INET){
-          newhost->setIPv4(&this->ip4);
+          newhost->setIPv4(this->ip4);
         }else{
-          newhost->setIPv6(&this->ip6);
+          newhost->setIPv6(this->ip6);
         }
         if(this->mode(DO_ICMP)){
           if(this->target_addresses[i]->getVersion()==AF_INET){
-            newhost->setICMPv4(&this->icmp4);
+            newhost->setICMPv4(this->icmp4);
           }else{
-            newhost->setICMPv6(&this->icmp6);
+            newhost->setICMPv6(this->icmp6);
           }
         }
         if(this->mode(DO_TCP))
-          newhost->setTCP(&this->tcp);
+          newhost->setTCP(this->tcp);
         if(this->mode(DO_UDP))
-          newhost->setUDP(&this->udp);
+          newhost->setUDP(this->udp);
         if(this->mode(DO_ARP) && this->target_addresses[i]->getVersion()==AF_INET)
-          newhost->setARP(&this->arp);
+          newhost->setARP(this->arp);
         if(this->payload_buff!=NULL)
           newhost->setPayload(this->payload_buff, this->payload_len);
       }else{

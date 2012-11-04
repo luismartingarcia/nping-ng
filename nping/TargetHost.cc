@@ -204,73 +204,65 @@ NetworkInterface *TargetHost::getInterface(){
 
 
 /* Associates the host with an Ethernet header template. */
-int TargetHost::setEth(EthernetHeaderTemplate *hdr){
-  assert(hdr!=NULL);
+int TargetHost::setEth(EthernetHeaderTemplate hdr){
   this->eth=new EthernetHeaderTemplate();
-  *this->eth=*hdr;
+  *this->eth=hdr;
   return OP_SUCCESS;
 } /* End of setEth() */
 
 
 /* Associates the host with an ARP header template. */
-int TargetHost::setARP(ARPHeaderTemplate *hdr){
-  assert(hdr!=NULL);
+int TargetHost::setARP(ARPHeaderTemplate hdr){
   this->arp=new ARPHeaderTemplate();
-  *this->arp=*hdr;
+  *this->arp=hdr;
   return OP_SUCCESS;
 } /* End of setEth() */
 
 
 /* Associates the host with an IPv4 header template. */
-int TargetHost::setIPv4(IPv4HeaderTemplate *hdr){
-  assert(hdr!=NULL);
+int TargetHost::setIPv4(IPv4HeaderTemplate hdr){
   this->ip4=new IPv4HeaderTemplate();
-  *this->ip4=*hdr;
+  *this->ip4=hdr;
   return OP_SUCCESS;
 } /* End of setIPv4() */
 
 
 /* Associates the host with an IPv6 header template. */
-int TargetHost::setIPv6(IPv6HeaderTemplate *hdr){
-  assert(hdr!=NULL);
+int TargetHost::setIPv6(IPv6HeaderTemplate hdr){
   this->ip6=new IPv6HeaderTemplate();
-  *this->ip6=*hdr;
+  *this->ip6=hdr;
   return OP_SUCCESS;
 } /* End of setIPv6() */
 
 
 /* Associates the host with a TCP header template. */
-int TargetHost::setTCP(TCPHeaderTemplate *hdr){
-  assert(hdr!=NULL);
+int TargetHost::setTCP(TCPHeaderTemplate hdr){
   this->tcp=new TCPHeaderTemplate();
-  *this->tcp=*hdr;
+  *this->tcp=hdr;
   return OP_SUCCESS;
 } /* End of setTCP() */
 
 
 /* Associates the host with a UDP header template. */
-int TargetHost::setUDP(UDPHeaderTemplate *hdr){
-  assert(hdr!=NULL);
+int TargetHost::setUDP(UDPHeaderTemplate hdr){
   this->udp=new UDPHeaderTemplate();
-  *this->udp=*hdr;
+  *this->udp=hdr;
   return OP_SUCCESS;
 } /* End of setUDP() */
 
 
 /* Associates the host with an ICMPv4 header template. */
-int TargetHost::setICMPv4(ICMPv4HeaderTemplate *hdr){
-  assert(hdr!=NULL);
+int TargetHost::setICMPv4(ICMPv4HeaderTemplate hdr){
   this->icmp4=new ICMPv4HeaderTemplate();
-  *this->icmp4=*hdr;
+  *this->icmp4=hdr;
   return OP_SUCCESS;
 } /* End of setICMPv4() */
 
 
 /* Associates the host with an ICMPv6 header template. */
-int TargetHost::setICMPv6(ICMPv6HeaderTemplate *hdr){
-  assert(hdr!=NULL);
+int TargetHost::setICMPv6(ICMPv6HeaderTemplate hdr){
   this->icmp6=new ICMPv6HeaderTemplate();
-  *this->icmp6=*hdr;
+  *this->icmp6=hdr;
   return OP_SUCCESS;
 } /* End of setICMPv4() */
 
