@@ -159,6 +159,7 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
   IPAddress aux_ip4;
   IPAddress aux_ip6;
   struct in_addr auxinaddr;
+  u64 aux64=0;
   u32 aux32=0;
   u16 aux16=0;
   u8 aux8=0;
@@ -244,6 +245,10 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
   {"icmp6-renum-match-prefix", required_argument, 0, 0},
   {"icmp6-renum-use-prefix", required_argument, 0, 0},
   {"icmp6-renum-matched-prefix", required_argument, 0, 0},
+  {"icmp6-ni-qtype", required_argument, 0, 0},
+  {"icmp6-ni-flags", required_argument, 0, 0},
+  {"icmp6-ni-nonce", required_argument, 0, 0},
+  {"icmp6-ni-data", required_argument, 0, 0},
 
   /* ARP */
   {"arp-type",  required_argument, 0, 0},
@@ -913,6 +918,69 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
         }else{
           o.icmp6.renum_r_matched_prefix.setConstant(aux_ip6.getIPv6Address());
         }
+      }
+    /* ICMPv6 Node Information Qtype */
+    } else if (optcmp(long_options[option_index].name, "icmp6-ni-qtype") == 0) {
+      o.addMode(DO_ICMP);
+      aux16=0;
+      if(parse_u16(optarg, &aux16) == OP_SUCCESS){
+        o.icmp6.ni_qtype.setConstant(aux16);
+      }else{
+        if(!strcasecmp(optarg, "noop")){
+          o.icmp6.ni_qtype.setConstant(NI_QTYPE_NOOP);
+        }else if(!strcasecmp(optarg, "unused")){
+          o.icmp6.ni_qtype.setConstant(NI_QTYPE_UNUSED);
+        }else if(!strcasecmp(optarg, "node-name")){
+          o.icmp6.ni_qtype.setConstant(NI_QTYPE_NODENAME);
+        }else if(!strcasecmp(optarg, "node-addrs")){
+          o.icmp6.ni_qtype.setConstant(NI_QTYPE_NODEADDRS);
+        }else if(!strcasecmp(optarg, "ip4-addrs")){
+          o.icmp6.ni_qtype.setConstant(NI_QTYPE_IPv4ADDRS);
+        }else{
+          nping_fatal(QT_3, "Invalid ICMPv6 Node Information Qtype. Value must be 0<=N<=65536");
+        }
+      }
+    } else if (optcmp(long_options[option_index].name, "icmp6-ni-nonce") == 0) {
+      o.addMode(DO_ICMP);
+      if(parse_u64(optarg, &aux64) == OP_SUCCESS){
+        o.icmp6.ni_nonce.setConstant(aux64);
+      }else{
+        nping_fatal(QT_3, "Invalid ICMPv6 Node Information Nonce. Value must be 0<=N<2^64");
+      }
+    /* ICMPv6 Node Information Flags */
+    } else if (optcmp(long_options[option_index].name, "icmp6-ni-flags") == 0) {
+      o.addMode(DO_ICMP);
+      aux16=0;
+      /* Check if flags were passed as an integer */
+      if(parse_u16(optarg, &aux16) == OP_SUCCESS){
+        o.icmp6.ni_flags.setConstant(aux16);
+      }else{
+        for(size_t f=0; f<strlen(optarg); f++){
+          switch(optarg[f]){
+            case 'T': case 't':
+              aux16 = aux16 | ICMPv6_NI_FLAG_T;
+            break;
+            case 'A': case 'a':
+              aux16 = aux16 | ICMPv6_NI_FLAG_A;
+            break;
+            case 'C': case 'c':
+              aux16 = aux16 | ICMPv6_NI_FLAG_C;
+            break;
+            case 'L': case 'l':
+              aux16 = aux16 | ICMPv6_NI_FLAG_L;
+            break;
+            case 'G': case 'g':
+              aux16 = aux16 | ICMPv6_NI_FLAG_G;
+            break;
+            case 'S': case 's':
+              aux16 = aux16 | ICMPv6_NI_FLAG_S;
+            break;
+            default:
+              nping_fatal(QT_3, "Invalid ICMPv6 Node Information flags supplied (%c). Possible flags: T, A, C, L, G, S.", optarg[f]);
+            break;
+          }
+        }
+      o.icmp6.ni_flags.setConstant(aux16);
       }
 /* ARP OPTIONS ***************************************************************/
     /* Operation code */

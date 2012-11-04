@@ -879,19 +879,26 @@ ICMPv6Header *TargetHost::getICMPv6Header(){
       }
 
     break;
+
+    case ICMPv6_NODEINFOQUERY:
+    case ICMPv6_NODEINFORESP:
+      myicmp6->setQtype(this->icmp6->ni_qtype.getNextValue());
+      myicmp6->setNodeInfoFlags(this->icmp6->ni_flags.getNextValue());
+      myicmp6->setNonce(this->icmp6->ni_nonce.getNextValue());
+    break;
+
+    /* These don't have any specific fields. They should include the
+     * original IPv6 datagram portion (as much as it fits without exceeding
+     * an 1280-byte MTU */
     case ICMPv6_UNREACH:
     case ICMPv6_TIMXCEED:
+    break;
 
+    /* Unimplemented ICMPv6 types */
     case ICMPv6_GRPMEMBQUERY:
     case ICMPv6_GRPMEMBREP:
     case ICMPv6_GRPMEMBRED:
     case ICMPv6_ROUTERSOLICIT:
-
-
-
-
-    case ICMPv6_NODEINFOQUERY:
-    case ICMPv6_NODEINFORESP:
     case ICMPv6_INVNGHBRSOLICIT:
     case ICMPv6_INVNGHBRADVERT:
     case ICMPv6_MLDV2:

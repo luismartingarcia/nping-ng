@@ -361,6 +361,11 @@ class ICMPv6HeaderTemplate : public HeaderTemplate{
     ProtoField_u32 renum_r_interface_index;     /* Result Interface Index     */
     ProtoField_in6addr renum_r_matched_prefix;  /* Result Matched Prefix      */
 
+    /* Node Information */
+    ProtoField_u16 ni_qtype;                    /* Query Type                 */
+    ProtoField_u16 ni_flags;                    /* Node info flags            */
+    ProtoField_u64 ni_nonce;                    /* Nonce                      */
+
     ICMPv6HeaderTemplate();
     ~ICMPv6HeaderTemplate();
     void reset();
