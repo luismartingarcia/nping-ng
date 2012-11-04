@@ -439,6 +439,8 @@ char *ProbeEngine::bpf_filter(vector<TargetHost *> &Targets, NetworkInterface *t
   char dst_hosts[1220];
   int filterlen=0;
   int len=0;
+  bool ipv4_targets=false;
+  bool ipv6_targets=false;
   unsigned int targetno;
   memset(pcap_filter, 0, sizeof(pcap_filter));
   IPAddress *src_addr=NULL;
@@ -447,6 +449,25 @@ char *ProbeEngine::bpf_filter(vector<TargetHost *> &Targets, NetworkInterface *t
   /* If the user specified a custom BPF filter, use it. */
   if(o.issetBPFFilterSpec())
     return o.getBPFFilterSpec();
+
+  /* First of all, check if our targets are all IPv6 or all IPv4. If there is
+   * a mixture of both versions, then we need to avoid setting a "dst host ADDR"
+   * in the BPF filter, because IPv6 hosts will use different target addresses
+   * than IPv4 hosts. */
+   for(targetno = 0; targetno < Targets.size(); targetno++){
+     /* Only process hosts whose network interface matches target_interface */
+     if( strcmp(Targets[targetno]->getInterface()->getName(), target_interface->getName()))
+       continue;
+     assert(Targets[targetno]->getTargetAddress()!=NULL);
+     if(Targets[targetno]->getTargetAddress()->getVersion()==AF_INET)
+       ipv4_targets=true;
+     else  if(Targets[targetno]->getTargetAddress()->getVersion()==AF_INET6)
+       ipv6_targets=true;
+     else
+       nping_fatal(QT_3, "Wrong address family found in a TargetHost");
+     if(ipv4_targets && ipv6_targets)
+       break;
+   }
 
   /* If we have 20 or less targets, build a list of addresses so we can set
    * an explicit BPF filter */
@@ -473,25 +494,38 @@ char *ProbeEngine::bpf_filter(vector<TargetHost *> &Targets, NetworkInterface *t
      * the packets to come from */
     if (len < 0 || len + filterlen >= (int) sizeof(dst_hosts))
       nping_fatal(QT_3, "ran out of space in dst_hosts");
-    len = Snprintf(pcap_filter, sizeof(pcap_filter), "dst host %s and (%s)",
+    /* Omit the destination address part when dealing with IPv4 and IPv6 targets
+     * simultaneously. */
+    if(ipv4_targets && ipv6_targets){
+      len = Snprintf(pcap_filter, sizeof(pcap_filter), "%s", dst_hosts);
+    }else{
+      len = Snprintf(pcap_filter, sizeof(pcap_filter), "dst host %s and (%s)",
                    src_addr->toString(), dst_hosts);
+    }
   /* If we have too many targets to list every single IP address that we
    * plan to send packets too, just set the filter with our own address, so
    * we only capture packets destined to the source address we chose for the
    * packets we sent. */
   }else{
-    /* Find the first target that uses our interface so we can extract the source
-     * IP address */
-    for(targetno = 0; targetno < Targets.size(); targetno++) {
-      /* Only process hosts whose network interface matches target_interface */
-      if( strcmp(Targets[targetno]->getInterface()->getName(), target_interface->getName()) ){
-        continue;
-      }else{
-        src_addr=Targets[targetno]->getSourceAddress();
-        break;
+    /* If we are dealing with IPv4 and IPv6 hosts at the same time, just use
+     * a NULL filter, so we get all the packets. Nping's matching engine will
+     * discard all the rubbish. */
+    if(ipv4_targets && ipv6_targets){
+      len = Snprintf(pcap_filter, sizeof(pcap_filter), "");
+    }else{
+     /* Find the first target that uses our interface so we can extract the source
+       * IP address */
+      for(targetno = 0; targetno < Targets.size(); targetno++) {
+        /* Only process hosts whose network interface matches target_interface */
+        if( strcmp(Targets[targetno]->getInterface()->getName(), target_interface->getName()) ){
+          continue;
+        }else{
+          src_addr=Targets[targetno]->getSourceAddress();
+          break;
+        }
       }
+      len = Snprintf(pcap_filter, sizeof(pcap_filter), "dst host %s", src_addr->toString());
     }
-    len = Snprintf(pcap_filter, sizeof(pcap_filter), "dst host %s", src_addr->toString());
   }
   /* Make sure we haven't screwed up */
   if (len < 0 || len >= (int) sizeof(pcap_filter))
