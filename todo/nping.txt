@@ -48,7 +48,17 @@
  * Things that have NOT been done yet                                        *
  *****************************************************************************/
 
-* Investigate an asertion failure in FreeBSD. This doens't happen when the
+* "-S" does not work for IPv6 when -6 is not passed explicitely.
+
+* In echo server mode, when users don't pass any network interface, one is
+  selected automatically. Consider opening a pcap descriptor for any interface
+  on the system so we listen on all of them (all that have at least one IP
+  address, of course).
+
+* Fix test ICMP_90, that fails. "5" gets parsed as an IP address when it should
+  fatal().
+
+* Investigate an assertion failure in FreeBSD. This doesn't happen when the
   --no-capture parameter is passed, so it has to do with PCAP_READ events in
   nsock.
 
@@ -68,14 +78,10 @@
   --data-string, --data-len or --data, but there is no way to, for example,
   pass an IPv6 address.
 
-* Provide a way to set no flags at all in a ICMPv6 router renumbering header.
-  Currently, the HeaderTemplate sets the T, R flags, and there is no way to
-  say "no flags at all" from the command line.
-
 * Do endianness conversion in ICMPv6 Node Information nonces. For some reason,
   be64toh() and htobe64() do not seem to work well on my machine.
 
-* Implement IMCPv6 Options.
+* Implement ICMPv6 Options.
 
 * Implement the "Prf" 2-bit flag for ICMPv6 Router Advertisement.
 
@@ -148,23 +154,6 @@
     Tx time: 3.00044s | Tx bytes/s: 37.33 | Tx pkts/s: 1.33
     Rx time: 3.71207s | Rx bytes/s: 39.87 | Rx pkts/s: 1.08
     Nping done: 2 IP addresses pinged in 3.80 seconds
-
-* When targeting IPv4 and IPv6 hosts at the same time (and probably when
-  targeting hosts reachable through different network interfaces with different
-  configured IPs), the BPF filter is not correct. For example, when running
-  "nping ::1 localhost" we only get IPv6 responses. If we invert the order,
-  "nping localhost ::1" we get IPv4 responses (because localhost is resolved
-  for IPv4 by default). The cause is a single source IP address being specified
-  in the BPF filter. These are the filters that are being generated for those
-  two examples: "dst host ::1 and (src host ::1 or src host 127.0.0.1)" and
-  "dst host 127.0.0.1 and (src host 127.0.0.1 or src host ::1)". We should,
-  either get rid of the "dst host" part, or include every source IP that we
-  are using.
-
-* The fact that TargetHosts make a copy of the header templates that are
-  passed is weird. Maybe instead of taking pointers, the setTCP, setEth...
-  functions should take the templates by value. That way the code would be
-  less confusing.
 
 * In the packet capture handler, when we iterate over the list of target hosts,
   it would be great if we could skip those hosts that are not reachable through
@@ -1070,3 +1059,24 @@ SENT (1.0580s) ARP who has 192.168.240.139? Tell 192.168.240.1
 
 [DONE] Investigate an IPv6-related core dump reported by Vasiliy Kulikov.
   More info: http://seclists.org/nmap-dev/2011/q3/567
+
+[DONE] Provide a way to set no flags at all in a ICMPv6 router renumbering header.
+  Currently, the HeaderTemplate sets the T, R flags, and there is no way to
+  say "no flags at all" from the command line.
+
+[DONE] When targeting IPv4 and IPv6 hosts at the same time (and probably when
+  targeting hosts reachable through different network interfaces with different
+  configured IPs), the BPF filter is not correct. For example, when running
+  "nping ::1 localhost" we only get IPv6 responses. If we invert the order,
+  "nping localhost ::1" we get IPv4 responses (because localhost is resolved
+  for IPv4 by default). The cause is a single source IP address being specified
+  in the BPF filter. These are the filters that are being generated for those
+  two examples: "dst host ::1 and (src host ::1 or src host 127.0.0.1)" and
+  "dst host 127.0.0.1 and (src host 127.0.0.1 or src host ::1)". We should,
+  either get rid of the "dst host" part, or include every source IP that we
+  are using.
+
+[DONE] The fact that TargetHosts make a copy of the header templates that are
+  passed is weird. Maybe instead of taking pointers, the setTCP, setEth...
+  functions should take the templates by value. That way the code would be
+  less confusing.
