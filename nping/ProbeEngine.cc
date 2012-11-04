@@ -127,6 +127,7 @@ ProbeEngine::~ProbeEngine() {
 
 /* Sets every attribute to its default value. */
 void ProbeEngine::reset() {
+  nping_print(DBG_4,"%s()", __func__);
   this->nsock_init=false;
   memset(&start_time, 0, sizeof(struct timeval));
   this->rawsd4=-1;
@@ -141,6 +142,7 @@ void ProbeEngine::reset() {
  * this function is meant to be called just once. Subsequent calls will
  * have no effect unless ProbeEngine::reset() has been called previously. */
 int ProbeEngine::init_nsock(){
+  nping_print(DBG_4,"%s()", __func__);
   struct timeval now;
   if(nsock_init==false){
     /* Create a new nsock pool */
@@ -166,6 +168,7 @@ int ProbeEngine::init_nsock(){
 /* Cleans up the internal nsock pool and any other internal data that
  * needs to be taken care of before destroying the object. */
 int ProbeEngine::cleanup(){
+  nping_print(DBG_4,"%s()", __func__);
   nsp_delete(this->nsp);
   return OP_SUCCESS;
 } /* End of cleanup() */
@@ -179,6 +182,7 @@ int ProbeEngine::cleanup(){
  * @warning the caller must ensure that init_nsock() has been called before
  * calling this method; otherwise, it will fatal() */
 nsock_pool ProbeEngine::getNsockPool(){
+  nping_print(DBG_4,"%s()", __func__);
   if( this->nsock_init==false)
     nping_fatal(QT_3, "%s() called before init_nsock(). Please report a bug.", __func__);
   return this->nsp;
@@ -193,6 +197,7 @@ nsock_pool ProbeEngine::getNsockPool(){
  *          assertion failure.
  * @return OP_SUCCESS on success, fatals on error. */
 int ProbeEngine::setup_sniffer(vector<NetworkInterface *> &ifacelist, vector<const char *>bpf_filters){
+  nping_print(DBG_4,"%s()", __func__);
   char *errmsg = NULL;
   char pcapdev[128];
   nsock_iod my_pcap_iod;
@@ -237,6 +242,7 @@ int ProbeEngine::setup_sniffer(vector<NetworkInterface *> &ifacelist, vector<con
  * passed, the ProbeEngine still needs to access some additional configuration
  * parameters through the global NpingOps object.  */
 int ProbeEngine::start(vector<TargetHost *> &Targets, vector<NetworkInterface *> &Interfaces){
+  nping_print(DBG_4,"%s()", __func__);
   const char *filter = NULL;
   vector<const char *>bpf_filters;
   vector<PacketElement *> Packets;
@@ -427,6 +433,7 @@ int ProbeEngine::start(vector<TargetHost *> &Targets, vector<NetworkInterface *>
  * @warning Returned pointer is a statically allocated buffer that subsequent
  *  calls will overwrite. */
 char *ProbeEngine::bpf_filter(vector<TargetHost *> &Targets, NetworkInterface *target_interface){
+  nping_print(DBG_4,"%s()", __func__);
   static char pcap_filter[2048];
   /* 20 IPv6 addresses is max (46 byte addy + 14 (" or src host ")) * 20 == 1200 */
   char dst_hosts[1220];
@@ -502,6 +509,7 @@ char *ProbeEngine::bpf_filter(vector<TargetHost *> &Targets, NetworkInterface *t
  * The "now" parameter should hold the time that the caller wants to display
  * in Nping's "SENT (X.XXXX)..." output line */
 int ProbeEngine::send_packet(TargetHost *tgt, PacketElement *pkt, struct timeval *now){
+  nping_print(DBG_4,"%s()", __func__);
   eth_t *ethsd=NULL;       /* DNET Ethernet handler                 */
   struct sockaddr_in s4;   /* Target IPv4 address                   */
   struct sockaddr_in6 s6;  /* Target IPv6 address                   */
@@ -587,6 +595,7 @@ int ProbeEngine::send_packet(TargetHost *tgt, PacketElement *pkt, struct timeval
  * immediate TCP/UDP CONNECT event. All other operations (data writes, data
  * reads, etc) are handled by an specialized event handler. */
 int ProbeEngine::do_unprivileged(int proto, TargetHost *tgt, u16 tport, u16 sport, struct timeval *now){
+  nping_print(DBG_4,"%s()", __func__);
   struct sockaddr_storage ss;      /* Source address */
   struct sockaddr_storage to;      /* Destination address                     */
   size_t sslen=0;                  /* Destination address length              */
@@ -670,6 +679,7 @@ int ProbeEngine::do_unprivileged(int proto, TargetHost *tgt, u16 tport, u16 spor
 /* Schedules an immediate TCP CONNECT event. For more information, check
  * do_unprivileged() above. */
 int ProbeEngine::do_tcp_connect(TargetHost *tgt, u16 tport, u16 sport, struct timeval *now){
+  nping_print(DBG_4,"%s()", __func__);
   return do_unprivileged(DO_TCP_CONNECT, tgt, tport, sport, now);
 } /* End of do_tcp_connect() */
 
@@ -677,6 +687,7 @@ int ProbeEngine::do_tcp_connect(TargetHost *tgt, u16 tport, u16 sport, struct ti
 /* Schedules an immediate UDP CONNECT event. For more information, check
  * do_unprivileged() above. */
 int ProbeEngine::do_udp_unpriv(TargetHost *tgt, u16 tport, u16 sport, struct timeval *now){
+  nping_print(DBG_4,"%s()", __func__);
   return do_unprivileged(DO_UDP_UNPRIV, tgt, tport, sport, now);
 } /* End of do_udp_unpriv() */
 
@@ -687,6 +698,7 @@ int ProbeEngine::do_udp_unpriv(TargetHost *tgt, u16 tport, u16 sport, struct tim
  * the probes we've already sent. If it does, the contents are printed out and
  * the statistics are updated. */
 int ProbeEngine::packet_capture_handler(nsock_pool nsp, nsock_event nse, void *arg){
+  nping_print(DBG_4,"%s()", __func__);
   nsock_iod nsi = nse_iod(nse);
   enum nse_status status = nse_status(nse);
   enum nse_type type = nse_type(nse);
@@ -788,6 +800,7 @@ int ProbeEngine::packet_capture_handler(nsock_pool nsp, nsock_event nse, void *a
  * also read because for each READ event that we are delivered, we schedule a
  * new one. */
 int ProbeEngine::tcpconnect_handler(nsock_pool nsp, nsock_event nse, void *mydata) {
+  nping_print(DBG_4,"%s()", __func__);
   nsock_iod nsi;                   /* Current nsock IO descriptor.            */
   enum nse_status status;          /* Current nsock event status.             */
   enum nse_type type;              /* Current nsock event type.               */
@@ -947,6 +960,7 @@ int ProbeEngine::tcpconnect_handler(nsock_pool nsp, nsock_event nse, void *mydat
  *
  */
 int ProbeEngine::udpunpriv_handler(nsock_pool nsp, nsock_event nse, void *mydata) {
+  nping_print(DBG_4,"%s()", __func__);
   nsock_iod nsi;                   /* Current nsock IO descriptor.            */
   enum nse_status status;          /* Current nsock event status.             */
   enum nse_type type;              /* Current nsock event type.               */
