@@ -434,6 +434,107 @@ u32 ProtoField_u32::getNextValue(){
 } /* End of getNextValue() */
 
 
+/*****************************************************************************
+ * ProtoField_u64 Class                                                       *
+ *****************************************************************************/
+
+ProtoField_u64::ProtoField_u64(){
+  this->start_value=0;
+  this->current_value=0;
+} /* End of ProtoField_u64 constructor */
+
+
+ProtoField_u64::ProtoField_u64(u64 startvalue){
+  this->setStartValue(startvalue);
+} /* End of ProtoField_u64 constructor */
+
+
+ProtoField_u64::ProtoField_u64(u64 *set, u64 set_len){
+  this->setDiscreteSet(set, set_len);
+} /* End of ProtoField_u64 constructor */
+
+
+ProtoField_u64::~ProtoField_u64(){
+
+} /* End of ProtoField_u64 destructor */
+
+
+int ProtoField_u64::setStartValue(u64 startvalue){
+  this->start_value=startvalue;
+  this->current_value=startvalue;
+  this->discrete_set=NULL;
+  this->discrete_set_len=0;
+  this->current_set_element=0;
+  this->set=true;
+  return OP_SUCCESS;
+} /* End of setStartValue() */
+
+
+int ProtoField_u64::setDiscreteSet(u64 *set, u64 set_len){
+  assert(set!=NULL && set_len>0);
+  this->setBehavior(FIELD_TYPE_DISCRETE_SET);
+  this->discrete_set=set;
+  this->discrete_set_len=set_len;
+  this->current_set_element=0;
+  this->set=true;
+  return OP_SUCCESS;
+} /* End of setDiscreteSet() */
+
+
+/* Sets a constant value for the field. Note that this method overwrites the
+ * current field behavior, setting it to FIELD_TYPE_CONSTANT, */
+int ProtoField_u64::setConstant(u64 val){
+  this->setStartValue(val);
+  this->setBehavior(FIELD_TYPE_CONSTANT);
+  return OP_SUCCESS;
+} /* End of setConstant() */
+
+
+u64 ProtoField_u64::getNextValue(){
+  u64 return_val=0;
+  u8 buff[8];
+  switch(this->behavior){
+
+    case FIELD_TYPE_CONSTANT:
+      return this->start_value;
+    break;
+
+    case FIELD_TYPE_INCREMENTAL:
+      /* We don't check for overflows, the caller must ensure the increment
+       * value is reasonable */
+      return_val=this->current_value;
+
+      if(max_increments>0 && increment_count>=max_increments){
+        this->current_value=this->start_value;
+        this->increment_count=0;
+      }else{
+        this->current_value += this->increment_value;
+        this->increment_count++;
+      }
+      return return_val;
+    break;
+
+    case FIELD_TYPE_RANDOM:
+      for(int i=0; i<8; i++)
+        buff[i]= get_random_u8();
+      memcpy(&return_val, buff, sizeof(u64));
+    break;
+
+    case FIELD_TYPE_DISCRETE_SET:
+      assert(this->discrete_set!=NULL);
+      return_val = this->discrete_set[this->current_set_element];
+      if(this->current_set_element+1>=this->discrete_set_len){
+        this->current_set_element=0;
+      }else{
+        this->current_set_element++;
+      }
+      return return_val;
+    break;
+  }
+  assert(false);
+  return 0;
+} /* End of getNextValue() */
+
 
 /*****************************************************************************
  * ProtoField_bool Class                                                       *

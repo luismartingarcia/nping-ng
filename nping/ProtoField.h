@@ -194,6 +194,32 @@ class ProtoField_u32 : public ProtoField{
 
 };
 
+
+/*****************************************************************************
+ * ProtoField_u64 Class                                                       *
+ *****************************************************************************/
+
+class ProtoField_u64 : public ProtoField{
+  private:
+    u64 start_value;
+    u64 current_value;
+    u64 *discrete_set;
+    u64 discrete_set_len;
+    u64 current_set_element;
+
+  public:
+    ProtoField_u64();
+    ProtoField_u64(u64 startvalue);
+    ProtoField_u64(u64 *set, u64 set_len);
+    ~ProtoField_u64();
+    u64 getNextValue();
+    int setDiscreteSet(u64 *set, u64 set_len);
+    int setStartValue(u64 startvalue);
+    int setConstant(u64 val);
+
+};
+
+
 /*****************************************************************************
  * ProtoField_bool Class                                                       *
  *****************************************************************************/
