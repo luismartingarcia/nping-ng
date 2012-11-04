@@ -1789,7 +1789,7 @@ const char *spec_to_addresses(const char *target_expr, int af, vector<IPAddress 
 
     /* No colons allowed in IPv4 addresses */
     if( strchr(hostexp, ':') )
-      return "Invalid host expression: colons only allowed in IPv6 addresses, and then you need the -6 switch";
+      return "Invalid host expression: colons only allowed in IPv6 addresses.";
 
     /* Initialize things properly before we begin */
     addy[0] = addy[1] = addy[2] = addy[3] = addy[4] = NULL;
