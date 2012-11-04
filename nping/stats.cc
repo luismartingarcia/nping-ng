@@ -751,12 +751,12 @@ int PacketStats::print_proto_stats(int proto, const char *leading_str, bool prin
     nping_print(QT_1|NO_NEWLINE, "%sTCP connection attempts: %s ", leading_str, u64tostr(this->get_connects(STATS_TCP)));
     nping_print(QT_1|NO_NEWLINE,"| Successful connections: %s ", u64tostr(this->get_accepts(STATS_TCP)));
     nping_print(QT_1|NO_NEWLINE,"| Failed: %s ", u64tostr(this->get_difference(STATS_TCP, INDEX_CONNECTS, INDEX_ACCEPTS)));
-    nping_print(QT_1,"(%.2lf%%)", this->get_percentage(STATS_TCP, INDEX_CONNECTS, INDEX_ACCEPTS));
+    nping_print(QT_1,"(%.2lf%%)", 100 - this->get_percentage(STATS_TCP, INDEX_CONNECTS, INDEX_ACCEPTS));
   }else if(proto==STATS_UDP_UNPRIV){
     nping_print(QT_1|NO_NEWLINE, "%sUDP write operations: %s ", leading_str, u64tostr(this->get_writes(STATS_UDP)));
     nping_print(QT_1|NO_NEWLINE,"| Successful reads: %s ", u64tostr(this->get_reads(STATS_UDP)));
     nping_print(QT_1|NO_NEWLINE,"| Failed: %s ", u64tostr(this->get_difference(STATS_UDP, INDEX_WRITES, INDEX_READS)));
-    nping_print(QT_1|NO_NEWLINE,"(%.2lf%%)\n", this->get_percentage(STATS_UDP, INDEX_WRITES, INDEX_READS));
+    nping_print(QT_1|NO_NEWLINE,"(%.2lf%%)\n", 100 - this->get_percentage(STATS_UDP, INDEX_WRITES, INDEX_READS));
   }else{
     switch(proto){
       case STATS_TCP: start_str="TCP"; break;
