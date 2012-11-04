@@ -367,8 +367,7 @@ void ICMPv6HeaderTemplate::reset(){
   /* Router Renumbering */
   this->renum_seq.setBehavior(FIELD_TYPE_INCREMENTAL);
   this->renum_seq.setStartValue(0);
-  this->renum_T.setConstant(true);
-  this->renum_R.setConstant(true);
+  this->renum_flags.setConstant(ICMPv6_RR_FLAG_T|ICMPv6_RR_FLAG_R);
 
   this->renum_mp_op_code.setConstant(ICMPv6_RR_MP_OPCODE_ADD);
   this->renum_mp_op_length.setConstant(4*1+3);

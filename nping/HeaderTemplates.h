@@ -305,21 +305,13 @@ class ICMPv6HeaderTemplate : public HeaderTemplate{
 
     /* Router advertisements */
     ProtoField_u8 ra_hlim;          /* Offset to the error           */
-    ProtoField_bool ra_M;           /* Managed Address Config Flag   */
-    ProtoField_bool ra_O;           /* Other Configuration Flag      */
-    ProtoField_bool ra_H;           /* Mobile Home Agent Flag        */
-    ProtoField_bool ra_Prf;         /* Router Selection Preferences  */
-    ProtoField_bool ra_P;           /* Neighbor Discovery Proxy Flag */
-    ProtoField_bool ra_R1;          /* Reserved flag                 */
-    ProtoField_bool ra_R2;          /* Reserved flag                 */
+    ProtoField_u8 ra_flags;         /* Flags                         */
     ProtoField_u16 ra_lifetime;     /* Router lifetime               */
     ProtoField_u32 ra_reachtime;    /* Reachable time                */
     ProtoField_u32 ra_retrtimer;    /* Retransmission timer          */
 
     /* Neighbor advertisement */
-    ProtoField_bool na_R;           /* Router flag                   */
-    ProtoField_bool na_S;           /* Solicited flag                */
-    ProtoField_bool na_O;           /* Override flag                 */
+    ProtoField_u8 na_flags;         /* Flags                         */
     ProtoField_in6addr na_addr;     /* Target address                */
 
     /* Neighbor solicitation */
@@ -333,11 +325,7 @@ class ICMPv6HeaderTemplate : public HeaderTemplate{
     ProtoField_u32 renum_seq;       /* Sequence number               */
     ProtoField_u8 renum_seg;        /* Segment number                */
     ProtoField_u8 renum_delay;      /* Max delay                     */
-    ProtoField_bool renum_T;        /* Flag "Test command"           */
-    ProtoField_bool renum_R;        /* Flag "Result requested"       */
-    ProtoField_bool renum_A;        /* Flag "All interfaces"         */
-    ProtoField_bool renum_S;        /* Flag "Site-specific"          */
-    ProtoField_bool renum_P;        /* Flag "Processed previously"   */
+    ProtoField_u8 renum_flags;    /* Flag "Test command"           */
 
     ProtoField_u8 renum_mp_op_code;             /* Match-Prefix Op Code       */
     ProtoField_u8 renum_mp_op_length;           /* Match-Prefix Op Length     */

@@ -771,25 +771,7 @@ ICMPv6Header *TargetHost::getICMPv6Header(){
     break;
 
     case ICMPv6_ROUTERADVERT:
-      /* Router Advertisement flags */
-      aux8=0;
-      /* Extract flag info from the template and set the appropriate bits on
-       * an 8-bit aux variable */
-      if(this->icmp6->ra_M.getNextValue()==true)
-        aux8= aux8 | ICMPv6_RA_FLAG_M;
-      if(this->icmp6->ra_O.getNextValue()==true)
-        aux8= aux8 | ICMPv6_RA_FLAG_O;
-      if(this->icmp6->ra_H.getNextValue()==true)
-        aux8= aux8 | ICMPv6_RA_FLAG_H;
-      if(this->icmp6->ra_P.getNextValue()==true)
-        aux8= aux8 | ICMPv6_RA_FLAG_P;
-      if(this->icmp6->ra_R1.getNextValue()==true)
-        aux8= aux8 | ICMPv6_RA_FLAG_R1;
-      if(this->icmp6->ra_R2.getNextValue()==true)
-        aux8= aux8 | ICMPv6_RA_FLAG_R2;
-      /* Finally, set the flag on the ICMPv6 header */
-      myicmp6->setFlags(aux8);
-      /* Rest of the fields: */
+      myicmp6->setFlags(this->icmp6->ra_flags.getNextValue());
       myicmp6->setCurrentHopLimit(this->icmp6->ra_hlim.getNextValue());
       myicmp6->setRouterLifetime(this->icmp6->ra_lifetime.getNextValue());
       myicmp6->setReachableTime(this->icmp6->ra_reachtime.getNextValue());
@@ -797,18 +779,7 @@ ICMPv6Header *TargetHost::getICMPv6Header(){
     break;
 
     case ICMPv6_NGHBRADVERT:
-      /* Neighbor Advertisement flags */
-      aux8=0;
-      /* Extract flag info from the template and set the appropriate bits on
-       * an 8-bit aux variable */
-      if(this->icmp6->na_R.getNextValue()==true)
-        aux8= aux8 | ICMPv6_NA_FLAG_R;
-      if(this->icmp6->na_S.getNextValue()==true)
-        aux8= aux8 | ICMPv6_NA_FLAG_S;
-      if(this->icmp6->na_O.getNextValue()==true)
-        aux8= aux8 | ICMPv6_NA_FLAG_O;
-      /* Finally, set the flag on the ICMPv6 header */
-      myicmp6->setFlags(aux8);
+      myicmp6->setFlags(this->icmp6->na_flags.getNextValue());
       myicmp6->setTargetAddress(this->icmp6->na_addr.getNextValue());
     break;
 
@@ -822,21 +793,7 @@ ICMPv6Header *TargetHost::getICMPv6Header(){
     break;
 
     case ICMPv6_RTRRENUM:
-      /* Router renumbering flags */
-      aux8=0;
-      /* Extract flag info from the template and set the appropriate bits on
-       * an 8-bit aux variable */
-      if(this->icmp6->renum_T.getNextValue()==true)
-        aux8= aux8 | ICMPv6_RR_FLAG_T;
-      if(this->icmp6->renum_R.getNextValue()==true)
-        aux8= aux8 | ICMPv6_RR_FLAG_R;
-      if(this->icmp6->renum_A.getNextValue()==true)
-        aux8= aux8 | ICMPv6_RR_FLAG_A;
-      if(this->icmp6->renum_S.getNextValue()==true)
-        aux8= aux8 | ICMPv6_RR_FLAG_S;
-      if(this->icmp6->renum_P.getNextValue()==true)
-        aux8= aux8 | ICMPv6_RR_FLAG_P;
-      myicmp6->setFlags(aux8);
+      myicmp6->setFlags(this->icmp6->renum_flags.getNextValue());
       myicmp6->setSequence(this->icmp6->renum_seq.getNextValue());
       myicmp6->setSegmentNumber(this->icmp6->renum_seg.getNextValue());
       myicmp6->setMaxDelay(this->icmp6->renum_delay.getNextValue());

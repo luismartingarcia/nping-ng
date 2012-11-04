@@ -673,44 +673,42 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
     } else if (optcmp(long_options[option_index].name, "icmp6-ra-flags") == 0) {
       o.addMode(DO_ICMP);
       aux8=0;
-      int Rflags=0, ra_flags=0;
-      for(size_t f=0; f<strlen(optarg); f++){
-        switch(optarg[f]){
-          case 'M': case 'm':
-            o.icmp6.ra_M.setConstant(true);
-            ra_flags++;
-          break;
-          case 'O': case 'o':
-            o.icmp6.ra_O.setConstant(true);
-            ra_flags++;
-          break;
-          case 'H': case 'h':
-            o.icmp6.ra_H.setConstant(true);
-            ra_flags++;
-          break;
-          case 'P': case 'p':
-            o.icmp6.ra_P.setConstant(true);
-            ra_flags++;
-          break;
-          case 'R': case 'r':
-            /* First R we get, we set the reserved flag on the second bit
-             * If we get more Rs, then we set the one on the first bit. */
+      int Rflags=0;
+      /* Check if flags were passed as an integer */
+      if(parse_u8(optarg, &aux8) == OP_SUCCESS){
+        o.icmp6.ra_flags.setConstant(aux8);
+      }else{
+        for(size_t f=0; f<strlen(optarg); f++){
+          switch(optarg[f]){
+            case 'M': case 'm':
+              aux8 = aux8 | ICMPv6_RA_FLAG_M;
+            break;
+            case 'O': case 'o':
+              aux8 = aux8 | ICMPv6_RA_FLAG_O;
+            break;
+            case 'H': case 'h':
+              aux8 = aux8 | ICMPv6_RA_FLAG_H;
+            break;
+            case 'P': case 'p':
+              aux8 = aux8 | ICMPv6_RA_FLAG_P;
+            break;
+            case 'R': case 'r':
+              /* First R we get, we set the reserved flag on the second bit
+               * If we get more Rs, then we set the one on the first bit. */
               if(Rflags==0){
-                o.icmp6.ra_R1.setConstant(true);
+                aux8 = aux8 | ICMPv6_RA_FLAG_R1;
                 Rflags++;
-                ra_flags++;
               }else{
-                o.icmp6.ra_R2.setConstant(true);
-                ra_flags++;
+                aux8 = aux8 | ICMPv6_RA_FLAG_R2;
               }
-          break;
-          default:
-            nping_fatal(QT_3, "Invalid ICMPv6 Router Advertisement flags supplied (%c). Possible flags: M, O, H, P, R.", optarg[f]);
-          break;
+            break;
+            default:
+              nping_fatal(QT_3, "Invalid ICMPv6 Router Advertisement flags supplied (%c). Possible flags: M, O, H, P, R.", optarg[f]);
+            break;
+          }
         }
+        o.icmp6.ra_flags.setConstant(aux8);
       }
-      if(ra_flags==0)
-        nping_fatal(QT_3, "No ICMPv6 Router Advertisement flags supplied. Possible flags: M, O, H, P, R.");
     /* ICMPv6 Router Advertisement Hop Limit */
     } else if (optcmp(long_options[option_index].name, "icmp6-ra-hlim") == 0) {
       o.addMode(DO_ICMP);
@@ -747,28 +745,28 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
     } else if (optcmp(long_options[option_index].name, "icmp6-na-flags") == 0) {
       o.addMode(DO_ICMP);
       aux8=0;
-      int na_flags=0;
-      for(size_t f=0; f<strlen(optarg); f++){
-        switch(optarg[f]){
-          case 'R': case 'r':
-            o.icmp6.na_R.setConstant(true);
-            na_flags++;
-          break;
-          case 'S': case 's':
-            o.icmp6.na_S.setConstant(true);
-            na_flags++;
-          break;
-          case 'O': case 'o':
-            o.icmp6.na_O.setConstant(true);
-            na_flags++;
-          break;
-          default:
-            nping_fatal(QT_3, "Invalid ICMPv6 Neighbor Advertisement flags supplied (%c). Possible flags: R, S, O.", optarg[f]);
-          break;
+      /* Check if flags were passed as an integer */
+      if(parse_u8(optarg, &aux8) == OP_SUCCESS){
+        o.icmp6.na_flags.setConstant(aux8);
+      }else{
+        for(size_t f=0; f<strlen(optarg); f++){
+          switch(optarg[f]){
+            case 'R': case 'r':
+              aux8 = aux8 | ICMPv6_NA_FLAG_R;
+            break;
+            case 'S': case 's':
+              aux8 = aux8 | ICMPv6_NA_FLAG_S;
+            break;
+            case 'O': case 'o':
+              aux8 = aux8 | ICMPv6_NA_FLAG_O;
+            break;
+            default:
+              nping_fatal(QT_3, "Invalid ICMPv6 Neighbor Advertisement flags supplied (%c). Possible flags: R, S, O.", optarg[f]);
+            break;
+          }
         }
+        o.icmp6.na_flags.setConstant(aux8);
       }
-      if(na_flags==0)
-        nping_fatal(QT_3, "No ICMPv6 Neighbor Advertisement flags supplied. Possible flags: R, S, O.");
     /* ICMPv6 Neighbor Advertisement Target Address */
     } else if (optcmp(long_options[option_index].name, "icmp6-na-addr") == 0) {
       o.addMode(DO_ICMP);
@@ -836,45 +834,35 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
     /* ICMPv6 Router Renumbering header flags Flags */
     } else if (optcmp(long_options[option_index].name, "icmp6-renum-flags") == 0) {
       o.addMode(DO_ICMP);
-
-      /* If the user has requested specific renum flags, first reset the defaults
-       * that are set in the HeaderTemplate. */
-      o.icmp6.renum_T.setConstant(0);
-      o.icmp6.renum_R.setConstant(0);
-      o.icmp6.renum_A.setConstant(0);
-      o.icmp6.renum_S.setConstant(0);
-      o.icmp6.renum_P.setConstant(0);
-
-      int rr_flags=0;
-      for(size_t f=0; f<strlen(optarg); f++){
-        switch(optarg[f]){
-          case 'T': case 't':
-            o.icmp6.renum_T.setConstant(true);
-            rr_flags++;
-          break;
-          case 'R': case 'r':
-            o.icmp6.renum_R.setConstant(true);
-            rr_flags++;
-          break;
-          case 'A': case 'a':
-            o.icmp6.renum_A.setConstant(true);
-            rr_flags++;
-          break;
-          case 'S': case 's':
-            o.icmp6.renum_S.setConstant(true);
-            rr_flags++;
-          break;
-          case 'P': case 'p':
-            o.icmp6.renum_P.setConstant(true);
-            rr_flags++;
-          break;
-          default:
-            nping_fatal(QT_3, "Invalid ICMPv6 Router Renumbering flags supplied (%c). Possible flags: T, R, A, S, P.", optarg[f]);
-          break;
+      aux8=0;
+      /* Check if flags were passed as an integer */
+      if(parse_u8(optarg, &aux8) == OP_SUCCESS){
+        o.icmp6.renum_flags.setConstant(aux8);
+      }else{
+        for(size_t f=0; f<strlen(optarg); f++){
+          switch(optarg[f]){
+            case 'T': case 't':
+              aux8 = aux8 | ICMPv6_RR_FLAG_T;
+            break;
+            case 'R': case 'r':
+              aux8 = aux8 | ICMPv6_RR_FLAG_R;
+            break;
+            case 'A': case 'a':
+              aux8 = aux8| ICMPv6_RR_FLAG_A;
+            break;
+            case 'S': case 's':
+              aux8 = aux8 | ICMPv6_RR_FLAG_S;
+            break;
+            case 'P': case 'p':
+              aux8 = aux8 | ICMPv6_RR_FLAG_P;
+            break;
+            default:
+              nping_fatal(QT_3, "Invalid ICMPv6 Router Renumbering flags supplied (%c). Possible flags: T, R, A, S, P.", optarg[f]);
+            break;
+          }
         }
+        o.icmp6.renum_flags.setConstant(aux8);
       }
-      if(rr_flags==0)
-        nping_fatal(QT_3, "No ICMPv6 Router Renumbering flags supplied. Possible flags: T, R, A, S, P.");
     /* ICMPv6 Router Renumbering max delay */
     } else if (optcmp(long_options[option_index].name, "icmp6-renum-delay") == 0) {
       o.addMode(DO_ICMP);
