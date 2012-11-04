@@ -102,11 +102,11 @@ TargetHost::TargetHost(){
 
 
 TargetHost::~TargetHost(){
-
 } /* End of TargetHost destructor */
 
 
 void TargetHost::reset(){
+  this->hostname=NULL;
   this->target_addr=NULL;
   this->source_addr=NULL;
   this->nxthop_addr=NULL;
@@ -126,6 +126,18 @@ void TargetHost::reset(){
   this->payload=NULL;
   this->payload_len=0;
 } /* End of reset() */
+
+
+int TargetHost::setHostname(const char *name){
+  assert(name!=NULL);
+  this->hostname=name;
+  return OP_SUCCESS;
+} /* End of setHostname() */
+
+
+const char *TargetHost::getHostname(){
+  return this->hostname;
+} /* End of getHostname() */
 
 
 int TargetHost::setTargetAddress(IPAddress *addr){

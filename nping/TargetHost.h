@@ -116,6 +116,8 @@ using namespace std;
 class TargetHost{
 
   private:
+
+    const char *hostname;     /* Command-line supplied hostname.                      */
     IPAddress *target_addr;   /* Target's IP address                                  */
     IPAddress *source_addr;   /* Source address for packets sent to the target        */
     IPAddress *nxthop_addr;   /* Address of the gateway 2be used to reach the target  */
@@ -156,6 +158,10 @@ class TargetHost{
   public:
     TargetHost();
     ~TargetHost();
+
+    /* Hostname */
+    int setHostname(const char *name);
+    const char *getHostname();
 
     /* Target Host IP Address */
     int setTargetAddress(IPAddress *addr);

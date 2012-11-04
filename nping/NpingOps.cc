@@ -1534,7 +1534,10 @@ void NpingOps::displayStatistics(){
   if(this->getRole()!=ROLE_SERVER){
     if(this->target_hosts.size() > 1){
       for(u32 i=0; i<this->target_hosts.size(); i++){
-        nping_print(VB_0|NO_NEWLINE, "Statistics for host %s:\n" , this->target_hosts[i]->getTargetAddress()->toString());
+        nping_print(VB_0|NO_NEWLINE, "Statistics for host %s" , this->target_hosts[i]->getTargetAddress()->toString());
+        if(!IPAddress::isIPAddress(this->target_hosts[i]->getHostname()))
+          nping_print(VB_0|NO_NEWLINE, " (%s)", this->target_hosts[i]->getHostname());
+        nping_print(VB_0|NO_NEWLINE, ":\n");
         if(this->mode(DO_TCP) || this->mode(DO_UDP) || this->mode(DO_ICMP) || this->mode(DO_ARP)){
           this->target_hosts[i]->stats.print_proto_stats(STATS_TOTAL, " |_ ", print_echoed);
         }
@@ -2009,6 +2012,13 @@ int NpingOps::setupTargetHosts(){
     if(errmsg!=NULL){
       nping_warning(QT_1, "WARNING: %s (%s)", errmsg, this->target_specs[i]);
     }
+    /* Store the targetspec that originated the address in a list. This is
+     * done so later we can associate hostnames to TargetHost objects, and
+     * we need to do it because otherwise, when IP ranges are expanded, it gets
+     * impossible to tell which address came from what spec. */
+    while(this->target_hostnames.size() < this->target_addresses.size()){
+      this->target_hostnames.push_back(this->target_specs[i]);
+    }
   }
 
   /* Now for each address, let's determine if we have enough info to route
@@ -2025,6 +2035,10 @@ int NpingOps::setupTargetHosts(){
       nping_print(DBG_4, "Setting spoofed address.");
       newhost->setSourceAddress(this->spoof_addr);
     }
+    /* Setup hostname. Note that only holds a hostname when the user passed one.
+     * If he passed an IP address, then the ASCII representation of the address
+     * is what gets stored in the object. */
+    newhost->setHostname(this->target_hostnames[i]);
 
     /* If we are running some mode that requires raw sockets, perform
      * route determination so we can fill up the TargetHost object with
