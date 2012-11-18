@@ -1576,7 +1576,7 @@ void NpingOps::displayStatistics(){
           this->target_hosts[i]->stats.print_proto_stats(STATS_UDP_UNPRIV, " |_ ", print_echoed);
         }
         /* If we sent more than one type of packet, print separate stats for each protocol*/
-        if(((int)this->mode(DO_TCP) + (int)this->mode(DO_UDP) + (int)this->mode(DO_ICMP) + (int)this->mode(DO_ARP)) >  1){
+        if(((int)this->mode(DO_TCP) + (int)this->mode(DO_UDP) + (int)this->mode(DO_ICMP) + (int)this->mode(DO_ARP) + this->mode(DO_TCP_CONNECT) + this->mode(DO_UDP_UNPRIV)) >  1){
           if(this->mode(DO_TCP)){
             this->target_hosts[i]->stats.print_proto_stats(STATS_TCP, " |_ ", print_echoed);
           }
@@ -1608,19 +1608,11 @@ void NpingOps::displayStatistics(){
   }else if(this->getRole()==ROLE_SERVER){
     this->stats.print_proto_stats(STATS_ECHO_SERVER, NULL, false);
   }else if(this->getRole()==ROLE_NORMAL){
-    if(this->mode(DO_TCP_CONNECT)){
-      this->stats.print_proto_stats(STATS_TCP_CONNECT, NULL, false);
-
-    }
-    if(this->mode(DO_UDP_UNPRIV)){
-      this->stats.print_proto_stats(STATS_UDP_UNPRIV, NULL, false);
-
-    }
     if(this->mode(DO_TCP) || this->mode(DO_UDP) || this->mode(DO_ICMP) || this->mode(DO_ARP)){
       this->stats.print_proto_stats(STATS_TOTAL, NULL, print_echoed);
 
       /* If we sent more than one type of packet, print separate stats for each protocol*/
-      if(((int)this->mode(DO_TCP) + (int)this->mode(DO_UDP) + (int)this->mode(DO_ICMP) + (int)this->mode(DO_ARP)) >  1){
+      if(((int)this->mode(DO_TCP) + (int)this->mode(DO_UDP) + (int)this->mode(DO_ICMP) + (int)this->mode(DO_ARP) + this->mode(DO_TCP_CONNECT) + this->mode(DO_UDP_UNPRIV)) >  1){
         if(this->mode(DO_TCP)){
           this->stats.print_proto_stats(STATS_TCP, NULL, print_echoed);
         }
@@ -1639,6 +1631,14 @@ void NpingOps::displayStatistics(){
           }
         }
       }
+    }
+    if(this->mode(DO_TCP_CONNECT)){
+      this->stats.print_proto_stats(STATS_TCP_CONNECT, NULL, false);
+
+    }
+    if(this->mode(DO_UDP_UNPRIV)){
+      this->stats.print_proto_stats(STATS_UDP_UNPRIV, NULL, false);
+
     }
     this->stats.print_RTTs(NULL);
   }
