@@ -158,6 +158,13 @@ int ProbeEngine::init_nsock(){
       nsp_settrace(nsp, NULL, 1 , &now);
     else if( o.getDebugging() > DBG_5 )
       nsp_settrace(nsp, NULL, 10 , &now);
+
+    /* If users passed an explicit network interface, set it in Nsock so
+     * all IODs get bound to the interface. */
+    if(o.issetDevice()){
+      nsp_setdevice(this->nsp, o.getDevice());
+    }
+
     /* Flag it as already initialized so we don't do it again */
     nsock_init=true;
   }
