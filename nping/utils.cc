@@ -386,7 +386,12 @@ static int parse_unsigned_number(const char *str, u64 min, u64 max, u64 *dst){
 
   /* Case 2: User supplied an actual number */
   errno=0;
+
+#ifdef WIN32
+  result=_strtoui64(str, &tail, 0);
+#else
   result=strtoull(str, &tail, 0);
+#endif
   if(errno!=0 || tail==str || *tail!='\0')
     return OP_FAILURE;
 
