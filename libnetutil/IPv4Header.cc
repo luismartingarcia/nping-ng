@@ -244,15 +244,15 @@ int IPv4Header::print(FILE *output, int detail) const {
       Snprintf(ipinfo, sizeof(ipinfo), "ttl=%d id=%d iplen=%d%s%s%s%s",
           this->getTTL(), this->getIdentification(), this->getTotalLength(), fragnfo,
           this->getHeaderLength()==5?"":" ipopts={",
-          this->getHeaderLength()?"":format_ip_options(this->h.options , MIN(this->getHeaderLength()*4, this->length-IP_HEADER_LEN)),
-          this->getHeaderLength()?"":"}");
+          this->getHeaderLength()==5?"":format_ip_options(this->h.options , MIN((this->getHeaderLength()*4)-IP_HEADER_LEN,this->length-IP_HEADER_LEN)),
+          this->getHeaderLength()==5?"":"}");
   }else if( detail == PRINT_DETAIL_MED ){
       Snprintf(ipinfo, sizeof(ipinfo), "ttl=%d id=%d proto=%d csum=0x%04X iplen=%d%s%s%s%s",
           this->getTTL(), this->getIdentification(),
           this->getNextProto(), ntohs(this->getSum()),
           this->getTotalLength(), fragnfo,
           this->getHeaderLength()==5?"":" ipopts={",
-          this->getHeaderLength()==5?"":format_ip_options(this->h.options , MIN(this->getHeaderLength()*4, this->length-IP_HEADER_LEN)),
+          this->getHeaderLength()==5?"":format_ip_options(this->h.options , MIN((this->getHeaderLength()*4)-IP_HEADER_LEN, this->length-IP_HEADER_LEN)),
           this->getHeaderLength()==5?"":"}");
   }else if( detail>=PRINT_DETAIL_HIGH ){
       Snprintf(ipinfo, sizeof(ipinfo), "ver=%d ihl=%d tos=0x%02x iplen=%d id=%d%s%s%s%s foff=%d%s ttl=%d proto=%d csum=0x%04X%s%s%s",
@@ -267,7 +267,7 @@ int IPv4Header::print(FILE *output, int detail) const {
           this->getTTL(), this->getNextProto(),
           ntohs(this->getSum()),
           this->getHeaderLength()==5?"":" ipopts={",
-          this->getHeaderLength()==5?"":format_ip_options(this->h.options , MIN(this->getHeaderLength()*4, this->length-IP_HEADER_LEN)),
+          this->getHeaderLength()==5?"":format_ip_options(this->h.options , MIN((this->getHeaderLength()*4)-IP_HEADER_LEN, this->length-IP_HEADER_LEN)),
           this->getHeaderLength()==5?"":"}");
   }
 
