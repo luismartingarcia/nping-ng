@@ -2242,6 +2242,8 @@ SENT (4.0330s) TCP 192.168.0.21 &gt; 3.3.3.3:139
            may fix the checksum before placing the packet on the wire, so
            even if Nping shows the incorrect checksum in its output, the
            packets may be transparently corrected by the kernel.
+           Transmitting the packet at the raw Ethernet level (passing
+           <option>--send-eth</option>) solves the problem.
         </para>
         </listitem>
       </varlistentry>
