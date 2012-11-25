@@ -1439,6 +1439,12 @@ void NpingOps::validateOptions() {
     if(this->mode(DO_ARP))
       nping_fatal(QT_3, "The echo client can't be run with protocols other than TCP, UDP or ICMP.");
 
+    /* No TCP-Connect or UDP-Unpriv in Echo mode */
+    if(this->mode(DO_TCP_CONNECT))
+      nping_fatal(QT_3, "TCP-Connect is not supported in Echo mode.");
+    if(this->mode(DO_UDP_UNPRIV))
+      nping_fatal(QT_3, "Unprivileged UDP is not supported in Echo mode.");
+
     /* Now let's check if we are running in echo client mode. In this case
      * the protocol fields cannot vary. Otherwise packets would differ from
      * the specification passed to the server during the session
