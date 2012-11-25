@@ -1461,6 +1461,12 @@ void NpingOps::validateOptions() {
       this->udp.sport.setBehavior(FIELD_TYPE_CONSTANT);
       this->icmp4.seq.setBehavior(FIELD_TYPE_CONSTANT);
       this->icmp6.seq.setBehavior(FIELD_TYPE_CONSTANT);
+  }else if(this->getRole()==ROLE_SERVER){
+    /* If the user did not pass any interface to listen on, pick one */
+    if(!this->issetDevice()){
+      char *mydev=select_network_iface();
+      this->setDevice(mydev);
+    }
   }
   #ifndef HAVE_OPENSSL
   if(this->getRole()==ROLE_CLIENT || this->getRole()==ROLE_SERVER ){
