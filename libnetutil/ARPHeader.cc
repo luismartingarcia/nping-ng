@@ -239,6 +239,20 @@ int ARPHeader::print(FILE *output, int detail) const {
       fprintf(output, "%s]", myip.toString());
     break;
 
+    /* From RFC 1577:
+     *   The ARP_NAK packet format is the same as the received ARP_REQUEST
+     *   packet format with the operation code set to ARP_NAK, i.e., the
+     *   ARP_REQUEST packet data is merely copied for transmission with the
+     *   ARP_REQUEST operation code reset to ARP_NAK. */
+    case OP_ARPNAK:
+      myaddr.s_addr=this->getTargetIP();
+      myip.setAddress(myaddr);
+      fprintf(output, "ARP-NAK[Who has %s? ", myip.toString());
+      myaddr.s_addr=this->getSenderIP();
+      myip.setAddress(myaddr);
+      fprintf(output, "Tell %s]", myip.toString());
+    break;
+
     default:
     fprintf(output, "ARP-Unknown[");
     fprintf(output, "HType:%04X ", this->getHardwareType());
