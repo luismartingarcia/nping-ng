@@ -170,33 +170,33 @@ sudo nping $GLOBALOPTS -c1 google.com bogushostname bogushostname2 insecure.org
 t TARGETSPEC_13 "Don't specify any target host. Expected: error message." \
 sudo nping $GLOBALOPTS -c1
 
-# These will all fail becasue -iL is not implemmented.
-echo "google.com" > myhostlist.tmp
-t TARGETSPEC_14 "Test single target spec with -iL (hostname)." \
-sudo nping $GLOBALOPTS -c1 -iL myhostlist.tmp
+# These will all fail becasue -iL is not implemented. The day we implement
+# the functionality, the tests need to be re-enabled
+# echo "google.com" > myhostlist.tmp
+# t TARGETSPEC_14 "Test single target spec with -iL (hostname)." \
+# sudo nping $GLOBALOPTS -c1 -iL myhostlist.tmp
 
-echo "192.168.1.1" > myhostlist.tmp
-t TARGETSPEC_15 "Test single target spec with -iL (IP address)." \
-sudo nping $GLOBALOPTS -c1 -iL myhostlist.tmp
+# echo "192.168.1.1" > myhostlist.tmp
+# t TARGETSPEC_15 "Test single target spec with -iL (IP address)." \
+# sudo nping $GLOBALOPTS -c1 -iL myhostlist.tmp
 
-echo "google.com nmap.org" > myhostlist.tmp
-t TARGETSPEC_16 "Test multiple target spec with -iL (two hostnames)." \
-sudo nping $GLOBALOPTS -c1 -iL myhostlist.tmp
+# echo "google.com nmap.org" > myhostlist.tmp
+# t TARGETSPEC_16 "Test multiple target spec with -iL (two hostnames)." \
+# sudo nping $GLOBALOPTS -c1 -iL myhostlist.tmp
 
-echo "192.168.1.1 192.168.1.99" > myhostlist.tmp
-t TARGETSPEC_17 "Test multiple target spec with -iL (two IP addresses)." \
-sudo nping $GLOBALOPTS -c1 -iL myhostlist.tmp
+# echo "192.168.1.1 192.168.1.99" > myhostlist.tmp
+# t TARGETSPEC_17 "Test multiple target spec with -iL (two IP addresses)." \
+# sudo nping $GLOBALOPTS -c1 -iL myhostlist.tmp
 
-echo "192.168.1.1-10 " > myhostlist.tmp
-t TARGETSPEC_18 "Test multiple target spec with -iL (IP range #1)." \
-sudo nping $GLOBALOPTS -c1 --rate 10 -iL myhostlist.tmp
+# echo "192.168.1.1-10 " > myhostlist.tmp
+# t TARGETSPEC_18 "Test multiple target spec with -iL (IP range #1)." \
+# sudo nping $GLOBALOPTS -c1 --rate 10 -iL myhostlist.tmp
 
-echo "192.168.1.1 192.168.1.99-100 google.com/29 scanme.nmap.org" > myhostlist.tmp
-t TARGETSPEC_19 "Test multiple target spec with -iL (mixed specs)." \
-sudo nping $GLOBALOPTS -c1 --rate 10 -iL myhostlist.tmp
+# echo "192.168.1.1 192.168.1.99-100 google.com/29 scanme.nmap.org" > myhostlist.tmp
+# t TARGETSPEC_19 "Test multiple target spec with -iL (mixed specs)." \
+# sudo nping $GLOBALOPTS -c1 --rate 10 -iL myhostlist.tmp
 
-rm -f myhostlist.tmp
-
+# rm -f myhostlist.tmp
 
 
 
@@ -226,7 +226,7 @@ sudo nping --tcp-connect -p 1000 -g 1000 $TARGETS $GLOBALOPTS
 
 #### TCP MODE ####
 
-t TCP_1 "TCP default flags and port. BPF filter?" \
+t TCP_1 "TCP default flags and port." \
 sudo nping --tcp $TARGETS $GLOBALOPTS
 
 t TCP_2 "TCP open port." \
@@ -333,30 +333,27 @@ sudo nping --tcp --win rand $TARGETS $GLOBALOPTS
 t TCP_30 "TCP badsum." \
 sudo nping --tcp --badsum $TARGETS $GLOBALOPTS
 
-t TCP_31 "TCP mss." \
-sudo nping --tcp --mss 900 $TARGETS $GLOBALOPTS
-
-t TCP_32 "TCP ws." \
-sudo nping --tcp --ws 2 $TARGETS $GLOBALOPTS
-
-t TCP_33 "TCP ts 1234,5678." \
-sudo nping --tcp  --ts 1234,5678 $TARGETS $GLOBALOPTS
-
-t TCP_34 "TCP ts rand,rand." \
-sudo nping --tcp  --ts rand,rand $TARGETS $GLOBALOPTS
-
-t TCP_35 "TCP ts 1234." \
-sudo nping --tcp  --ts 1234 $TARGETS $GLOBALOPTS
+# Unimplemented
+# t TCP_31 "TCP mss." \
+# sudo nping --tcp --mss 900 $TARGETS $GLOBALOPTS
+# t TCP_32 "TCP ws." \
+# sudo nping --tcp --ws 2 $TARGETS $GLOBALOPTS
+# t TCP_33 "TCP ts 1234,5678." \
+# sudo nping --tcp  --ts 1234,5678 $TARGETS $GLOBALOPTS
+# t TCP_34 "TCP ts rand,rand." \
+# sudo nping --tcp  --ts rand,rand $TARGETS $GLOBALOPTS
+# t TCP_35 "TCP ts 1234." \
+# sudo nping --tcp  --ts 1234 $TARGETS $GLOBALOPTS
 
 
 
 #### UDP MODE ####
 
 # Unprivileged execution
-t UDP_UNPRIV_1 "Send UDP packet in unprivileged mode with default parameters. Expected: Packets to dport 40125 and <<UDP packet with 4 bytes>> messages." \
+t UDP_UNPRIV_1 "Send UDP packet in unprivileged mode with default parameters. Expected: Packets to dport 40125 and <<UDP packet with 0 bytes>> messages." \
 nping --udp $TARGETS $GLOBALOPTS
 
-t UDP_UNPRIV_2 "Send UDP packet to custom dport. Expected: 4-byte UDP packets to port $OPEN_PORT and <<UDP packet with 4 bytes>> messages." \
+t UDP_UNPRIV_2 "Send UDP packet to custom dport. Expected: 0-byte UDP packets to port $OPEN_PORT and <<UDP packet with 0 bytes>> messages." \
 nping --udp -p $OPEN_PORT $TARGETS $GLOBALOPTS
 
 t UDP_UNPRIV_3 "Send UDP packet specifying a source port." \
@@ -1070,8 +1067,15 @@ sudo nping --tcp --ttl 256 $TARGETS $GLOBALOPTS
 t IP_21 "IP ttl rand." \
 sudo nping --tcp --ttl rand $TARGETS $GLOBALOPTS
 
-t IP_22 "IP badsum-ip." \
+# This test may "fail" (receive TCP SYN-ACK replies) because some systems
+# fix the checksum before placing the packet on the wire. This happens
+# at least in Linux. It only happens when sending at the IP level. Test IP_22B
+# forces Ethernet transmission. --badsum-ip should work in that case.
+t IP_22A "IP badsum-ip. The underlying kernel may transparently fix the sum. " \
 sudo nping --tcp --badsum-ip $TARGETS $GLOBALOPTS
+
+t IP_22B "IP badsum-ip (forcing Ethernet with --send-eth). " \
+sudo nping --tcp --badsum-ip $TARGETS $GLOBALOPTS --send eth
 
 for mtu in 0 20 600 1500 65536 70000; do
   t IP_mtu$mtu "IP mtu $mtu." \
@@ -1117,16 +1121,13 @@ sudo nping --tcp --ip-options "L 1.1.1.1 2.2.2.2" $TARGETS $GLOBALOPTS
 t IP_35 "IP options L too many hops." \
 sudo nping --tcp --ip-options "L 1.1.1.1 2.2.2.2 3.3.3.3 4.4.4.4 5.5.5.5 6.6.6.6 7.7.7.7 8.8.8.8 9.9.9.9" $TARGETS $GLOBALOPTS
 
-t IP_36 "IP options RTUS." \
-sudo nping --tcp --ip-options "RTUS 1.1.1.1 2.2.2.2" $TARGETS $GLOBALOPTS
-
-t IP_37 "IP options hex." \
+t IP_36 "IP options hex." \
 sudo nping --tcp --ip-options "\xff" $TARGETS $GLOBALOPTS
 
-t IP_38 "IP options decimal." \
+t IP_37 "IP options decimal." \
 sudo nping --tcp --ip-options "\255" $TARGETS $GLOBALOPTS
 
-t IP_39 "IP options repetition." \
+t IP_38 "IP options repetition." \
 sudo nping --tcp --ip-options "\x12*8" $TARGETS $GLOBALOPTS
 
 
@@ -1267,32 +1268,33 @@ sudo nping --icmp $TARGETS $GLOBALOPTS --icmp-type echo --data-len 9999999999999
 t PAYLOAD_24 "Test random data payload specification, specifying bogus data (negative number of bytes)." \
 sudo nping --icmp $TARGETS $GLOBALOPTS --icmp-type echo --data-len -1
 
-# The following tests are not passed because --data-file is currently unimplemented
+# Injecting data in TCP-Connect mode is supported.
+t PAYLOAD_25 "Test payload specification in TCP connect mode. Expected: DATA (0.0330s) 12 bytes sent..." \
+nping --tcp-connect $TARGETS $GLOBALOPTS --data-string "Test Payload"
 
+
+# The following tests are not passed because --data-file is currently unimplemented
 # Generate an empty file
-rm -f NPINGEMPTYFILE.tmp
-touch NPINGEMPTYFILE.tmp
-t PAYLOAD_25 "Test payload file specification, specifying an empty file. Expected: Packets with a 0-byte payload." \
-sudo nping --icmp $TARGETS $GLOBALOPTS --icmp-type echo --data-file NPINGEMPTYFILE.tmp
+# rm -f NPINGEMPTYFILE.tmp
+# touch NPINGEMPTYFILE.tmp
+# t PAYLOAD_26 "Test payload file specification, specifying an empty file. Expected: Packets with a 0-byte payload." \
+# sudo nping --icmp $TARGETS $GLOBALOPTS --icmp-type echo --data-file NPINGEMPTYFILE.tmp
 # And delete it after the test
-rm -f NPINGEMPTYFILE.tmp
+# rm -f NPINGEMPTYFILE.tmp
 
 # Generate regular empty file
-echo "London's burning dial 99999..." > NPINGREGULARFILE.tmp
-t PAYLOAD_26 "Test payload file specification, specifying normal file with a normal string. Expected: Packets with the string included." \
-sudo nping --icmp $TARGETS $GLOBALOPTS --icmp-type echo --data-file NPINGREGULARFILE.tmp
+# echo "London's burning dial 99999..." > NPINGREGULARFILE.tmp
+# t PAYLOAD_27 "Test payload file specification, specifying normal file with a normal string. Expected: Packets with the string included." \
+# sudo nping --icmp $TARGETS $GLOBALOPTS --icmp-type echo --data-file NPINGREGULARFILE.tmp
 # And delete it after the test
-rm -f NPINGREGULARFILE.tmp
+# rm -f NPINGREGULARFILE.tmp
 
-t PAYLOAD_27 "Test payload file specification, specifying a nonexisting or not-readable file. Expected: error message." \
-sudo nping --icmp $TARGETS $GLOBALOPTS --icmp-type echo --data-file FILE_THAT_DOES_NOT_EXIST.tmp
+# t PAYLOAD_28 "Test payload file specification, specifying a nonexisting or not-readable file. Expected: error message." \
+# sudo nping --icmp $TARGETS $GLOBALOPTS --icmp-type echo --data-file FILE_THAT_DOES_NOT_EXIST.tmp
 
-t PAYLOAD_28 "Test payload file specification, specifying a null filename. Expected: error message." \
-sudo nping --icmp $TARGETS $GLOBALOPTS --icmp-type echo --data-file ""
+# t PAYLOAD_29 "Test payload file specification, specifying a null filename. Expected: error message." \
+# sudo nping --icmp $TARGETS $GLOBALOPTS --icmp-type echo --data-file ""
 
-# This doesn't give an error, it just ignores the payload spec.
-t PAYLOAD_29 "Test payload specification in TCP connect mode. Expected: warning message." \
-nping --tcp-connect $TARGETS $GLOBALOPTS --data-string "Test Payload"
 
 
 #### ECHO MODE ####
@@ -1341,7 +1343,7 @@ t ECHO_14 "Test client connection to echo.nmap.org. ARP mode. Expected: Failure"
 sudo nping --echo-client "public" echo.nmap.org --arp
 
 t ECHO_15 "Test client connection to echo.nmap.org. RARP mode. Expected: Failure" \
-sudo nping --echo-client "public" echo.nmap.org --rarp
+sudo nping --echo-client "public" echo.nmap.org --arp --arp-type rarp-request
 
 t ECHO_16 "Test client connection to echo.nmap.org, using the wrong password." \
 sudo nping --echo-client "BOGUS" echo.nmap.org
