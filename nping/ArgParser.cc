@@ -181,21 +181,6 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
   {"tr", no_argument, 0, 0},
   {"traceroute", no_argument, 0, 0},
 
-  /* Mode shortcuts */
-  {"echo-request", no_argument, 0, 0},
-  {"destination-unreachable", no_argument, 0, 0},
-  {"dest-unr", no_argument, 0, 0},
-  {"timestamp", no_argument, 0, 0},
-  {"timestamp-request", no_argument, 0, 0},
-  {"information", no_argument, 0, 0},
-  {"information-request", no_argument, 0, 0},
-  {"netmask", no_argument, 0, 0},
-  {"netmask-request", no_argument, 0, 0},
-  {"arp-request", no_argument, 0, 0},
-  {"arp-reply", no_argument, 0, 0},
-  {"rarp-request", no_argument, 0, 0},
-  {"rarp-reply", no_argument, 0, 0},
-
    /* TCP/UDP */
   {"source-port", required_argument, 0, 'g'},
   {"dest-port", required_argument, 0, 'p'},
