@@ -180,6 +180,8 @@ NpingOps::NpingOps() {
   disable_packet_capture=false;
   disable_packet_capture_set=false;
 
+  do_multicast=false;
+
   /* Privileges */
   isr00t=false;
   isr00t_set=false;
@@ -786,6 +788,23 @@ bool NpingOps::issetDisablePacketCapture(){
   return this->disable_packet_capture_set;
 } /* End of issetDisablePacketCapture() */
 
+
+/* Pass "true" to indicate that Nping is targetting multicast addresses, and
+ * therefore, we can receive more than one reply for the same probe. Pass
+ * "false" if we are targeting unicast IP addresses. */
+bool NpingOps::doMulticast(bool new_val){
+  bool old_val=this->do_multicast;
+  this->do_multicast=new_val;
+  return old_val;
+} /* End of doMulticast() */
+
+
+/* Returns true if we are sending probes to some multicast address. When that
+ * happens, Nping should be able to handle multiple responses, coming from
+ * different targets, triggered by the same single probe. */
+bool NpingOps::doMulticast(){
+  return this->do_multicast;
+} /* End of doMulticast() */
 
 /** Sets the IP address family that will be used in all packets. Supplied
  * parameter must be either AF_INET or AF_INET6. */
@@ -2070,6 +2089,16 @@ int NpingOps::setupTargetHosts(){
      * If he passed an IP address, then the ASCII representation of the address
      * is what gets stored in the object. */
     newhost->setHostname(this->target_hostnames[i]);
+
+    /* Determine if the target address is multicast or unicast. If it's
+     * multicast, we set a global flag. This is important for some Nping
+     * routines because when we target multicast addresses we can receive
+     * more than one response for the same probe. Also, we should expect
+     * responses from addresses that don't match the original probe's
+     * destination IP. */
+    if(newhost->getTargetAddress()->isMulticast()){
+      this->doMulticast(true);
+    }
 
     /* If we are running some mode that requires raw sockets, perform
      * route determination so we can fill up the TargetHost object with

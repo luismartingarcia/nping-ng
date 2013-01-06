@@ -504,10 +504,16 @@ char *ProbeEngine::bpf_filter(vector<TargetHost *> &Targets, NetworkInterface *t
     /* Omit the destination address part when dealing with IPv4 and IPv6 targets
      * simultaneously. */
     if(ipv4_targets && ipv6_targets){
-      len = Snprintf(pcap_filter, sizeof(pcap_filter), "%s", dst_hosts);
+      if(o.doMulticast())
+        len = Snprintf(pcap_filter, sizeof(pcap_filter), "");
+      else
+        len = Snprintf(pcap_filter, sizeof(pcap_filter), "%s", dst_hosts);
     }else{
-      len = Snprintf(pcap_filter, sizeof(pcap_filter), "dst host %s and (%s)",
-                   src_addr->toString(), dst_hosts);
+      if(o.doMulticast())
+        len = Snprintf(pcap_filter, sizeof(pcap_filter), "dst host %s", src_addr->toString());
+      else
+        len = Snprintf(pcap_filter, sizeof(pcap_filter), "dst host %s and (%s)",
+                       src_addr->toString(), dst_hosts);
     }
   /* If we have too many targets to list every single IP address that we
    * plan to send packets too, just set the filter with our own address, so

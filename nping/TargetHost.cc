@@ -946,9 +946,17 @@ int TargetHost::is_response(PacketElement *pkt_rcvd, struct timeval *rcvd_time){
       this->stats.update_rtt(rtt);
       o.stats.update_rtt(rtt);
       /* Do some cleanup */
-      PacketParser::freePacketChain(this->sent_pkts[i]);
-      this->sent_pkts.erase(this->sent_pkts.begin()+i, this->sent_pkts.begin()+i+1);
-      this->sent_times.erase(this->sent_times.begin()+i, this->sent_times.begin()+i+1);
+      if(o.doMulticast()==false){
+        /* We remove the packet in all cases except when we are targeting some
+         * multicast address. In that case, we need the packet to stay alive
+         * because we may have multiple answers to the same probe, and we
+         * need to be able to match it against more than one packet. If we
+         * delete the packet after the first match, we'll never detect the
+         * extra responses. */
+        PacketParser::freePacketChain(this->sent_pkts[i]);
+        this->sent_pkts.erase(this->sent_pkts.begin()+i, this->sent_pkts.begin()+i+1);
+        this->sent_times.erase(this->sent_times.begin()+i, this->sent_times.begin()+i+1);
+      }
       return true;
     }
   }

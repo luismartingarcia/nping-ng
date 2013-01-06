@@ -150,6 +150,7 @@ class IPAddress {
     static const char *toString(struct sockaddr_in6 *s6);
     static const char *toString(struct sockaddr_in6 s6);
     static int setSockaddrPort(struct sockaddr_storage *ss, u16 port);
+    bool isMulticast();
 
 }; /* End of class IPAddress */
 

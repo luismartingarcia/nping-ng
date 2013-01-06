@@ -675,3 +675,19 @@ int IPAddress::setSockaddrPort(struct sockaddr_storage *ss, u16 port){
   return OP_SUCCESS;
 } /* End of setSockaddrPort() */
 
+
+/* Returns true if the IP address is a multicast address. This works for both
+ * IPv4 and IPv6 addresses. */
+bool IPAddress::isMulticast(){
+  if(this->version==AF_INET6){
+    /* IPv6 multicast addresses always start with 0xFF (binary 1111 1111) */
+    if(this->ip6.s6_addr[0]==0xFF)
+      return true;
+  }else{
+    /* IPv4 multicast addresses are in the range 224.0.0.0 through
+     * 239.255.255.255. */
+    if(*((u8 *)&(this->ip4.s_addr))>=224 &&  *((u8 *)&(this->ip4.s_addr))<=239)
+      return true;
+  }
+  return false;
+} /* End of isMulticast(); */

@@ -223,6 +223,7 @@ class NpingOps {
     bool have_pcap;           /* True if we have access to libpcap     */
     bool disable_packet_capture; /* If false, no packets are captured  */
     bool disable_packet_capture_set;
+    bool do_multicast;        /* Are we targeting multicast IP addresses? */
 
     /* Privileges */
     bool isr00t;              /* True if current user has root privs   */
@@ -388,6 +389,9 @@ class NpingOps {
     int setDisablePacketCapture(bool val);
     bool disablePacketCapture();
     bool issetDisablePacketCapture();
+
+    bool doMulticast(bool new_val);
+    bool doMulticast();
 
     int setAddressFamily(int addrfamily);
     bool ipv4();
