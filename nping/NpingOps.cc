@@ -2116,6 +2116,16 @@ int NpingOps::setupTargetHosts(){
          * in the target's class */
         nping_print(DBG_4, "Route found!");
 
+        /* Windows does not let us send raw packets to localhost so we skip
+         * localhost if we detect it. */
+        if(this->win32()){
+          if (route.ii.device_type == devt_loopback){
+            nping_warning(QT_2, "Skipping %s because Windows does not allow localhost scans (try --unprivileged).", this->target_addresses[i]->toString());
+            delete newhost;
+            continue;
+          }
+        }
+
         /* Set the source IP address. Note that we handle the case where
          * we have a spoof address above */
         if(this->spoof_addr==NULL){
