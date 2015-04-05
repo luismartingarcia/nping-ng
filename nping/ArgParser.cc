@@ -764,6 +764,7 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
       }else{
         o.ip6.hlim.setConstant(aux8);
         o.ip4.ttl.setConstant(aux8);
+        o.custom_ttl_set=true; // Only used for traceroute, in case the user does not want to start with TTL=1
       }
       /* TODO: At some point we may want to let users specify TTLs like "linux",
        * "bsd" etc, so the default TTL for those systems is used. Check

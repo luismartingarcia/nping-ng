@@ -200,6 +200,7 @@ NpingOps::NpingOps() {
 
   mtu=0;
   mtu_set=false;
+  custom_ttl_set=false;
 
   ip_proto=0;
   ip_proto_set=false;
@@ -1333,7 +1334,7 @@ void NpingOps::validateOptions() {
 
 /** PROBE MODE SELECTION *****************************************************/
   /* Ensure that one probe mode is selected */
-  if(this->getModes()==NO_MODE_SET){
+  if(this->getModes()==NO_MODE_SET || this->getModes()==DO_TRACEROUTE){
     if (this->isRoot())
       this->addMode(DO_ICMP);
     else
@@ -1346,6 +1347,16 @@ void NpingOps::validateOptions() {
    * the Internet. */
   if(!this->issetRounds() && this->mode(DO_TRACEROUTE) ){
     this->setRounds(TRACEROUTE_PACKET_ROUNDS);
+  }
+
+  /* In traceroute mode, make the TTL field incremental and start from TTL=1 */
+  if(this->mode(DO_TRACEROUTE)){
+    if(!this->custom_ttl_set)
+      this->ip4.ttl.setStartValue(1);
+    this->ip4.ttl.setBehavior(FIELD_TYPE_INCREMENTAL);
+    if(!this->custom_ttl_set)
+      this->ip6.hlim.setStartValue(1);
+    this->ip6.hlim.setBehavior(FIELD_TYPE_INCREMENTAL);
   }
 
 /** UDP UNPRIVILEGED MODE? ***************************************************/

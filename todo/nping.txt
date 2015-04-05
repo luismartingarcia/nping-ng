@@ -1033,3 +1033,6 @@ SENT (1.0580s) ARP who has 192.168.240.139? Tell 192.168.240.1
 
 [DONE] Fix stats for UDP unprivileged. "Failed" does not show the correct figures.
     UDP write operations: 10 | Successful reads: 5 | Failed: 0 (0.00%)
+
+[DONE] Finish --traceroute. currently it does not start from TTL=1, but from TTL=64.
+  If I pass --ttl 30, then it starts from 30. Investigate this.

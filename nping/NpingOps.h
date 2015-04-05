@@ -506,5 +506,8 @@ class NpingOps {
     int setupTargetHosts();
     u32 totalTargetHosts();
 
+    /* Public attributes */
+    bool custom_ttl_set;      /* Used only for traceroute when initial TTL!=1 */
+
 }; /* End of class NpingOps */
 
