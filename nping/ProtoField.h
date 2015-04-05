@@ -243,6 +243,31 @@ class ProtoField_inaddr : public ProtoField{
 
 };
 
+/*****************************************************************************
+ * ProtoField_in6addr Class                                                   *
+ *****************************************************************************/
+
+class ProtoField_in6addr : public ProtoField{
+  private:
+    struct in6_addr start_value;
+    struct in6_addr current_value;
+    struct in6_addr  *discrete_set;
+    u32 discrete_set_len;
+    u32 current_set_element;
+
+  public:
+    ProtoField_in6addr();
+    ProtoField_in6addr(struct in6_addr startvalue);
+    ProtoField_in6addr(struct in6_addr *set, u32 set_len);
+    ~ProtoField_in6addr();
+    struct in6_addr getNextValue();
+    int setDiscreteSet(struct in6_addr *set, u32 set_len);
+    int setStartValue(struct in6_addr startvalue);
+    int setConstant(struct in6_addr val);
+
+};
+
+
 
 /*****************************************************************************
  * ProtoField_mac Class                                                      *

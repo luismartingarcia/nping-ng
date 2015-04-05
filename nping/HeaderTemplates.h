@@ -320,7 +320,7 @@ class ICMPv6HeaderTemplate : public HeaderTemplate{
     ProtoField_bool na_R;           /* Router flag                   */
     ProtoField_bool na_S;           /* Solicited flag                */
     ProtoField_bool na_O;           /* Override flag                 */
-    //ProtoField_in6addr na_addr;     /* Target address                */
+    ProtoField_in6addr na_addr;     /* Target address                */
 
 
     ICMPv6HeaderTemplate();

@@ -788,6 +788,21 @@ ICMPv6Header *TargetHost::getICMPv6Header(){
       myicmp6->setRetransmissionTimer(this->icmp6->ra_retrtimer.getNextValue());
     break;
 
+    case ICMPv6_NGHBRADVERT:
+      /* Neighbor Advertisement flags */
+      aux8=0;
+      /* Extract flag info from the template and set the appropriate bits on
+       * an 8-bit aux variable */
+      if(this->icmp6->na_R.getNextValue()==true)
+        aux8= aux8 | ICMPv6_NA_FLAG_R;
+      if(this->icmp6->na_S.getNextValue()==true)
+        aux8= aux8 | ICMPv6_NA_FLAG_S;
+      if(this->icmp6->na_O.getNextValue()==true)
+        aux8= aux8 | ICMPv6_NA_FLAG_O;
+      /* Finally, set the flag on the ICMPv6 header */
+      myicmp6->setFlags(aux8);
+      myicmp6->setTargetAddress(this->icmp6->na_addr.getNextValue());
+    break;
 
     case ICMPv6_UNREACH:
     case ICMPv6_TIMXCEED:
@@ -798,7 +813,7 @@ ICMPv6Header *TargetHost::getICMPv6Header(){
     case ICMPv6_ROUTERSOLICIT:
 
     case ICMPv6_NGHBRSOLICIT:
-    case ICMPv6_NGHBRADVERT:
+
     case ICMPv6_REDIRECT:
     case ICMPv6_RTRRENUM:
     case ICMPv6_NODEINFOQUERY:

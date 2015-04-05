@@ -224,6 +224,8 @@ int ICMPv6Header::validate(){
 int ICMPv6Header::print(FILE *output, int detail) const {
   u8 type=this->getType();
   u8 code=this->getCode();
+  struct in6_addr addr;
+  static char ipstring[256];
   const char *typestr=this->type2string(type, code);
 
   fprintf(output, "ICMPv6[%s", typestr);
@@ -317,6 +319,23 @@ int ICMPv6Header::print(FILE *output, int detail) const {
       }
     break;           
     
+    case ICMPv6_NGHBRADVERT:
+      if(this->getFlags()!=0){
+        fprintf(output, " flags=");
+        if(this->getFlags() & ICMPv6_NA_FLAG_R)
+          fprintf(output, "R");
+        if(this->getFlags() & ICMPv6_NA_FLAG_S)
+          fprintf(output, "S");
+        if(this->getFlags() & ICMPv6_NA_FLAG_O)
+          fprintf(output, "O");
+      }
+      memset(ipstring, 0, 256);
+      addr=this->getTargetAddress();
+      inet_ntop(AF_INET6, &addr, ipstring, sizeof(ipstring));
+      fprintf(output, " %s", ipstring);
+    break;
+
+
     default:
         /* Print nothing */
     break;

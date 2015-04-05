@@ -157,6 +157,7 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
   long l=0;
   int option_index=0;
   IPAddress aux_ip4;
+  IPAddress aux_ip6;
   struct in_addr auxinaddr;
   u32 aux32=0;
   u16 aux16=0;
@@ -231,6 +232,8 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
   {"icmp6-ra-lifetime", required_argument, 0, 0},
   {"icmp6-ra-reachtime", required_argument, 0, 0},
   {"icmp6-ra-retrtimer", required_argument, 0, 0},
+  {"icmp6-na-flags", required_argument, 0, 0},
+  {"icmp6-na-addr", required_argument, 0, 0},
 
   /* ARP */
   {"arp-type",  required_argument, 0, 0},
@@ -724,6 +727,44 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
         o.icmp6.ra_retrtimer.setConstant(aux32);
       }else{
         nping_fatal(QT_3, "Invalid ICMPv6 Router Advertisement Retransmission Timer. Value must be 0<=N<2^32.");
+      }
+    /* ICMPv6 Neighbor Advertisement Flags */
+    } else if (optcmp(long_options[option_index].name, "icmp6-na-flags") == 0) {
+      o.addMode(DO_ICMP);
+      aux8=0;
+      int na_flags=0;
+      for(size_t f=0; f<strlen(optarg); f++){
+        switch(optarg[f]){
+          case 'R': case 'r':
+            o.icmp6.na_R.setConstant(true);
+            na_flags++;
+          break;
+          case 'S': case 's':
+            o.icmp6.na_S.setConstant(true);
+            na_flags++;
+          break;
+          case 'O': case 'o':
+            o.icmp6.na_O.setConstant(true);
+            na_flags++;
+          break;
+          default:
+            nping_fatal(QT_3, "Invalid ICMPv6 Neighbor Advertisement flags supplied (%c). Possible flags: R, S, O.", optarg[f]);
+          break;
+        }
+      }
+      if(na_flags==0)
+        nping_fatal(QT_3, "No ICMPv6 Neighbor Advertisement flags supplied. Possible flags: R, S, O.");
+    /* ICMPv6 Neighbor Advertisement Target Address */
+    } else if (optcmp(long_options[option_index].name, "icmp6-na-addr") == 0) {
+      o.addMode(DO_ICMP);
+      if(meansRandom(optarg)){
+        o.icmp6.na_addr.setBehavior(FIELD_TYPE_RANDOM);
+      }else{
+        if(aux_ip6.setIPv6Address(optarg) != OP_SUCCESS){
+          nping_fatal(QT_3, "Could not resolve specified Neighbor Advertisement Target Address.");
+        }else{
+          o.icmp6.na_addr.setConstant(aux_ip6.getIPv6Address());
+        }
       }
 
 /* ARP OPTIONS ***************************************************************/

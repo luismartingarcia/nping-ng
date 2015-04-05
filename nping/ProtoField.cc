@@ -618,6 +618,108 @@ struct in_addr ProtoField_inaddr::getNextValue(){
 } /* End of getNextValue() */
 
 
+/*****************************************************************************
+ * ProtoField_in6addr Class                                                   *
+ *****************************************************************************/
+
+ProtoField_in6addr::ProtoField_in6addr(){
+  memset(&this->start_value, 0, sizeof(struct in6_addr));
+  memset(&this->current_value, 0, sizeof(struct in6_addr));
+} /* End of ProtoField_in6addr constructor */
+
+
+ProtoField_in6addr::ProtoField_in6addr(struct in6_addr startvalue){
+  this->setStartValue(startvalue);
+} /* End of ProtoField_in6addr constructor */
+
+
+ProtoField_in6addr::ProtoField_in6addr(struct in6_addr *set, u32 set_len){
+  this->setDiscreteSet(set, set_len);
+} /* End of ProtoField_in6addr constructor */
+
+
+ProtoField_in6addr::~ProtoField_in6addr(){
+
+} /* End of ProtoField_in6addr destructor */
+
+
+int ProtoField_in6addr::setStartValue(struct in6_addr startvalue){
+  this->start_value=startvalue;
+  this->current_value=startvalue;
+  this->discrete_set=NULL;
+  this->discrete_set_len=0;
+  this->current_set_element=0;
+  this->set=true;
+  return OP_SUCCESS;
+} /* End of setStartValue() */
+
+
+int ProtoField_in6addr::setDiscreteSet(struct in6_addr *set, u32 set_len){
+  assert(set!=NULL && set_len>0);
+  this->setBehavior(FIELD_TYPE_DISCRETE_SET);
+  this->discrete_set=set;
+  this->discrete_set_len=set_len;
+  this->current_set_element=0;
+  this->set=true;
+  return OP_SUCCESS;
+} /* End of setDiscreteSet() */
+
+
+/* Sets a constant value for the field. Note that this method overwrites the
+ * current field behavior, setting it to FIELD_TYPE_CONSTANT, */
+int ProtoField_in6addr::setConstant(struct in6_addr val){
+  this->setStartValue(val);
+  this->setBehavior(FIELD_TYPE_CONSTANT);
+  return OP_SUCCESS;
+} /* End of setConstant() */
+
+
+struct in6_addr ProtoField_in6addr::getNextValue(){
+  struct in6_addr return_val;
+  memset(&return_val, 0, sizeof(struct in6_addr));
+  switch(this->behavior){
+
+    case FIELD_TYPE_CONSTANT:
+      return this->start_value;
+    break;
+
+    case FIELD_TYPE_INCREMENTAL:
+      return_val=this->current_value;
+      /* Now we increment the 128-bit address by one. Instead of using
+       * big fancy math libraries to operate with 128-bit integers, we just
+       * operate at the byte leave and carry the bit when needed */
+      for(int i=15; i>=0; i--){
+        if(this->current_value.s6_addr[i]<0xFF){
+          this->current_value.s6_addr[i]++;
+          break;
+        }else{
+          this->current_value.s6_addr[i]=0x00;
+          continue;
+        }
+      }
+      return return_val;
+    break;
+
+    case FIELD_TYPE_RANDOM:
+      for(int i=0; i<16; i++)
+        return_val.s6_addr[i]=get_random_u8();
+      return return_val;
+    break;
+
+    case FIELD_TYPE_DISCRETE_SET:
+      assert(this->discrete_set!=NULL);
+      return_val = this->discrete_set[this->current_set_element];
+      if(this->current_set_element+1>=this->discrete_set_len){
+        this->current_set_element=0;
+      }else{
+        this->current_set_element++;
+      }
+      return return_val;
+    break;
+  }
+  assert(false);
+  return return_val;
+} /* End of getNextValue() */
 
 
 /*****************************************************************************

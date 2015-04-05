@@ -309,6 +309,11 @@
 #define ICMPv6_RA_FLAG_R1   0x02
 #define ICMPv6_RA_FLAG_R2   0x01
 
+/* Neighbor Advertisement flag bitmaks */
+#define ICMPv6_NA_FLAG_R    0x80
+#define ICMPv6_NA_FLAG_S    0x40
+#define ICMPv6_NA_FLAG_O    0x20
+
 /* Node Information flag bitmaks */
 #define ICMPv6_NI_FLAG_T    0x01
 #define ICMPv6_NI_FLAG_A    0x02
