@@ -258,6 +258,9 @@ void PacketStats::reset(){
   this->tcpconn[INDEX_CONN_ISSUED]=0;
   this->tcpconn[INDEX_CONN_ACCEPTED]=0;
 
+  this->udpunpriv[INDEX_UDP_WRITES]=0;
+  this->udpunpriv[INDEX_UDP_READS]=0;
+
   //this->sctpconn[INDEX_CONN_ISSUED]=0;
   //this->sctpconn[INDEX_CONN_ACCEPTED]=0;
 
@@ -277,35 +280,44 @@ void PacketStats::reset(){
 /* Takes a protocol and returns the appropriate stats array. */
 u64_t *PacketStats::proto2stats(int proto){
   switch(proto){
-      case HEADER_TYPE_TCP:
+
+      case STATS_TCP:
         return this->tcp;
       break;
 
-      case HEADER_TYPE_UDP:
+      case STATS_UDP:
         return this->udp;
       break;
 
-      case HEADER_TYPE_ICMPv4:
+      case STATS_ICMPv4:
         return this->icmp4;
       break;
 
-      case HEADER_TYPE_ICMPv6:
+      case STATS_ICMPv6:
         return this->icmp6;
       break;
 
-      case HEADER_TYPE_ARP:
+      case STATS_ARP:
         return this->arp;
       break;
 
-      case HEADER_TYPE_IPv4:
+      case STATS_IPv4:
         return this->ip4;
       break;
 
-      case HEADER_TYPE_IPv6:
+      case STATS_IPv6:
         return this->ip4;
       break;
 
-      case HEADER_TYPE_RAW_DATA:
+      case STATS_TCP_CONNECT:
+        return this->tcpconn;
+      break;
+
+      case STATS_UDP_UNPRIV:
+          return this->udpunpriv;
+      break;
+
+      case STATS_TOTAL:
         return this->packets;
       break;
   }
@@ -383,7 +395,7 @@ int PacketStats::update_clients_served(){
 /* Updates connection counters (issued and accepted TCP connections). This
  * method is meant to be used internally. Use the update_connects() and
  * update_accepts() instead. */
-int PacketStats::update_connection_count(int index, int ip_version, int proto){
+int PacketStats::update_unprivileged_counts(int index, int ip_version, int proto){
   assert(index==INDEX_CONN_ISSUED || index==INDEX_CONN_ACCEPTED);
   /* IP stats */
   switch(ip_version){
@@ -399,12 +411,17 @@ int PacketStats::update_connection_count(int index, int ip_version, int proto){
     case HEADER_TYPE_TCP:
       this->tcpconn[index]++;
     break;
+
+    case HEADER_TYPE_UDP:
+      this->udpunpriv[index]++;
+    break;
+
     default:
       assert(false);
     break;
   }
   return OP_SUCCESS;
-} /* End of update_connection_count() */
+} /* End of update_unprivileged_counts() */
 
 
 /* Update the stats for the number of connections that we have tried to
@@ -412,7 +429,7 @@ int PacketStats::update_connection_count(int index, int ip_version, int proto){
  * The "proto" parameter is now redundant but it will make sense if one day
  * we support SCTP connections. */
 int PacketStats::update_connects(int ip_version, int proto){
-  return this->update_connection_count(INDEX_CONN_ISSUED, ip_version, proto);
+  return this->update_unprivileged_counts(INDEX_CONN_ISSUED, ip_version, proto);
 } /* End of update_connects() */
 
 
@@ -420,8 +437,22 @@ int PacketStats::update_connects(int ip_version, int proto){
  * established. The "proto" parameter is now redundant but it will make
  * sense if one day we support SCTP connections. */
 int PacketStats::update_accepts(int ip_version, int proto){
-  return this->update_connection_count(INDEX_CONN_ACCEPTED, ip_version, proto);
+  return this->update_unprivileged_counts(INDEX_CONN_ACCEPTED, ip_version, proto);
 } /* End of update_accepts() */
+
+
+/* Update the stats for the number of unprivileged UDP write() operations that we
+ * have successfully carried out. The "proto" parameter is now redundant,  since
+ * we only measure that for UDP, but maybe we can extend that in the future. */
+int PacketStats::update_reads(int ip_version, int proto, u32 pkt_len){
+  return this->update_unprivileged_counts(INDEX_UDP_READS, ip_version, proto);
+} /* End of update_reads() */
+
+
+/* Update the stats for the number of unprivileged UDP read() operations */
+int PacketStats::update_writes(int ip_version, int proto, u32 pkt_len){
+  return this->update_unprivileged_counts(INDEX_UDP_WRITES, ip_version, proto);
+} /* End of update_writes() */
 
 
 /* Update the number of bytes read. Note that this method is public only because

@@ -1003,8 +1003,8 @@ int ProbeEngine::udpunpriv_handler(nsock_pool nsp, nsock_event nse, void *mydata
             luis_hdump((char *)o.getPayloadBuffer(), o.getPayloadLen()); // TODO @todo Find print_hexdump() and use it!
         }
         /* Update statistics */
-        tgt->stats.update_sent(family, HEADER_TYPE_UDP, payload_len);
-        o.stats.update_sent(family, HEADER_TYPE_UDP, payload_len);
+        tgt->stats.update_writes(family, HEADER_TYPE_UDP, payload_len);
+        o.stats.update_writes(family, HEADER_TYPE_UDP, payload_len);
         /* If user did not disable packet capture, schedule a read operation */
         if(!o.disablePacketCapture())
           nsock_read(nsp, nsi, udpunpriv_handler_wrapper, DEFAULT_UDP_READ_TIMEOUT_MS, tgt);
@@ -1029,8 +1029,8 @@ int ProbeEngine::udpunpriv_handler(nsock_pool nsp, nsock_event nse, void *mydata
         if(o.getVerbosity()>=VB_3 && readbuff!=NULL && readbytes>0)
           luis_hdump((char *)readbuff, readbytes); // TODO @todo Find print_hexdump() and use it!
         /* Update statistics */
-        tgt->stats.update_rcvd(family, HEADER_TYPE_UDP, readbytes);
-        o.stats.update_rcvd(family, HEADER_TYPE_UDP, readbytes);
+        tgt->stats.update_reads(family, HEADER_TYPE_UDP, readbytes);
+        o.stats.update_reads(family, HEADER_TYPE_UDP, readbytes);
         /* Even when we have received some data, we schedule another read
          * operation so we can get more if the target still transmits stuff */
         if(!o.disablePacketCapture())

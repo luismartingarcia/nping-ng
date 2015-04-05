@@ -207,6 +207,23 @@ class NpingTimer {
 #define INDEX_CONN_ISSUED   0
 #define INDEX_CONN_ACCEPTED 1
 
+/* Array indexes for UDP unprivileged writes and reads */
+#define INDEX_UDP_WRITES  0
+#define INDEX_UDP_READS   1
+
+/* Stat identifiers for getters */
+#define STATS_TCP                (HEADER_TYPE_TCP)
+#define STATS_UDP                (HEADER_TYPE_UDP)
+#define STATS_ICMPv4             (HEADER_TYPE_ICMPv4)
+#define STATS_ICMPv6             (HEADER_TYPE_ICMPv6)
+#define STATS_IPv4               (HEADER_TYPE_IPv4)
+#define STATS_IPv6               (HEADER_TYPE_IPv6)
+#define STATS_ARP                (HEADER_TYPE_ARP)
+#define STATS_TCP_CONNECT        (-1)
+#define STATS_UDP_UNPRIV         (-2)
+#define STATS_ECHO_SERVER        (-3)
+#define STATS_TOTAL              (-4)
+
 
 class PacketStats {
 
@@ -221,6 +238,7 @@ class PacketStats {
     u64_t ip4[3];      /* IPv4 packets sent/received/echoed */
     u64_t ip6[3];      /* IPv6 packets sent/received/echoed */
     u64_t tcpconn[2];  /* TCP-Unprivileged connections attempted/accepted */
+    u64_t udpunpriv[2];/* UDP-Unprivileged write and read operations */
   //u64_y sctpconn[2]  /* SCTP-Unprivileged connections attempted/accepted */
 
     u32 echo_clients_served;
@@ -234,7 +252,7 @@ class PacketStats {
     int avg_rtt;
 
     int update_packet_count(int index, int ip_version, int proto, u32 pkt_len);
-    int update_connection_count(int index, int ip_version, int proto);
+    int update_unprivileged_counts(int index, int ip_version, int proto);
     u64_t *proto2stats(int proto);
     u64_t get_stat(int proto, int index);
 
@@ -248,6 +266,8 @@ class PacketStats {
     int update_clients_served();
     int update_connects(int ip_version, int proto);
     int update_accepts(int ip_version, int proto);
+    int update_reads(int ip_version, int proto, u32 pkt_len);
+    int update_writes(int ip_version, int proto, u32 pkt_len);
     int update_bytes_read(u32 count);
     int update_bytes_written(u32 count);
     int update_rtt(int rtt);

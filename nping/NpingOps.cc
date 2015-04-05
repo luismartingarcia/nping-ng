@@ -1452,13 +1452,13 @@ void NpingOps::displayStatistics(){
       for(u32 i=0; i<this->target_hosts.size(); i++){
         nping_print(VB_0|NO_NEWLINE, "Statistics for host %s:\n" , this->target_hosts[i]->getTargetAddress()->toString());
         if(this->mode(DO_TCP) || this->mode(DO_UDP) || this->mode(DO_ICMP) || this->mode(DO_ARP)){
-          this->target_hosts[i]->stats.print_proto_stats(HEADER_TYPE_RAW_DATA, " |_ ", print_echoed);
+          this->target_hosts[i]->stats.print_proto_stats(STATS_TOTAL, " |_ ", print_echoed);
         }
         if(this->mode(DO_TCP_CONNECT)){
-          nping_print(QT_1|NO_NEWLINE, "TCP connection attempts: %llu ", this->target_hosts[i]->stats.get_connects(HEADER_TYPE_TCP) );
-          nping_print(QT_1|NO_NEWLINE,"| Successful connections: %llu ", this->target_hosts[i]->stats.get_accepts(HEADER_TYPE_TCP) );
-          nping_print(QT_1|NO_NEWLINE,"| Failed: %llu ", this->target_hosts[i]->stats.get_connects_failed(HEADER_TYPE_TCP) );
-          nping_print(QT_1|NO_NEWLINE,"(%.2lf%%)\n |_ ", this->target_hosts[i]->stats.get_percent_failed(HEADER_TYPE_TCP) );
+          nping_print(QT_1|NO_NEWLINE, "TCP connection attempts: %llu ", this->target_hosts[i]->stats.get_connects(STATS_TCP_CONNECT) );
+          nping_print(QT_1|NO_NEWLINE,"| Successful connections: %llu ", this->target_hosts[i]->stats.get_accepts(STATS_TCP_CONNECT) );
+          nping_print(QT_1|NO_NEWLINE,"| Failed: %llu ", this->target_hosts[i]->stats.get_connects_failed(STATS_TCP_CONNECT) );
+          nping_print(QT_1|NO_NEWLINE,"(%.2lf%%)\n |_ ", this->target_hosts[i]->stats.get_percent_failed(STATS_TCP_CONNECT) );
         }
         if(this->mode(DO_UDP_UNPRIV)){
           nping_print(QT_1|NO_NEWLINE, "UDP write operations: %llu ", this->target_hosts[i]->stats.get_pkts_sent() );
@@ -1470,20 +1470,20 @@ void NpingOps::displayStatistics(){
         /* If we sent more than one type of packet, print separate stats for each protocol*/
         if(((int)this->mode(DO_TCP) + (int)this->mode(DO_UDP) + (int)this->mode(DO_ICMP) + (int)this->mode(DO_ARP)) >  1){
           if(this->mode(DO_TCP)){
-            this->target_hosts[i]->stats.print_proto_stats(HEADER_TYPE_TCP, " |_ ", print_echoed);
+            this->target_hosts[i]->stats.print_proto_stats(STATS_TCP, " |_ ", print_echoed);
           }
           if(this->mode(DO_UDP)){
-            this->target_hosts[i]->stats.print_proto_stats(HEADER_TYPE_UDP, " |_ ", print_echoed);
+            this->target_hosts[i]->stats.print_proto_stats(STATS_UDP, " |_ ", print_echoed);
           }
           if(this->mode(DO_ARP)){
-            this->target_hosts[i]->stats.print_proto_stats(HEADER_TYPE_ARP, " |_ ", print_echoed);
+            this->target_hosts[i]->stats.print_proto_stats(STATS_ARP, " |_ ", print_echoed);
           }
           if(this->mode(DO_ICMP)){
-            if(this->target_hosts[i]->stats.get_sent(HEADER_TYPE_ICMPv4)>0){
-              this->target_hosts[i]->stats.print_proto_stats(HEADER_TYPE_ICMPv4, " |_ ", print_echoed);
+            if(this->target_hosts[i]->stats.get_sent(STATS_ICMPv4)>0){
+              this->target_hosts[i]->stats.print_proto_stats(STATS_ICMPv4, " |_ ", print_echoed);
             }
             if(this->target_hosts[i]->stats.get_sent(HEADER_TYPE_ICMPv6)>0){
-              this->target_hosts[i]->stats.print_proto_stats(HEADER_TYPE_ICMPv6, " |_ ", print_echoed);
+              this->target_hosts[i]->stats.print_proto_stats(STATS_ICMPv6, " |_ ", print_echoed);
             }
           }
         }
@@ -1500,14 +1500,7 @@ void NpingOps::displayStatistics(){
 
   /* Sent/Recv/Echoed Packets */
   if(this->getRole()==ROLE_CLIENT){
-    nping_print(QT_1|NO_NEWLINE, "Raw packets sent: %llu ", this->stats.get_pkts_sent() );
-    nping_print(QT_1|NO_NEWLINE, "(%s) ", format_bytecount(this->stats.get_bytes_sent(), auxbuff, 256));
-    nping_print(QT_1|NO_NEWLINE,"| Rcvd: %llu ", this->stats.get_pkts_rcvd() );
-    nping_print(QT_1|NO_NEWLINE,"(%s) ", format_bytecount(this->stats.get_bytes_rcvd(), auxbuff, 256));
-    nping_print(QT_1|NO_NEWLINE,"| Lost: %llu ", this->stats.get_pkts_lost() );
-    nping_print(QT_1|NO_NEWLINE,"(%.2lf%%)", this->stats.get_percent_lost() );
-    nping_print(QT_1|NO_NEWLINE,"| Echoed: %llu ", this->stats.get_pkts_echoed() );
-    nping_print(QT_1,"(%s) ", format_bytecount(this->stats.get_bytes_echoed(), auxbuff, 256));
+    this->stats.print_proto_stats(HEADER_TYPE_RAW_DATA, NULL, print_echoed);
   }else if(this->getRole()==ROLE_SERVER){
     nping_print(QT_1|NO_NEWLINE, "Raw packets captured: %llu ", this->stats.get_pkts_rcvd() );
     nping_print(QT_1|NO_NEWLINE, "(%s) ", format_bytecount(this->stats.get_bytes_rcvd(), auxbuff, 256));
@@ -1518,10 +1511,10 @@ void NpingOps::displayStatistics(){
     nping_print(QT_1,"(%.2lf%%)", this->stats.get_percent_unmatched() );
   }else if(this->getRole()==ROLE_NORMAL){
     if(this->mode(DO_TCP_CONNECT)){
-      nping_print(QT_1|NO_NEWLINE, "TCP connection attempts: %llu ", this->stats.get_connects(HEADER_TYPE_TCP) );
-      nping_print(QT_1|NO_NEWLINE,"| Successful connections: %llu ", this->stats.get_accepts(HEADER_TYPE_TCP) );
-      nping_print(QT_1|NO_NEWLINE,"| Failed: %llu ", this->stats.get_connects_failed(HEADER_TYPE_TCP) );
-      nping_print(QT_1,"(%.2lf%%)", this->stats.get_percent_failed(HEADER_TYPE_TCP) );
+      nping_print(QT_1|NO_NEWLINE, "TCP connection attempts: %llu ", this->stats.get_connects(STATS_TCP_CONNECT));
+      nping_print(QT_1|NO_NEWLINE,"| Successful connections: %llu ", this->stats.get_accepts(STATS_TCP_CONNECT));
+      nping_print(QT_1|NO_NEWLINE,"| Failed: %llu ", this->stats.get_connects_failed(STATS_TCP_CONNECT));
+      nping_print(QT_1,"(%.2lf%%)", this->stats.get_percent_failed(STATS_TCP_CONNECT));
     }
     if(this->mode(DO_UDP_UNPRIV)){
       nping_print(QT_1|NO_NEWLINE, "UDP write operations: %llu ", this->stats.get_pkts_sent() );
@@ -1535,20 +1528,20 @@ void NpingOps::displayStatistics(){
       /* If we sent more than one type of packet, print separate stats for each protocol*/
       if(((int)this->mode(DO_TCP) + (int)this->mode(DO_UDP) + (int)this->mode(DO_ICMP) + (int)this->mode(DO_ARP)) >  1){
         if(this->mode(DO_TCP)){
-          this->stats.print_proto_stats(HEADER_TYPE_TCP, NULL, print_echoed);
+          this->stats.print_proto_stats(STATS_TCP, NULL, print_echoed);
         }
         if(this->mode(DO_UDP)){
-          this->stats.print_proto_stats(HEADER_TYPE_UDP, NULL, print_echoed);
+          this->stats.print_proto_stats(STATS_UDP, NULL, print_echoed);
         }
         if(this->mode(DO_ARP)){
-          this->stats.print_proto_stats(HEADER_TYPE_ARP, NULL, print_echoed);
+          this->stats.print_proto_stats(STATS_ARP, NULL, print_echoed);
         }
         if(this->mode(DO_ICMP)){
           if(this->stats.get_sent(HEADER_TYPE_ICMPv4)>0){
-            this->stats.print_proto_stats(HEADER_TYPE_ICMPv4, NULL, print_echoed);
+            this->stats.print_proto_stats(STATS_ICMPv4, NULL, print_echoed);
           }
           if(this->stats.get_sent(HEADER_TYPE_ICMPv6)>0){
-            this->stats.print_proto_stats(HEADER_TYPE_ICMPv6, NULL, print_echoed);
+            this->stats.print_proto_stats(STATS_ICMPv6, NULL, print_echoed);
           }
         }
       }

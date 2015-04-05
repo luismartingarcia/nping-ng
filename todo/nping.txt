@@ -63,6 +63,7 @@
 * Decide on packet output. Ideally, each PacketElement class should print itself.
   That's what we do now, but the problem is that we don't get "IP:Port > IP:Port"
   things like 192.168.1.3:4456 > 72.1.1.1:80, because the IPv4Header class
+
   doesn't know about the TCPHeader class that follows. Is it acceptable to
   print IPv4[...] TCP[...] or we want to have the original nping output back?
 
