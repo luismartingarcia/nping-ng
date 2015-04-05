@@ -1537,9 +1537,8 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
   * first unparsed argument. User may specify multiple target hosts.
   * */
   const char *next_spec=NULL;
-  while ( (next_spec= grab_next_host_spec(NULL, false, argc, argv)) != NULL ){
-    o.addTargetSpec(next_spec);
-  }
+  while ( (next_spec= grab_next_host_spec(NULL, false, argc, (const char **) argv)) != NULL )
+       o.addTargetSpec( (char *) next_spec );
   return OP_SUCCESS;
 } /* End of parseArguments() */
 
