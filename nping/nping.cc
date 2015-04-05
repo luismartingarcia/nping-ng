@@ -213,7 +213,7 @@ int main(int argc, char *argv[] ){
   switch( o.getRole() ){
 
         case ROLE_NORMAL:
-            prob.start(o.targets.Targets);
+            //prob.start(o.targets.Targets);
             prob.cleanup();
         break;
 

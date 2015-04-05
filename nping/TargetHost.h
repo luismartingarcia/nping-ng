@@ -1,8 +1,9 @@
 
 /***************************************************************************
- * ProbeEngine.cc -- Probe Mode is nping's default working mode. Basically,*
- * it involves sending the packets that the user requested at regular      *
- * intervals and capturing responses from the wire.                        *
+ * NpingTarget.h -- The NpingTarget class encapsulates much of the         *
+ * information Nping has about a host. Things like next hop address or the *
+ * network interface that should be used to send probes to the target, are *
+ * stored in this class as they are determined.                            *
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
@@ -89,168 +90,59 @@
  *                                                                         *
  ***************************************************************************/
 
+#ifndef __TARGETHOST_H__
+#define __TARGETHOST_H__ 1
+
 #include "nping.h"
-#include "ProbeEngine.h"
-#include <vector>
-#include "nsock.h"
-#include "output.h"
-#include "NpingOps.h"
 
-extern NpingOps o;
+/* The internal attribute net_distance may be tested for one of the following to
+ * determine if we've discovered how far the target is. */
+#define DISTANCE_UNKONWN -1   /* We don't know how far the host is. */
+#define DISTANCE_DIRECT   0   /* The host is directly connected.    */
 
+class TargetHost{
 
-ProbeEngine::ProbeEngine() {
-  this->reset();
-} /* End of ProbeEngine constructor */
+  private:
+    IPAddress *target_addr;   /* Target's IP address                                  */
+    IPAddress *source_addr;   /* Source address for packets sent to the target        */
+    IPAddress *nxthop_addr;   /* Address of the gateway 2be used to reach the target  */
 
+    MACAddress *target_mac;  /* Target's MAC. Valid only if tgt is directly connected */
+    MACAddress *source_mac;  /* Source MAC address for frames sent to target          */
+    MACAddress *nxthop_mac;  /* Destination MAC address for frames sent to target     */
 
-ProbeEngine::~ProbeEngine() {
-} /* End of ProbeEngine destructor */
+    int net_distance;        /* If >=0, indicates how many hops away the target is    */
+    struct interface_info iface; /* Info about the proper interface to reach target   */
 
+  public:
+    TargetHost();
+    ~TargetHost();
 
-/** Sets every attribute to its default value- */
-void ProbeEngine::reset() {
-  this->nsock_init=false;
-} /* End of reset() */
+    /* Target Host IP Address */
+    int setTargetAddress(IPAddress *addr);
+    IPAddress *getTargetAddress();
 
+    /* Source IP Address */
+    int setSourceAddress(IPAddress *addr);
+    IPAddress *getSourceAddress();
 
-/** Sets up the internal nsock pool and the nsock trace level */
-int ProbeEngine::init_nsock(){
-  struct timeval now;
-  if( nsock_init==false ){
-      /* Create a new nsock pool */
-      if ((nsp = nsp_new(NULL)) == NULL)
-        nping_fatal(QT_3, "Failed to create new pool.  QUITTING.\n");
+    /* Next Hop IP Address */
+    int setNextHopAddress(IPAddress *addr);
+    IPAddress *getNextHopAddress();
 
-      /* Allow broadcast addresses */
-      nsp_setbroadcast(nsp, 1);
+    /* Network distance to the host */
+    int setNetworkDistance(int distance);
+    int getNetworkDistance();
 
-      /* Set nsock trace level */
-      gettimeofday(&now, NULL);
-      if( o.getDebugging() == DBG_5)
-        nsp_settrace(nsp, NULL, 1 , &now);
-      else if( o.getDebugging() > DBG_5 )
-        nsp_settrace(nsp, NULL, 10 , &now);
-      /* Flag it as already initialized so we don't do it again */
-      nsock_init=true;
-  }
-  return OP_SUCCESS;
-} /* End of init() */
+    /* Interface Information */
+    int setInterfaceInfo(struct interface_info ifinfo);
+    const char *getInterface();
 
+    void reset();
+    bool done();
+    int schedule();
+    const char *interface();
 
-/** Cleans up the internal nsock pool and any other internal data that
-  * needs to be taken care of before destroying the object. */
-int ProbeEngine::cleanup(){
-  nsp_delete(this->nsp);
-  return OP_SUCCESS;
-} /* End of cleanup() */
+};
 
-
-/** Returns the internal nsock pool.
-  * @warning the caller must ensure that init_nsock() has been called before
-  * calling this method; otherwise, it will fatal() */
-nsock_pool ProbeEngine::getNsockPool(){
-  if( this->nsock_init==false)
-    nping_fatal(QT_3, "getNsockPool() called before init_nsock(). Please report a bug.");
-  return this->nsp;
-} /* End of getNsockPool() */
-
-
-
-/* This method gets the probe engien ready for packet capture. Basically it
- * obtains a pcap descriptor from nsock and sets an appropriate BPF filter. */
-int ProbeEngine::setup_sniffer(const char *iface, const char *bpf_filter) {
-  char *errmsg = NULL;
-  char pcapdev[128];
-
-#ifdef WIN32
-  /* Nmap normally uses device names obtained through dnet for interfaces, but
-     Pcap has its own naming system.  So the conversion is done here */
-  if (!DnetName2PcapName(iface, pcapdev, sizeof(pcapdev))) {
-    /* Oh crap -- couldn't find the corresponding dev apparently.  Let's just go
-       with what we have then ... */
-    Strncpy(pcapdev, iface, sizeof(pcapdev));
-  }
-#else
-  Strncpy(pcapdev, iface, sizeof(pcapdev));
-#endif
-
-  /* Obtain a pcap descriptor */
-  if ((errmsg = nsock_pcap_open(this->nsp, this->pcap_nsi, pcapdev, 8192, 0, bpf_filter)) != NULL)
-    fatal("Error opening capture device %s --> %s\n", pcapdev, errmsg);
-
-  /* Store the pcap NSI inside the pool so we can retrieve it inside a callback */
-  nsp_setud(this->nsp, (void *)&(this->pcap_nsi));
-
-  return OP_SUCCESS;
-}
-
-
-/** This function handles regular ping mode. Basically it handles both
-  * unprivileged modes (TCP_CONNECT and UDP_UNPRIV) and raw packet modes
-  * (TCP, UDP, ICMP, ARP). This function is where the loops that iterate
-  * over target hosts and target ports are located. It uses the nsock lib
-  * to schedule transmissions. The actual Tx and Rx is done inside the nsock
-  * event handlers, here we just schedule them, take care of the timers,
-  * set up pcap and the bpf filter, etc. */
-int ProbeEngine::start(vector<NpingTarget *> &Targets){
-
-  bool probemode_done = false;
-  const char *bpf_filter = NULL;
-  struct timeval begin_time;
-
-  nping_print(DBG_1, "Starting Nping Probe Engine...\n");
-
-  /* Initialize variables, timers, etc. */
-  gettimeofday(&begin_time, NULL);
-  this->init_nsock();
-
-  /* Build the BPF filter */
-  bpf_filter = this->bpf_filter(Targets);
-  nping_print(DBG_2, "[ProbeEngine] Interface=%s BPF:%s\n", Targets[0]->interface(), bpf_filter);
-
-  /* Set up the sniffer */
-
-
-  /* Do the Probe Mode rounds */
-  while (!probemode_done) {
-    probemode_done = true; /* It will remain true only when all hosts are .done() */
-
-    /* Go through the list of hosts and ask them to schedule their probes */
-    for (unsigned int i = 0; i < Targets.size(); i++) {
-
-      /* If the host is not done yet, call shedule() to let it schedule
-       * new probes. */
-      if (!Targets[i]->done()) {
-        probemode_done = false;
-        Targets[i]->schedule();
-        nping_print(DBG_2, "[ProbeEngine] Host #%u not done\n", i);
-      }
-    }
-
-    /* Handle scheduled events */
-    //global_netctl.handle_events();
-
-  }
-
-  /* Cleanup and return */
-
-  nping_print(DBG_1, "Nping Probe Engine Finished.\n");
-  return OP_SUCCESS;
-
-} /* End of start() */
-
-
-/** This function creates a BPF filter specification, suitable to be passed to
-  * pcap_compile() or nsock_pcap_open(). It reads info from "NpingOps o" and
-  * creates the right BPF filter for the current operation mode. However, if
-  * user has supplied a custom BPF filter through option --bpf-filter, the
-  * same string stored in o.getBPFFilterSpec() is returned (so the caller
-  * should not even bother to check o.issetBPFFilterSpec() because that check
-  * is done here already.
-  * @warning Returned pointer is a statically allocated buffer that subsequent
-  *  calls will overwrite. */
-char *ProbeEngine::bpf_filter(vector<NpingTarget *> &Targets){
-  static char filterstring[2048];
-  return filterstring;
-} /* End of getBPFFilterString() */
+#endif /* __TARGETHOST_H__ */

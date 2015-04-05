@@ -1,6 +1,6 @@
 
 /***************************************************************************
- * ProbeEngine.h -- Probe Mode is nping's default working mode. Basically,   *
+ * ProbeEngine.cc -- Probe Mode is nping's default working mode. Basically,*
  * it involves sending the packets that the user requested at regular      *
  * intervals and capturing responses from the wire.                        *
  *                                                                         *
@@ -88,46 +88,169 @@
  * included with Nmap.                                                     *
  *                                                                         *
  ***************************************************************************/
-#ifndef __PROBE_ENGINE_H__
-#define __PROBE_ENGINE_H__ 1
-
-
 
 #include "nping.h"
-#include "nsock.h"
+#include "ProbeEngine.h"
 #include <vector>
-#include "NpingTarget.h" // Remove this one
-#include "utils_net.h"
-#include "utils.h"
-using namespace std;
+#include "nsock.h"
+#include "output.h"
+#include "NpingOps.h"
 
-class ProbeEngine  {
-
-  private:
-    nsock_pool nsp;        /* Internal Nsock pool                     */
-    bool nsock_init;       /* True if Nsock pool has been initialized */
-    nsock_iod pcap_nsi;    /* Nsock Pcap descriptor.                  */
-
-  public:
-
-    ProbeEngine();
-    ~ProbeEngine();
-    void reset();
-    int init_nsock();
-    int start(vector<NpingTarget *> &Targets);
-    int cleanup();
-    nsock_pool getNsockPool();
-
-    static char *bpf_filter(vector<NpingTarget *> &Targets);
-    int setup_sniffer(const char *iface, const char *bpf_filter);
-
-}; /* End of class ProbeEngine */
+extern NpingOps o;
 
 
-/* Handler wrappers */
-void nping_event_handler(nsock_pool nsp, nsock_event nse, void *arg);
-void tcpconnect_event_handler(nsock_pool nsp, nsock_event nse, void *arg);
-void udpunpriv_event_handler(nsock_pool nsp, nsock_event nse, void *arg);
-void delayed_output_handler(nsock_pool nsp, nsock_event nse, void *arg);
+ProbeEngine::ProbeEngine() {
+  this->reset();
+} /* End of ProbeEngine constructor */
 
-#endif /* __PROBE_ENGINE_H__ */
+
+ProbeEngine::~ProbeEngine() {
+} /* End of ProbeEngine destructor */
+
+
+/** Sets every attribute to its default value- */
+void ProbeEngine::reset() {
+  this->nsock_init=false;
+} /* End of reset() */
+
+
+/** Sets up the internal nsock pool and the nsock trace level */
+int ProbeEngine::init_nsock(){
+  struct timeval now;
+  if( nsock_init==false ){
+      /* Create a new nsock pool */
+      if ((nsp = nsp_new(NULL)) == NULL)
+        nping_fatal(QT_3, "Failed to create new pool.  QUITTING.\n");
+
+      /* Allow broadcast addresses */
+      nsp_setbroadcast(nsp, 1);
+
+      /* Set nsock trace level */
+      gettimeofday(&now, NULL);
+      if( o.getDebugging() == DBG_5)
+        nsp_settrace(nsp, NULL, 1 , &now);
+      else if( o.getDebugging() > DBG_5 )
+        nsp_settrace(nsp, NULL, 10 , &now);
+      /* Flag it as already initialized so we don't do it again */
+      nsock_init=true;
+  }
+  return OP_SUCCESS;
+} /* End of init() */
+
+
+/** Cleans up the internal nsock pool and any other internal data that
+  * needs to be taken care of before destroying the object. */
+int ProbeEngine::cleanup(){
+  nsp_delete(this->nsp);
+  return OP_SUCCESS;
+} /* End of cleanup() */
+
+
+/** Returns the internal nsock pool.
+  * @warning the caller must ensure that init_nsock() has been called before
+  * calling this method; otherwise, it will fatal() */
+nsock_pool ProbeEngine::getNsockPool(){
+  if( this->nsock_init==false)
+    nping_fatal(QT_3, "getNsockPool() called before init_nsock(). Please report a bug.");
+  return this->nsp;
+} /* End of getNsockPool() */
+
+
+
+/* This method gets the probe engien ready for packet capture. Basically it
+ * obtains a pcap descriptor from nsock and sets an appropriate BPF filter. */
+int ProbeEngine::setup_sniffer(const char *iface, const char *bpf_filter) {
+  char *errmsg = NULL;
+  char pcapdev[128];
+
+#ifdef WIN32
+  /* Nmap normally uses device names obtained through dnet for interfaces, but
+     Pcap has its own naming system.  So the conversion is done here */
+  if (!DnetName2PcapName(iface, pcapdev, sizeof(pcapdev))) {
+    /* Oh crap -- couldn't find the corresponding dev apparently.  Let's just go
+       with what we have then ... */
+    Strncpy(pcapdev, iface, sizeof(pcapdev));
+  }
+#else
+  Strncpy(pcapdev, iface, sizeof(pcapdev));
+#endif
+
+  /* Obtain a pcap descriptor */
+  if ((errmsg = nsock_pcap_open(this->nsp, this->pcap_nsi, pcapdev, 8192, 0, bpf_filter)) != NULL)
+    fatal("Error opening capture device %s --> %s\n", pcapdev, errmsg);
+
+  /* Store the pcap NSI inside the pool so we can retrieve it inside a callback */
+  nsp_setud(this->nsp, (void *)&(this->pcap_nsi));
+
+  return OP_SUCCESS;
+}
+
+
+/** This function handles regular ping mode. Basically it handles both
+  * unprivileged modes (TCP_CONNECT and UDP_UNPRIV) and raw packet modes
+  * (TCP, UDP, ICMP, ARP). This function is where the loops that iterate
+  * over target hosts and target ports are located. It uses the nsock lib
+  * to schedule transmissions. The actual Tx and Rx is done inside the nsock
+  * event handlers, here we just schedule them, take care of the timers,
+  * set up pcap and the bpf filter, etc. */
+int ProbeEngine::start(vector<TargetHost *> &Targets){
+
+  bool probemode_done = false;
+  const char *bpf_filter = NULL;
+  struct timeval begin_time;
+
+  nping_print(DBG_1, "Starting Nping Probe Engine...\n");
+
+  /* Initialize variables, timers, etc. */
+  gettimeofday(&begin_time, NULL);
+  this->init_nsock();
+
+  /* Build the BPF filter */
+  bpf_filter = this->bpf_filter(Targets);
+  nping_print(DBG_2, "[ProbeEngine] Interface=%s BPF:%s\n", Targets[0]->interface(), bpf_filter);
+
+  /* Set up the sniffer */
+
+
+  /* Do the Probe Mode rounds */
+  while (!probemode_done) {
+    probemode_done = true; /* It will remain true only when all hosts are .done() */
+
+    /* Go through the list of hosts and ask them to schedule their probes */
+    for (unsigned int i = 0; i < Targets.size(); i++) {
+
+      /* If the host is not done yet, call shedule() to let it schedule
+       * new probes. */
+      if (!Targets[i]->done()) {
+        probemode_done = false;
+        Targets[i]->schedule();
+        nping_print(DBG_2, "[ProbeEngine] Host #%u not done\n", i);
+      }
+    }
+
+    /* Handle scheduled events */
+    //global_netctl.handle_events();
+
+  }
+
+  /* Cleanup and return */
+
+  nping_print(DBG_1, "Nping Probe Engine Finished.\n");
+  return OP_SUCCESS;
+
+} /* End of start() */
+
+
+/** This function creates a BPF filter specification, suitable to be passed to
+  * pcap_compile() or nsock_pcap_open(). It reads info from "NpingOps o" and
+  * creates the right BPF filter for the current operation mode. However, if
+  * user has supplied a custom BPF filter through option --bpf-filter, the
+  * same string stored in o.getBPFFilterSpec() is returned (so the caller
+  * should not even bother to check o.issetBPFFilterSpec() because that check
+  * is done here already.
+  * @warning Returned pointer is a statically allocated buffer that subsequent
+  *  calls will overwrite. */
+char *ProbeEngine::bpf_filter(vector<TargetHost *> &Targets){
+  static char filterstring[2048];
+  return filterstring;
+} /* End of getBPFFilterString() */

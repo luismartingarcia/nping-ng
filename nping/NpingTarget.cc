@@ -1104,25 +1104,3 @@ void NpingTarget::printRTTs(){
     nping_print(QT_1,"| Avg rtt: N/A" );
 } /* End of printRTTs() */
 
-
-
-
-
-/******************************************************************************/
-/* NEW STUFF                                                                  */
-/******************************************************************************/
-
-bool NpingTarget::done(){
-  printf("done()\n");
-  return false;
-}
-
-int NpingTarget::schedule(){
-  printf("schedule()\n");
-  return OP_SUCCESS;
-}
-
-const char *NpingTarget::interface(){
-  printf("interface()\n");
-  return NULL;
-}
