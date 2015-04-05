@@ -250,6 +250,8 @@ class NpingOps {
     bool mtu_set;
     char *ip_options;         /* IP Options                            */
     bool ip_options_set;
+    u8 ip_proto;
+    bool ip_proto_set;
     IPAddress *spoof_addr;    /* Spoofed source IP address             */
 
     /* TCP / UDP */
