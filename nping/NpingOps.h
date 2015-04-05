@@ -427,8 +427,7 @@ class NpingOps {
     u16 *getTargetPorts(u16 *len);
     int setTargetPorts(u16 *ports_array, u16 total_ports);
     bool issetTargetPorts();
-    bool scan_mode_uses_target_ports(int mode);
-
+    bool scan_mode_uses_target_ports();
     int setSourcePorts(u16 *ports_array, u16 total_ports);
     u16 *getSourcePorts(u16 *len);
     bool issetSourcePorts();
