@@ -218,6 +218,22 @@ int setsockaddrany(struct sockaddr_storage *ss){
 } /* End of setsockaddrany() */
 
 
+
+
+/* Sets the sin_port (or sin6_port) member of the supplied sockaddr. */
+int setsockaddrport(struct sockaddr_storage *ss, u16 port){
+  struct sockaddr_in *s4=(struct sockaddr_in *)ss;
+  struct sockaddr_in6 *s6=(struct sockaddr_in6 *)ss;
+  if(s4->sin_family==AF_INET)
+    s4->sin_port=htons(port);
+  else if(s6->sin6_family==AF_INET6)
+    s6->sin6_port=htons(port);
+  else
+      return OP_FAILURE;
+  return OP_SUCCESS;
+} /* End of setsockaddrport() */
+
+
 /** Returns true if supplied value corresponds to a valid RFC compliant ICMP
  *  Code. Otherwise it returns false.
  *  @warning The fact that a given value matches a standard code does not
