@@ -251,11 +251,16 @@ class NpingOps {
     bool ipversion_set;
     struct in_addr ipv4_src_address;     /* Source IPv4 address        */
     bool ipv4_src_address_set;
-    char *ip_options;         /* IP Options                            */
+
+    char *ip_options;
     bool ip_options_set;
 
+    u8 ip_proto;
+    bool ip_proto_set;
+
     /* IPv6 */
-    u8 ipv6_tclass;           /* Traffic Class                         */
+    u8 ipv6_tclass;
+
     bool ipv6_tclass_set;
     u32 ipv6_flowlabel;       /* Flow Label                            */
     bool ipv6_flowlabel_set;
@@ -504,6 +509,10 @@ class NpingOps {
     int setMTU(u32 t);
     u32 getMTU();
     bool issetMTU();
+
+    int setIPProto(u8 proto);
+    u8 getIPProto();
+    bool issetIPProto();
 
     /* IPv6 */
     int setTrafficClass(u8 val);

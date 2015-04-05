@@ -253,6 +253,7 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
   {"badsum-ip", no_argument, 0, 0},
   {"ip-options", required_argument, 0, 0},
   {"mtu", required_argument, 0, 0},
+  {"ip-proto", required_argument, 0, 0},
   /* Remember also: "-f" : Fragment packets*/
 
   /* IPv6 */
@@ -809,6 +810,11 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
         }else{
             nping_fatal(QT_3,"MTU must be >0 and multiple of 8");
         }
+    } else if (optcmp(long_options[option_index].name, "ip-proto") == 0 ){
+        if ( parse_u8(optarg, &aux8) == OP_SUCCESS )
+          o.setIPProto(aux8);
+        else
+          nping_fatal(QT_3,"Protocol number must be a number between 0 and 255 (inclusive)");
 
 
 /* IPv6 OPTIONS **************************************************************/

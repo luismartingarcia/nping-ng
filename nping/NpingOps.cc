@@ -224,6 +224,9 @@ NpingOps::NpingOps() {
     mtu=0;
     mtu_set=false;
 
+    ip_proto=0;
+    ip_proto_set=false;
+
     badsum_ip=false;
     badsum_ip_set=false;
 
@@ -1270,6 +1273,27 @@ u32 NpingOps::getMTU(){
 bool NpingOps::issetMTU(){
   return this->mtu_set;
 } /* End of issetMTU() */
+
+
+/* Sets the IPv4 "Protocol field" or the IPv6 "Next Header" field. */
+int NpingOps::setIPProto(u8 proto){
+  this->ip_proto=proto;
+  this->ip_proto_set=true;
+  return OP_SUCCESS;
+} /* End of setIPProto() */
+
+/* Returns the IANA protocol number that will be used for the IPv4
+ * "Protocol" field or the IPv6 "Next Header" field. Note that when
+ * users supply an explicit value, the IPProto may not match the actual
+ * next header in the packet. */
+u8 NpingOps::getIPProto(){
+  return this->ip_proto;
+} /* End of getIPProto() */
+
+
+bool NpingOps::issetIPProto(){
+  return this->ip_proto_set;
+} /* End of issetIPProto() */
 
 
 /** Sets attribute badsum_ip to "true". (Generate invalid checksums in IP

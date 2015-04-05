@@ -640,8 +640,8 @@ int ProbeMode::fillPacket(NpingTarget *target, u16 port, u8 *buff, int bufflen, 
 /** Fills an IPv4Header object with information obtained from the NpingOps
  * class.
  * @return OP_SUCCESS on success and fatal()s in case of failure. */
-int ProbeMode::createIPv4(IPv4Header *i, PacketElement *next_element, const char *next_proto, NpingTarget *target){
-  if( i==NULL || next_proto==NULL || target==NULL)
+int ProbeMode::createIPv4(IPv4Header *i, PacketElement *next_element, u8 next_proto, NpingTarget *target){
+  if( i==NULL || target==NULL)
     nping_fatal(QT_3,"createIPv4(): NULL pointer supplied.");
 
   i->setNextElement( next_element );   /* Set datagram payload */
@@ -686,8 +686,8 @@ int ProbeMode::createIPv4(IPv4Header *i, PacketElement *next_element, const char
 /** Fills an IPv6Header object with information obtained from the NpingOps
  * class.
  * @return OP_SUCCESS on success and fatal()s in case of failure. */
-int ProbeMode::createIPv6(IPv6Header *i, PacketElement *next_element, const char *next_proto, NpingTarget *target){
- if( i==NULL || next_proto==NULL || target==NULL)
+int ProbeMode::createIPv6(IPv6Header *i, PacketElement *next_element, u8 next_proto, NpingTarget *target){
+ if( i==NULL || target==NULL)
     nping_fatal(QT_3,"createIPv6(): NULL pointer supplied.");
 
     /* Set datagram payload */
@@ -853,7 +853,7 @@ int ProbeMode::fillPacketTCP(NpingTarget *target, u16 port, u8 *buff, int buffle
     case IP_VERSION_4:
 
         /* Fill the IPv4Header object with the info from NpingOps */
-        createIPv4(&i, &t, "TCP", target);
+        createIPv4(&i, &t, o.issetIPProto() ? o.getIPProto() : HEADER_TYPE_TCP, target);
 
         tip=target->getIPv4Address();
         i.getSourceAddress(&sip);
@@ -870,7 +870,7 @@ int ProbeMode::fillPacketTCP(NpingTarget *target, u16 port, u8 *buff, int buffle
     case IP_VERSION_6:
         if( o.sendEth() ){
             /* Fill the IPv6Header object with the info from NpingOps */
-            createIPv6(&i6, &t, "TCP", target);
+            createIPv6(&i6, &t, o.issetIPProto() ? o.getIPProto() : HEADER_TYPE_TCP, target);
 
             if( o.getBadsum() == true )
                 t.setSumRandom();
@@ -971,7 +971,7 @@ int ProbeMode::fillPacketUDP(NpingTarget *target, u16 port, u8 *buff, int buffle
     case IP_VERSION_4:
 
         /* Fill the IPv4Header object with the info from NpingOps */
-        createIPv4(&i, &u, "UDP", target);
+        createIPv4(&i, &u, o.issetIPProto() ? o.getIPProto() : HEADER_TYPE_UDP, target);
 
         /* Set checksum */
         tip=target->getIPv4Address();
@@ -990,7 +990,7 @@ int ProbeMode::fillPacketUDP(NpingTarget *target, u16 port, u8 *buff, int buffle
 
        if( o.sendEth() ){
             /* Fill the IPv6Header object with the info from NpingOps */
-            createIPv6(&i6, &u, "UDP", target);
+            createIPv6(&i6, &u, o.issetIPProto() ? o.getIPProto() : HEADER_TYPE_UDP, target);
 
             if( o.getBadsum() == true ){
                 u.setSumRandom();
@@ -1143,7 +1143,7 @@ int ProbeMode::fillPacketICMP(NpingTarget *target, u8 *buff, int bufflen, int *f
     c4.setSum(); /* TODO: Do we want to implement --badsum-icmp? */
 
     /* Fill the IPv4Header object with the info from NpingOps */
-    createIPv4(&i, &c4, "ICMP", target);
+    createIPv4(&i, &c4, o.issetIPProto() ? o.getIPProto() : HEADER_TYPE_ICMPv4, target);
 
     /* Store result in user supplied buffer */
     *filledlen = i.dumpToBinaryBuffer(buff, bufflen);
@@ -1177,7 +1177,7 @@ int ProbeMode::fillPacketICMP(NpingTarget *target, u8 *buff, int bufflen, int *f
     }
 
     /* Fill the IPv4Header object with the info from NpingOps */
-    createIPv6(&i6, &c6, "ICMPv6", target);
+    createIPv6(&i6, &c6, o.issetIPProto() ? o.getIPProto() : HEADER_TYPE_ICMPv6, target);
 
     /* Compute checksum */
     c6.setSum();
