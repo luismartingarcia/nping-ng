@@ -976,14 +976,14 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
         exit(0);
     break; /* case 'V': */
 
-    case 'c': /* Packet count */
-        if( meansRandom(optarg) ){
-           o.setPacketCount( get_random_u32()%1024 );
-        }else if( parse_u32(optarg, &aux32) == OP_SUCCESS ){
-            o.setPacketCount(aux32);
-        }else{
-            nping_fatal(QT_3,"Packet count must be an integer greater than 0.");
-        }
+    case 'c': /* Packet rounds */
+      if( meansRandom(optarg) ){
+        o.setRounds( get_random_u32()%1024 );
+      }else if( parse_u32(optarg, &aux32) == OP_SUCCESS ){
+        o.setRounds(aux32);
+      }else{
+        nping_fatal(QT_3,"Packet rounds must be an integer greater than 0.");
+      }
     break; /* case 'c': */
 
     case 'e': /* Network interface */

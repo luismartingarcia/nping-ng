@@ -155,8 +155,8 @@ NpingOps::NpingOps() {
     show_sent_pkts_set=false;
 
     /* Operation and Performance */
-    pcount=DEFAULT_PACKET_COUNT;
-    pcount_set=false;
+    rounds=DEFAULT_PACKET_ROUNDS;
+    rounds_set=false;
 
     sendpref=0;
     sendpref_set=false;
@@ -569,31 +569,30 @@ bool NpingOps::issetShowSentPackets(){
  *  Operation and Performance                                                 *
  ******************************************************************************/
 
-/** Sets packet count (number of packets that should be sent to each target)
- *  Supplied parameter must be a positive integer >0.
+/** Sets packet rounds (number of times that we iterate over each target host)
  *  @return OP_SUCCESS on success and OP_FAILURE in case of error.           */
-int NpingOps::setPacketCount(u32 val){
+int NpingOps::setRounds(u32 val){
   /* If zero is supplied, set highest value */
-  if( val==0 )
-    this->pcount=0xFFFFFFFF;
+  if(val==0)
+    this->rounds=0xFFFFFFFF;
   else
-    pcount=val;
-  this->pcount_set=true;
+    this->rounds=val;
+  this->rounds_set=true;
   return OP_SUCCESS;
-} /* End of setPacketCount() */
+} /* End of setRounds() */
 
 
 /** Returns value of attribute pcount (number of packets that should be sent
  *  to each target)  */
-u32 NpingOps::getPacketCount(){
-  return this->pcount;
-} /* End of getPacketCount() */
+u32 NpingOps::getRounds(){
+  return this->rounds;
+} /* End of getRounds() */
 
 
 /* Returns true if option has been set */
-bool NpingOps::issetPacketCount(){
-  return this->pcount_set;
-} /* End of issetPacketCount() */
+bool NpingOps::issetRounds(){
+  return this->rounds_set;
+} /* End of issetRounds() */
 
 
 /** Sets attribute sendpref which defines user's preference for packet
@@ -1758,8 +1757,8 @@ if (this->havePcap()==false){
   /* If --traceroute is set but the users has not specified any custom packet
    * count, set the packet count to something higher, so we reach hosts over
    * the Internet. */
-  if( !this->issetPacketCount() && this->mode(DO_TRACEROUTE) ){
-    this->setPacketCount(TRACEROUTE_PACKET_COUNT);
+  if( !this->issetRounds() && this->mode(DO_TRACEROUTE) ){
+    this->setRounds(TRACEROUTE_PACKET_ROUNDS);
   }
 
 /** UDP UNPRIVILEGED MODE? ***************************************************/
@@ -1847,8 +1846,8 @@ if (this->havePcap()==false){
 #endif
 
 /** MISCELLANEOUS ************************************************************/
-if(this->source_ports!=NULL && this->mode(DO_TCP_CONNECT) && this->getPacketCount()>1 )
-    error("Warning: Setting a source port in TCP-Connect mode with %d rounds may not work after the first round. You may want to do just one round (use --count 1).", this->getPacketCount() );
+if(this->source_ports!=NULL && this->mode(DO_TCP_CONNECT) && this->getRounds()>1 )
+    error("Warning: Setting a source port in TCP-Connect mode with %d rounds may not work after the first round. You may want to do just one round (use --count 1).", this->getRounds() );
 } /* End of validateOptions() */
 
 
@@ -2297,7 +2296,7 @@ int NpingOps::echoPayload(bool value){
 int NpingOps::getTotalProbes(){
   u16 total_ports=0;
   this->getTargetPorts(&total_ports);
-  return this->getPacketCount() * total_ports * this->target_hosts.size();
+  return this->getRounds() * total_ports * this->target_hosts.size();
 }
 
 

@@ -207,8 +207,8 @@ class NpingOps {
     bool show_sent_pkts_set;
 
     /* Operation and Performance */
-    u32 pcount;               /* No of packets 2be sent to each target */
-    bool pcount_set;
+    u32 rounds;               /* No of times a host is targeted        */
+    bool rounds_set;
     int sendpref;             /* Sending preference: eth or raw ip     */
     bool sendpref_set;
     bool send_eth;            /* True: send at raw ethernet level      */
@@ -390,9 +390,9 @@ class NpingOps {
     long getDelay();
     bool issetDelay();
 
-    int setPacketCount(u32 val);
-    u32 getPacketCount();
-    bool issetPacketCount();
+    int setRounds(u32 val);
+    u32 getRounds();
+    bool issetRounds();
 
     int setSendPreference(int v);
     int getSendPreference();

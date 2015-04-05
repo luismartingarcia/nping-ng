@@ -347,7 +347,7 @@
 
 
 /**< Default number of probes that are sent to each target */
-#define DEFAULT_PACKET_COUNT 5          
+#define DEFAULT_PACKET_ROUNDS 5
 
 /* When doing traceroute, the number of packets sent to each host must be
  * higher because 5 is probably not enough to reach the average target on the
@@ -359,7 +359,7 @@
  *    nication Networks & Applications Conference (ATNAC). Australia.
  *    <http://portal.acm.org/citation.cfm?id=948109.948116>
  */
-#define TRACEROUTE_PACKET_COUNT 48
+#define TRACEROUTE_PACKET_ROUNDS 48
 
 #define DEFAULT_DELAY 1000              /**< Milliseconds between each probe */
 
