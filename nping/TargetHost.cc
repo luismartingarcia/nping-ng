@@ -481,7 +481,15 @@ int TargetHost::getNextPacketBatch(vector<PacketElement *> &Packets){
   if(this->icmp6!=NULL){
     assert(ip_version==AF_INET6);
     myicmp6=this->getICMPv6Header();
-    myicmp6->setNextElement(myraw);
+
+    /* Set a payload after the last packet header. Note that getICMPv6Header()
+     * may return more than a single ICMPv6Header as it may be followed by
+     * IMCPv6Option headers or ICMPv6RRBody headers. To account for this, we
+     * find the last element in the chain, and add the payload afterwards. */
+    PacketElement *auxhdr=myicmp6;
+    while(auxhdr->getNextElement()!=NULL)
+        auxhdr=auxhdr->getNextElement();
+    auxhdr->setNextElement(myraw);
     myip6=this->getIPv6Header("ICMPv6");
     myip6->setNextElement(myicmp6);
     myip6->setPayloadLength();
@@ -739,7 +747,7 @@ ICMPv4Header *TargetHost::getICMPv4Header(){
 
 ICMPv6Header *TargetHost::getICMPv6Header(){
   ICMPv6Header *myicmp6=NULL;
-  u8 aux8=0;
+  ICMPv6RRBody *rrbody=NULL;
   assert(this->icmp6!=NULL);
   myicmp6=new ICMPv6Header();
 
@@ -813,6 +821,64 @@ ICMPv6Header *TargetHost::getICMPv6Header(){
       myicmp6->setDestinationAddress(this->icmp6->redir_dest.getNextValue());
     break;
 
+    case ICMPv6_RTRRENUM:
+      /* Router renumbering flags */
+      aux8=0;
+      /* Extract flag info from the template and set the appropriate bits on
+       * an 8-bit aux variable */
+      if(this->icmp6->renum_T.getNextValue()==true)
+        aux8= aux8 | ICMPv6_RR_FLAG_T;
+      if(this->icmp6->renum_R.getNextValue()==true)
+        aux8= aux8 | ICMPv6_RR_FLAG_R;
+      if(this->icmp6->renum_A.getNextValue()==true)
+        aux8= aux8 | ICMPv6_RR_FLAG_A;
+      if(this->icmp6->renum_S.getNextValue()==true)
+        aux8= aux8 | ICMPv6_RR_FLAG_S;
+      if(this->icmp6->renum_P.getNextValue()==true)
+        aux8= aux8 | ICMPv6_RR_FLAG_P;
+      myicmp6->setFlags(aux8);
+      myicmp6->setSequence(this->icmp6->renum_seq.getNextValue());
+      myicmp6->setSegmentNumber(this->icmp6->renum_seg.getNextValue());
+      myicmp6->setMaxDelay(this->icmp6->renum_delay.getNextValue());
+
+      /* Now, if we are sending a known RR type (command, result or reset), we
+       * instantiate an RRBody header and append it to the ICMPv6Header */
+      if(myicmp6->getCode()==ICMPv6_RTRRENUM_COMMAND ||
+         myicmp6->getCode()==ICMPv6_RTRRENUM_RESULT ||
+         myicmp6->getCode()==ICMPv6_RTRRENUM_SEQ_RESET){
+        rrbody=new ICMPv6RRBody(myicmp6->getCode());
+        myicmp6->setNextElement(rrbody);
+
+        /* Command */
+        if(myicmp6->getCode()==ICMPv6_RTRRENUM_COMMAND){
+          rrbody->setOpCode(this->icmp6->renum_mp_op_code.getNextValue());
+          rrbody->setOpLength(this->icmp6->renum_mp_op_length.getNextValue());
+          rrbody->setOrdinal(this->icmp6->renum_mp_ordinal.getNextValue());
+          rrbody->setMatchLength(this->icmp6->renum_mp_match_length.getNextValue());
+          rrbody->setMaxLength(this->icmp6->renum_mp_max_length.getNextValue());
+          rrbody->setMinLength(this->icmp6->renum_mp_min_length.getNextValue());
+          rrbody->setMatchPrefix(this->icmp6->renum_mp_match_prefix.getNextValue());
+
+          rrbody->setUseLength(this->icmp6->renum_up_use_length.getNextValue());
+          rrbody->setKeepLength(this->icmp6->renum_up_keep_length.getNextValue());
+          rrbody->setFlagMask(this->icmp6->renum_up_flag_mask.getNextValue());
+          rrbody->setValidLifetime(this->icmp6->renum_up_valid_lifetime.getNextValue());
+          rrbody->setPreferredLifetime(this->icmp6->renum_up_preferred_lifetime.getNextValue());
+          rrbody->setUsePrefix(this->icmp6->renum_up_use_prefix.getNextValue());
+
+        /* Result */
+        }else if(myicmp6->getCode()==ICMPv6_RTRRENUM_RESULT){
+          rrbody->setMatchedLength(this->icmp6->renum_r_matched_length.getNextValue());
+          rrbody->setInterfaceIndex(this->icmp6->renum_r_interface_index.getNextValue());
+          rrbody->setMatchedPrefix(this->icmp6->renum_r_matched_prefix.getNextValue());
+          rrbody->setOrdinal(this->icmp6->renum_mp_ordinal.getNextValue());
+        /* Reset */
+        }else if(myicmp6->getCode()==ICMPv6_RTRRENUM_SEQ_RESET){
+
+        }
+      }
+
+    break;
     case ICMPv6_UNREACH:
     case ICMPv6_TIMXCEED:
 
@@ -823,7 +889,7 @@ ICMPv6Header *TargetHost::getICMPv6Header(){
 
 
 
-    case ICMPv6_RTRRENUM:
+
     case ICMPv6_NODEINFOQUERY:
     case ICMPv6_NODEINFORESP:
     case ICMPv6_INVNGHBRSOLICIT:

@@ -181,7 +181,7 @@ int IPv6Header::storeRecvData(const u8 *buf, size_t len){
 } /* End of storeRecvData() */
 
 
-/* Returns a protocol identifier. This is used by packet parsing funtions
+/* Returns a protocol identifier. This is used by packet parsing functions
  * that return linked lists of PacketElement objects, to determine the protocol
  * the object represents. */
 int IPv6Header::protocol_id() const {

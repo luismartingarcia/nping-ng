@@ -363,4 +363,21 @@ void ICMPv6HeaderTemplate::reset(){
   this->id.setConstant(get_random_u16());
   this->seq.setBehavior(FIELD_TYPE_INCREMENTAL);
   this->seq.setStartValue(0);
+
+  /* Router Renumbering */
+  this->renum_seq.setBehavior(FIELD_TYPE_INCREMENTAL);
+  this->renum_seq.setStartValue(0);
+  this->renum_T.setConstant(true);
+  this->renum_R.setConstant(true);
+
+  this->renum_mp_op_code.setConstant(ICMPv6_RR_MP_OPCODE_ADD);
+  this->renum_mp_op_length.setConstant(4*1+3);
+  this->renum_mp_match_length.setConstant(64);
+  this->renum_mp_min_length.setConstant(64);
+  this->renum_mp_max_length.setConstant(80);
+  this->renum_mp_max_length.setConstant(80);
+  this->renum_up_keep_length.setConstant(64);
+  this->renum_up_use_length.setConstant(64);
+  this->renum_up_valid_lifetime.setConstant(64);
+
 } /* End of reset() */

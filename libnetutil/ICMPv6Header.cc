@@ -357,6 +357,27 @@ int ICMPv6Header::print(FILE *output, int detail) const {
       fprintf(output, " dst=%s", ipstring);
     break;
 
+    case ICMPv6_RTRRENUM:
+      if(this->getFlags()!=0){
+        fprintf(output, " flags=");
+        if(this->getFlags() & ICMPv6_RR_FLAG_T)
+          fprintf(output, "T");
+        if(this->getFlags() & ICMPv6_RR_FLAG_R)
+          fprintf(output, "R");
+        if(this->getFlags() & ICMPv6_RR_FLAG_A)
+          fprintf(output, "A");
+        if(this->getFlags() & ICMPv6_RR_FLAG_S)
+          fprintf(output, "S");
+        if(this->getFlags() & ICMPv6_RR_FLAG_P)
+          fprintf(output, "P");
+        }
+      if(detail>=PRINT_DETAIL_HIGH){
+        fprintf(output, " seq=%lu", (long unsigned int)this->getSequence());
+        fprintf(output, " seg=%u", this->getSequence());
+        fprintf(output, " delay=%u", this->getMaxDelay());
+      }
+    break;
+
     default:
         /* Print nothing */
     break;

@@ -124,8 +124,8 @@
  ***************************************************************************/
 /* This code was originally part of the Nping tool.                        */
 
-#ifndef ICMPv6HEADER_H
-#define ICMPv6HEADER_H 1
+#ifndef ICMPv6RRBODY_H
+#define ICMPv6RRBODY_H 1
 
 #include "NetworkLayerElement.h"
 
@@ -134,12 +134,16 @@
 
 /* Nping ICMPv6RRBody Class internal definitions */
 #define ICMPv6_RR_MATCH_PREFIX_LEN 24
-#define ICMPv6_RR_USE_PREFIX_LEN   32
 #define ICMPv6_RR_RESULT_MSG_LEN   24
-/* This must the MAX() of all values defined above*/
-#define ICMPv6_RR_MAX_LENGTH (ICMPv6_RR_USE_PREFIX_LEN)
-#define ICMPv6_RR_MIN_LENGTH (ICMPv6_RR_MATCH_PREFIX_LEN)
+#define ICMPv6_RR_USE_PREFIX_LEN   32
 
+/* This must the MAX() of all values defined above*/
+#define ICMPv6_RR_MAX_LENGTH (ICMPv6_RR_MATCH_PREFIX_LEN + ICMPv6_RR_USE_PREFIX_LEN)
+#define ICMPv6_RR_MIN_LENGTH (ICMPv6_RR_RESULT_MSG_LEN)
+
+#define ICMPv6_RR_MP_OPCODE_ADD       0x01
+#define ICMPv6_RR_MP_OPCODE_CHANGE    0x02
+#define ICMPv6_RR_MP_OPCODE_SETGLOBAL 0x03
 
 class ICMPv6RRBody : public NetworkLayerElement {
 
@@ -252,12 +256,61 @@ class ICMPv6RRBody : public NetworkLayerElement {
         rr_use_prefix_t   *h_up;
         rr_result_msg_t   *h_r;
 
+        /* The following variable is used internally to determine which type of
+         * RRBody message the class holds. We need this since the code is
+         * only available in the ICMPv6 class and we don't have access to it
+         * from here. The way this is set up is through a class constructor. */
+        u8 code;
+
+        int include_use_prefix();
+
     public:
-        ICMPv6RRBody();
+        ICMPv6RRBody(u8 icmp6code);
         ~ICMPv6RRBody();
         void reset();
+        int protocol_id() const;
         u8 *getBufferPointer();
         int storeRecvData(const u8 *buf, size_t len);
+        int validate();
+        int print(FILE *output, int detail) const;
+
+        /* Match prefix */
+        int setOpCode(u8 val);
+        u8 getOpCode() const;
+        int setOpLength(u8 val);
+        u8 getOpLength() const;
+        int setOrdinal(u8 val);
+        u8 getOrdinal() const;
+        int setMatchLength(u8 val);
+        u8 getMatchLength() const;
+        int setMaxLength(u8 val);
+        u8 getMaxLength() const;
+        int setMinLength(u8 val);
+        u8 getMinLength() const;
+        int setMatchPrefix(struct in6_addr addr);
+        struct in6_addr getMatchPrefix() const;
+
+        /* Use prefix */
+        int setUseLength(u8 val);
+        u8 getUseLength() const;
+        int setKeepLength(u8 val);
+        u8 getKeepLength() const;
+        int setFlagMask(u8 val);
+        u8 getFlagMask() const;
+        int setValidLifetime(u32 val);
+        u32 getValidLifetime() const;
+        int setPreferredLifetime(u32 val);
+        u32 getPreferredLifetime() const;
+        int setUsePrefix(struct in6_addr addr);
+        struct in6_addr getUsePrefix() const;
+
+        /* Result */
+        int setMatchedLength(u8 val);
+        u8 getMatchedLength() const;
+        int setInterfaceIndex(u32 val);
+        u32 getInterfaceIndex() const;
+        int setMatchedPrefix(struct in6_addr addr);
+        struct in6_addr getMatchedPrefix() const;
 
 }; /* End of class ICMPv6RRBody */
 

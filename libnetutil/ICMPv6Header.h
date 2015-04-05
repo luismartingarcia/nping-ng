@@ -314,6 +314,16 @@
 #define ICMPv6_NA_FLAG_S    0x40
 #define ICMPv6_NA_FLAG_O    0x20
 
+/* Router Renumbering flag bitmaks */
+#define ICMPv6_RR_FLAG_T    0x80
+#define ICMPv6_RR_FLAG_R    0x40
+#define ICMPv6_RR_FLAG_A    0x20
+#define ICMPv6_RR_FLAG_S    0x10
+#define ICMPv6_RR_FLAG_P    0x08
+#define ICMPv6_RR_FLAG_R1   0x04
+#define ICMPv6_RR_FLAG_R2   0x02
+#define ICMPv6_RR_FLAG_R3   0x01
+
 /* Node Information flag bitmaks */
 #define ICMPv6_NI_FLAG_T    0x01
 #define ICMPv6_NI_FLAG_A    0x02
@@ -551,7 +561,7 @@ class ICMPv6Header : public ICMPHeader {
           +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
           |                        SequenceNumber                         |
           +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-          | SegmentNumber |     Flags     |            MaxDelay           |
+          | SegmentNumber |T|R|A|S|P| res |            MaxDelay           |
           +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
           |                           reserved                            |
           +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+

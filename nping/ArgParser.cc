@@ -237,6 +237,13 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
   {"icmp6-ns-addr", required_argument, 0, 0},
   {"icmp6-redir-gw", required_argument, 0, 0},
   {"icmp6-redir-dest", required_argument, 0, 0},
+  {"icmp6-renum-seq", required_argument, 0, 0},
+  {"icmp6-renum-seg", required_argument, 0, 0},
+  {"icmp6-renum-flags", required_argument, 0, 0},
+  {"icmp6-renum-delay", required_argument, 0, 0},
+  {"icmp6-renum-match-prefix", required_argument, 0, 0},
+  {"icmp6-renum-use-prefix", required_argument, 0, 0},
+  {"icmp6-renum-matched-prefix", required_argument, 0, 0},
 
   /* ARP */
   {"arp-type",  required_argument, 0, 0},
@@ -805,7 +812,108 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
           o.icmp6.redir_dest.setConstant(aux_ip6.getIPv6Address());
         }
       }
+    /* ICMPv6 Router Renumbering sequence number */
+    } else if (optcmp(long_options[option_index].name, "icmp6-renum-seq") == 0) {
+      o.addMode(DO_ICMP);
+      if(parse_u32(optarg, &aux32) == OP_SUCCESS){
+        o.icmp6.renum_seq.setConstant(aux32);
+      }else{
+        nping_fatal(QT_3, "Invalid ICMPv6 Router Renumbering Sequence Number. Value must be 0<=N<2^32.");
+      }
+    /* ICMPv6 Router Renumbering segment number */
+    } else if (optcmp(long_options[option_index].name, "icmp6-renum-seg") == 0) {
+      o.addMode(DO_ICMP);
+      if(parse_u8(optarg, &aux8) == OP_SUCCESS){
+        o.icmp6.renum_seg.setConstant(aux8);
+      }else{
+        nping_fatal(QT_3, "Invalid ICMPv6 Router Renumbering Segment Number. Value must be 0<=N<=255.");
+      }
+    /* ICMPv6 Router Renumbering header flags Flags */
+    } else if (optcmp(long_options[option_index].name, "icmp6-renum-flags") == 0) {
+      o.addMode(DO_ICMP);
 
+      /* If the user has requested specific renum flags, first reset the defaults
+       * that are set in the HeaderTemplate. */
+      o.icmp6.renum_T.setConstant(0);
+      o.icmp6.renum_R.setConstant(0);
+      o.icmp6.renum_A.setConstant(0);
+      o.icmp6.renum_S.setConstant(0);
+      o.icmp6.renum_P.setConstant(0);
+
+      int rr_flags=0;
+      for(size_t f=0; f<strlen(optarg); f++){
+        switch(optarg[f]){
+          case 'T': case 't':
+            o.icmp6.renum_T.setConstant(true);
+            rr_flags++;
+          break;
+          case 'R': case 'r':
+            o.icmp6.renum_R.setConstant(true);
+            rr_flags++;
+          break;
+          case 'A': case 'a':
+            o.icmp6.renum_A.setConstant(true);
+            rr_flags++;
+          break;
+          case 'S': case 's':
+            o.icmp6.renum_S.setConstant(true);
+            rr_flags++;
+          break;
+          case 'P': case 'p':
+            o.icmp6.renum_P.setConstant(true);
+            rr_flags++;
+          break;
+          default:
+            nping_fatal(QT_3, "Invalid ICMPv6 Router Renumbering flags supplied (%c). Possible flags: T, R, A, S, P.", optarg[f]);
+          break;
+        }
+      }
+      if(rr_flags==0)
+        nping_fatal(QT_3, "No ICMPv6 Router Renumbering flags supplied. Possible flags: T, R, A, S, P.");
+    /* ICMPv6 Router Renumbering max delay */
+    } else if (optcmp(long_options[option_index].name, "icmp6-renum-delay") == 0) {
+      o.addMode(DO_ICMP);
+      if(parse_u8(optarg, &aux8) == OP_SUCCESS){
+        o.icmp6.renum_delay.setConstant(aux8);
+      }else{
+        nping_fatal(QT_3, "Invalid ICMPv6 Router Renumbering Max Delay. Value must be 0<=N<=255");
+      }
+     /* ICMPv6 Router Renumbering Match Prefix) */
+    } else if (optcmp(long_options[option_index].name, "icmp6-renum-match-prefix") == 0) {
+      o.addMode(DO_ICMP);
+      if(meansRandom(optarg)){
+        o.icmp6.renum_mp_match_prefix.setBehavior(FIELD_TYPE_RANDOM);
+      }else{
+        if(aux_ip6.setIPv6Address(optarg) != OP_SUCCESS){
+          nping_fatal(QT_3, "Could not resolve specified ICMPv6 Router Renumbering Match Prefix.");
+        }else{
+          o.icmp6.renum_mp_match_prefix.setConstant(aux_ip6.getIPv6Address());
+        }
+      }
+     /* ICMPv6 Router Renumbering Use Prefix) */
+    } else if (optcmp(long_options[option_index].name, "icmp6-renum-use-prefix") == 0) {
+      o.addMode(DO_ICMP);
+      if(meansRandom(optarg)){
+        o.icmp6.renum_up_use_prefix.setBehavior(FIELD_TYPE_RANDOM);
+      }else{
+        if(aux_ip6.setIPv6Address(optarg) != OP_SUCCESS){
+          nping_fatal(QT_3, "Could not resolve specified ICMPv6 Router Renumbering Use Prefix.");
+        }else{
+          o.icmp6.renum_up_use_prefix.setConstant(aux_ip6.getIPv6Address());
+        }
+      }
+     /* ICMPv6 Router Renumbering Matched Prefix) */
+    } else if (optcmp(long_options[option_index].name, "icmp6-renum-matched-prefix") == 0) {
+      o.addMode(DO_ICMP);
+      if(meansRandom(optarg)){
+        o.icmp6.renum_r_matched_prefix.setBehavior(FIELD_TYPE_RANDOM);
+      }else{
+        if(aux_ip6.setIPv6Address(optarg) != OP_SUCCESS){
+          nping_fatal(QT_3, "Could not resolve specified ICMPv6 Router Renumbering Matched Prefix.");
+        }else{
+          o.icmp6.renum_r_matched_prefix.setConstant(aux_ip6.getIPv6Address());
+        }
+      }
 /* ARP OPTIONS ***************************************************************/
     /* Operation code */
     }else if (optcmp(long_options[option_index].name, "arp-type") == 0){

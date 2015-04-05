@@ -48,6 +48,11 @@
  * Things that have NOT been done yet                                        *
  *****************************************************************************/
 
+
+* Provide a way to set no flags at all in a ICMPv6 router renumbering header.
+  Currently, the HeaderTemplate sets the T, R flags, and there is no way to
+  say "no flags at all" from the command line.
+
 * Implement IMCPv6 Options.
 
 * Implement the "Prf" 2-bit flag for ICMPv6 Router Advertisement.

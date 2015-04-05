@@ -314,7 +314,7 @@ class ICMPv6HeaderTemplate : public HeaderTemplate{
     ProtoField_bool ra_R2;          /* Reserved flag                 */
     ProtoField_u16 ra_lifetime;     /* Router lifetime               */
     ProtoField_u32 ra_reachtime;    /* Reachable time                */
-    ProtoField_u32 ra_retrtimer;    /* Retransmission timer           */
+    ProtoField_u32 ra_retrtimer;    /* Retransmission timer          */
 
     /* Neighbor advertisement */
     ProtoField_bool na_R;           /* Router flag                   */
@@ -326,8 +326,40 @@ class ICMPv6HeaderTemplate : public HeaderTemplate{
     ProtoField_in6addr ns_addr;     /* Target address                */
 
     /* Redirect */
-    ProtoField_in6addr redir_gw;     /* Redirect gateway              */
-    ProtoField_in6addr redir_dest;   /* Destination                   */
+    ProtoField_in6addr redir_gw;    /* Redirect gateway              */
+    ProtoField_in6addr redir_dest;  /* Destination                   */
+
+    /* Router renumbering */
+    ProtoField_u32 renum_seq;       /* Sequence number               */
+    ProtoField_u8 renum_seg;        /* Segment number                */
+    ProtoField_u8 renum_delay;      /* Max delay                     */
+    ProtoField_bool renum_T;        /* Flag "Test command"           */
+    ProtoField_bool renum_R;        /* Flag "Result requested"       */
+    ProtoField_bool renum_A;        /* Flag "All interfaces"         */
+    ProtoField_bool renum_S;        /* Flag "Site-specific"          */
+    ProtoField_bool renum_P;        /* Flag "Processed previously"   */
+
+    ProtoField_u8 renum_mp_op_code;             /* Match-Prefix Op Code       */
+    ProtoField_u8 renum_mp_op_length;           /* Match-Prefix Op Length     */
+    ProtoField_u8 renum_mp_ordinal;             /* Match-Prefix Ordinal       */
+    ProtoField_u8 renum_mp_match_length;        /* Match-Prefix Match Length  */
+    ProtoField_u8 renum_mp_min_length;          /* Match-Prefix Min Length    */
+    ProtoField_u8 renum_mp_max_length;          /* Match-Prefix Max Length    */
+    ProtoField_in6addr renum_mp_match_prefix;   /* Match-Prefix Match Prefix  */
+
+    ProtoField_u8 renum_up_use_length;          /* Use-Prefix Use Length      */
+    ProtoField_u8 renum_up_keep_length;         /* Use-Prefix Keep Length     */
+    ProtoField_u8 renum_up_flag_mask;           /* Use-Prefix Flag Mask       */
+    ProtoField_u8 renum_up_ra_flags;            /* Use-Prefix RA Flagas       */
+    ProtoField_u32 renum_up_valid_lifetime;     /* Use-Prefix Valid Lifetime  */
+    ProtoField_u32 renum_up_preferred_lifetime; /* Use-Prefix Preferred Ltime */
+    ProtoField_u8 renum_up_flags;               /* Use-Prefix Flags           */
+    ProtoField_in6addr renum_up_use_prefix;     /* Use-Prefix Use Prefix      */
+
+    ProtoField_u8 renum_r_flags;                /* Result Flags               */
+    ProtoField_u8 renum_r_matched_length;       /* Result Matched Length      */
+    ProtoField_u32 renum_r_interface_index;     /* Result Interface Index     */
+    ProtoField_in6addr renum_r_matched_prefix;  /* Result Matched Prefix      */
 
     ICMPv6HeaderTemplate();
     ~ICMPv6HeaderTemplate();

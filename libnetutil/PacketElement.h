@@ -153,6 +153,7 @@
 #define HEADER_TYPE_IPv6_MOBILE  135 /* Mobility Header                       */
 #define HEADER_TYPE_MPLS_IN_IP   137 /* MPLS-in-IP                            */
 #define HEADER_TYPE_ARP         2054 /* ARP Address Resolution Protocol       */
+#define HEADER_TYPE_ICMPv6_RRBODY 9996 /* ICMPv6 Router Renumbering body      */
 #define HEADER_TYPE_ICMPv6_OPTION 9997 /* ICMPv6 option                       */
 #define HEADER_TYPE_NEP         9998 /* Nping Echo Protocol                   */
 #define HEADER_TYPE_RAW_DATA    9999 /* Raw unknown data                      */
