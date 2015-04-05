@@ -508,6 +508,7 @@ class NpingOps {
     void displayNpingDoneMsg();
     void displayStatistics();
     int cleanup();
+    int getTotalProbes();
     bool win32();
 
     int setLastPacketSentTime(struct timeval t);
