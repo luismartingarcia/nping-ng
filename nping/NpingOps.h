@@ -182,6 +182,7 @@
 #include "NpingTargets.h"
 #include "TargetHost.h"
 #include "NetworkInterface.h"
+#include "HeaderTemplates.h"
 #include <string>
 
 class NpingOps {
@@ -270,19 +271,12 @@ class NpingOps {
     bool ipv6_flowlabel_set;
 
     /* TCP / UDP */
+
     u16 *target_ports;        /* Will point to an array of ports       */
     int tportcount;           /* Total number of target ports          */
     bool target_ports_set;
     u16 source_port;          /* Source port for TCP/UPD packets       */
     bool source_port_set;
-    u32 tcpseq;               /* TCP Sequence number                   */
-    bool tcpseq_set;
-    u32 tcpack;               /* TCP Acknowledgement                   */
-    bool tcpack_set;
-    u8 tcpflags[8];           /* TCP Flags                             */
-    bool tcpflags_set;
-    u16 tcpwin;               /* TCP Window                            */
-    bool tcpwin_set;
     bool badsum;              /* Generate invalid TCP/UDP checksums?   */
     bool badsum_set;
 
@@ -358,6 +352,7 @@ class NpingOps {
     vector<TargetHost *> target_hosts;     /* List of Nping target hosts  */
     vector<NetworkInterface *> interfaces; /* List of relevant net ifaces */
     NpingStats stats;                      /* Global statistics           */
+    TCPHeaderTemplate tcp;                 /* Header field values for TCP */
 
   public:
 
@@ -534,25 +529,6 @@ class NpingOps {
     bool disableBadsum();
     bool getBadsum();
     bool issetBadsum();
-
-    int setFlagTCP(int flag);
-    int setAllFlagsTCP();
-    int unsetAllFlagsTCP();
-    int getFlagTCP(int flag);
-    u8 getTCPFlags();
-    bool issetTCPFlags();
-
-    int setTCPSequence(u32 val);
-    u32 getTCPSequence();
-    bool issetTCPSequence();
-
-    int setTCPAck(u32 val);
-    u32 getTCPAck();
-    bool issetTCPAck();
-
-    int setTCPWindow(u16 val);
-    u16 getTCPWindow();
-    bool issetTCPWindow();
 
     /* ICMP */
     int setICMPType(u8 type);

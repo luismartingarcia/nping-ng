@@ -416,128 +416,114 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
 /* TCP/UDP OPTIONS ***********************************************************/
     /* TCP Sequence number */
     } else if (optcmp(long_options[option_index].name, "seq") == 0) {
-        if ( parse_u32(optarg, &aux32) != OP_SUCCESS )
-            nping_fatal(QT_3, "Invalid TCP Sequence number. Value must be 0<=N<2^32.");
-        else
-            o.setTCPSequence( aux32 );
+      if ( parse_u32(optarg, &aux32) != OP_SUCCESS )
+        nping_fatal(QT_3, "Invalid TCP Sequence number. Value must be 0<=N<2^32.");
+      else
+        o.tcp.seq.setConstant(aux32);
     /* TCP Flags */
-    } else if (optcmp(long_options[option_index].name, "flags") == 0) {
-        /* CASE 1: User is a freak and supplied a numeric value directly */
-        /* We initially parse it as an u32 so we give the proper error 
-         * for values like 0x100. */
-        if ( parse_u32(optarg, &aux32) == OP_SUCCESS ){
-            if( meansRandom(optarg) ){
-                aux8=get_random_u8();
-            }else if(aux32>255){
-                nping_fatal(QT_3, "Invalid TCP flag specification. Numerical values must be in the range [0,255].");
-            }else{
-                aux8=(u8)aux32;
-            }
-            if(aux8==0){
-                o.unsetAllFlagsTCP();
-            }else{
-                if( aux8 & 0x80 )
-                    o.setFlagTCP( FLAG_CWR );
-                if( aux8 & 0x40 )
-                    o.setFlagTCP( FLAG_ECN );
-                if( aux8 & 0x20 )
-                    o.setFlagTCP( FLAG_URG );
-                if( aux8 & 0x10 )
-                    o.setFlagTCP( FLAG_ACK );
-                if( aux8 & 0x08 )
-                    o.setFlagTCP( FLAG_PSH );
-                if( aux8 & 0x04 )
-                    o.setFlagTCP( FLAG_RST );
-                if( aux8 & 0x02 )
-                    o.setFlagTCP( FLAG_SYN );
-                if( aux8 & 0x01 )
-                    o.setFlagTCP( FLAG_FIN );
-            }
-        /* CASE 2: User supplied a list of flags in the format "syn,ack,ecn" */
-        }else if( contains(optarg, ",") ){
-            if( ((strlen(optarg)+1)%4)  !=0 )
-                nping_fatal(QT_3, "Invalid format in --flag. Make sure you specify a comma-separated list that contains 3-character flag names (e.g: --flags syn,ack,psh)");
-
-            for( size_t f=0; f< strlen(optarg); f+=4 ){
-                if(!strncasecmp((optarg+f), "CWR",3)){ o.setFlagTCP(FLAG_CWR);  }
-                else if(!strncasecmp((optarg+f), "ECN",3)){ o.setFlagTCP(FLAG_ECN);  }
-                else if(!strncasecmp((optarg+f), "ECE",3)){ o.setFlagTCP(FLAG_ECN);  }
-                else if(!strncasecmp((optarg+f), "URG",3)){ o.setFlagTCP(FLAG_URG);  }
-                else if(!strncasecmp((optarg+f), "ACK",3)){ o.setFlagTCP(FLAG_ACK);  }
-                else if(!strncasecmp((optarg+f), "PSH",3)){ o.setFlagTCP(FLAG_PSH);  }
-                else if(!strncasecmp((optarg+f), "RST",3)){ o.setFlagTCP(FLAG_RST);  }
-                else if(!strncasecmp((optarg+f), "SYN",3)){ o.setFlagTCP(FLAG_SYN);  }
-                else if(!strncasecmp((optarg+f), "FIN",3)){ o.setFlagTCP(FLAG_FIN);  }
-                else if(!strncasecmp((optarg+f), "ALL",3)){ o.setAllFlagsTCP();  }
-                else if(!strncasecmp((optarg+f), "NIL",3)){ o.unsetAllFlagsTCP();  }
-                else{
-                 char wrongopt[4];
-                 memcpy(wrongopt, (optarg+f), 3);
-                 wrongopt[3]='\0';
-                 nping_fatal(QT_3, "Invalid TCP flag specification: \"%s\"", wrongopt);
-                }
-            }
-
-        /* CASE 3: User supplied flag initials in format "XYZ..."  */        
+    }else if (optcmp(long_options[option_index].name, "flags") == 0) {
+      /* CASE 1: User is a freak and supplied a numeric value directly */
+      /* We initially parse it as an u32 so we give the proper error
+       * for values like 0x100. */
+      if ( parse_u32(optarg, &aux32) == OP_SUCCESS ){
+        if( meansRandom(optarg) ){
+          o.tcp.flags.setConstant(get_random_u8());
+        }else if(aux32>255){
+          nping_fatal(QT_3, "Invalid TCP flag specification. Numerical values must be in the range [0,255].");
         }else{
-            bool flag3_ok=false;
-            /* SPECIAL CASE: User entered exactly 3 chars so we don't know if
-             * only one flag was entered or three flags in format "XYZ..." */
-            if( strlen(optarg) == 3 ){
-                if(!strcasecmp(optarg, "CWR")){ o.setFlagTCP(FLAG_CWR); flag3_ok=true; }
-                else if(!strcasecmp(optarg, "ECN")){ o.setFlagTCP(FLAG_ECN); flag3_ok=true; }
-                else if(!strcasecmp(optarg, "ECE")){ o.setFlagTCP(FLAG_ECN); flag3_ok=true; }
-                else if(!strcasecmp(optarg, "URG")){ o.setFlagTCP(FLAG_URG); flag3_ok=true; }
-                else if(!strcasecmp(optarg, "ACK")){ o.setFlagTCP(FLAG_ACK); flag3_ok=true; }
-                else if(!strcasecmp(optarg, "PSH")){ o.setFlagTCP(FLAG_PSH); flag3_ok=true; }
-                else if(!strcasecmp(optarg, "RST")){ o.setFlagTCP(FLAG_RST); flag3_ok=true; }
-                else if(!strcasecmp(optarg, "SYN")){ o.setFlagTCP(FLAG_SYN); flag3_ok=true; }
-                else if(!strcasecmp(optarg, "FIN")){ o.setFlagTCP(FLAG_FIN); flag3_ok=true; }
-                else if(!strcasecmp(optarg, "ALL")){ o.setAllFlagsTCP(); flag3_ok=true; }
-                else if(!strcasecmp(optarg, "NIL")){ o.unsetAllFlagsTCP(); flag3_ok=true; }
-                else{
-                 flag3_ok=false;
-                }
-            }else if( strlen(optarg) == 0 ){
-                o.unsetAllFlagsTCP();
-            }
-            /* SPECIAL CASE: User supplied special flag "NONE" */
-            if(!strcasecmp(optarg, "NONE") ){ o.unsetAllFlagsTCP(); flag3_ok=true; }
-
-            /* User definitely supplied flag initials in format "XYZ..."*/
-            if( flag3_ok==false ){
-                for(size_t f=0; f<strlen(optarg); f++){
-                    switch( optarg[f] ){
-                        case 'C': case 'c': o.setFlagTCP(FLAG_CWR); break;
-                        case 'E': case 'e': o.setFlagTCP(FLAG_ECN); break;
-                        case 'U': case 'u': o.setFlagTCP(FLAG_URG); break;
-                        case 'A': case 'a': o.setFlagTCP(FLAG_ACK); break;
-                        case 'P': case 'p': o.setFlagTCP(FLAG_PSH); break;
-                        case 'R': case 'r': o.setFlagTCP(FLAG_RST); break;
-                        case 'S': case 's': o.setFlagTCP(FLAG_SYN); break;
-                        case 'F': case 'f': o.setFlagTCP(FLAG_FIN); break;
-                        default:
-                            if( isdigit(optarg[f]) )
-                                nping_fatal(QT_3, "Invalid TCP flag supplied (%c). If you want to specify flags using a number you must add prefix \"0x\"", optarg[f]);
-                            else
-                                nping_fatal(QT_3, "Invalid TCP flag supplied: %c", optarg[f]);
-
-                    }
-                }
-            }
+          o.tcp.flags.setConstant((u8)aux32);
         }
+
+      /* CASE 2: User supplied a list of flags in the format "syn,ack,ecn" */
+      }else if( contains(optarg, ",") ){
+        if( ((strlen(optarg)+1)%4)  !=0 )
+          nping_fatal(QT_3, "Invalid format in --flag. Make sure you specify a comma-separed list that contains 3-charater flag names (e.g: --flags syn,ack,psh)");
+        aux8=0;
+        for(size_t f=0; f< strlen(optarg); f+=4 ){
+          if(     !strncasecmp((optarg+f), "CWR",3)){ aux8 = aux8 | 0x80; }
+          else if(!strncasecmp((optarg+f), "ECN",3)){ aux8 = aux8 | 0x40; }
+          else if(!strncasecmp((optarg+f), "ECE",3)){ aux8 = aux8 | 0x40; }
+          else if(!strncasecmp((optarg+f), "URG",3)){ aux8 = aux8 | 0x20; }
+          else if(!strncasecmp((optarg+f), "ACK",3)){ aux8 = aux8 | 0x10; }
+          else if(!strncasecmp((optarg+f), "PSH",3)){ aux8 = aux8 | 0x08; }
+          else if(!strncasecmp((optarg+f), "RST",3)){ aux8 = aux8 | 0x04; }
+          else if(!strncasecmp((optarg+f), "SYN",3)){ aux8 = aux8 | 0x02; }
+          else if(!strncasecmp((optarg+f), "FIN",3)){ aux8 = aux8 | 0x01; }
+          else if(!strncasecmp((optarg+f), "ALL",3)){ aux8=0xFF;  }
+          else if(!strncasecmp((optarg+f), "NIL",3)){ aux8=0x00;  }
+          else{
+            char wrongopt[4];
+            memcpy(wrongopt, (optarg+f), 3);
+            wrongopt[3]='\0';
+            nping_fatal(QT_3, "Invalid TCP flag specification: \"%s\"", wrongopt);
+          }
+        }
+        o.tcp.flags.setConstant(aux8);
+
+      /* CASE 3: User supplied flag initials in format "XYZ..."  */
+      }else{
+        bool flag3_ok=false;
+        /* SPECIAL CASE: User entered exactly 3 chars so we don't know if
+         * only one flag was entered or three flags in format "XYZ..." */
+        if( strlen(optarg) == 3 ){
+          if(     !strcasecmp(optarg, "CWR")){ o.tcp.flags.setConstant(0x80); flag3_ok=true; }
+          else if(!strcasecmp(optarg, "ECN")){ o.tcp.flags.setConstant(0x40); flag3_ok=true; }
+          else if(!strcasecmp(optarg, "ECE")){ o.tcp.flags.setConstant(0x40); flag3_ok=true; }
+          else if(!strcasecmp(optarg, "URG")){ o.tcp.flags.setConstant(0x20); flag3_ok=true; }
+          else if(!strcasecmp(optarg, "ACK")){ o.tcp.flags.setConstant(0x10); flag3_ok=true; }
+          else if(!strcasecmp(optarg, "PSH")){ o.tcp.flags.setConstant(0x08); flag3_ok=true; }
+          else if(!strcasecmp(optarg, "RST")){ o.tcp.flags.setConstant(0x04); flag3_ok=true; }
+          else if(!strcasecmp(optarg, "SYN")){ o.tcp.flags.setConstant(0x02); flag3_ok=true; }
+          else if(!strcasecmp(optarg, "FIN")){ o.tcp.flags.setConstant(0x01); flag3_ok=true; }
+          else if(!strcasecmp(optarg, "ALL")){ o.tcp.flags.setConstant(0xFF); flag3_ok=true; }
+          else if(!strcasecmp(optarg, "NIL")){ o.tcp.flags.setConstant(0x00); flag3_ok=true; }
+          else{
+            flag3_ok=false;
+          }
+        /* SPECIAL CASE: User supplied an empty string */
+        }else if( strlen(optarg) == 0 ){
+          o.tcp.flags.setConstant(0x00);
+        /* SPECIAL CASE: User supplied special flag "NONE" */
+        }else if(!strcasecmp(optarg, "NONE") ){
+          o.tcp.flags.setConstant(0x00);
+          flag3_ok=true;
+        }
+
+        /* User definitely supplied flag initials in format "XYZ..."*/
+        if(flag3_ok==false){
+          aux8=0;
+          for(size_t f=0; f<strlen(optarg); f++){
+            switch(optarg[f]){
+              case 'C': case 'c': aux8 = aux8 | 0x80; break;
+              case 'E': case 'e': aux8 = aux8 | 0x40; break;
+              case 'U': case 'u': aux8 = aux8 | 0x20; break;
+              case 'A': case 'a': aux8 = aux8 | 0x10; break;
+              case 'P': case 'p': aux8 = aux8 | 0x08; break;
+              case 'R': case 'r': aux8 = aux8 | 0x04; break;
+              case 'S': case 's': aux8 = aux8 | 0x02; break;
+              case 'F': case 'f': aux8 = aux8 | 0x01; break;
+              default:
+                if( isdigit(optarg[f]) )
+                  nping_fatal(QT_3, "Invalid TCP flag supplied (%c). If you want to specify flags using a number you must add prefix \"0x\"", optarg[f]);
+                else
+                  nping_fatal(QT_3, "Invalid TCP flag supplied: %c", optarg[f]);
+            }
+          }
+          o.tcp.flags.setConstant(aux8);
+        }
+      }
     /* TCP Acknowledgement number */
     } else if (optcmp(long_options[option_index].name, "ack") == 0) {
-        if ( parse_u32(optarg, &aux32) != OP_SUCCESS )
-            nping_fatal(QT_3, "Invalid TCP ACK number. Value must be 0<=N<2^32.");
-        else
-           o.setTCPAck( aux32 );
+      if ( parse_u32(optarg, &aux32) != OP_SUCCESS )
+        nping_fatal(QT_3, "Invalid TCP ACK number. Value must be 0<=N<2^32.");
+      else
+        o.tcp.ack.setConstant(aux32);
     /* TCP Window size */
     } else if (optcmp(long_options[option_index].name, "win") == 0) {
-        if ( parse_u16(optarg, &aux16) != OP_SUCCESS )
-             nping_fatal(QT_3, "Invalid TCP Window size. Value must be 0<=N<65535.");
-        else
-           o.setTCPWindow( aux16 );
+      if ( parse_u16(optarg, &aux16) != OP_SUCCESS )
+        nping_fatal(QT_3, "Invalid TCP Window size. Value must be 0<=N<65535.");
+      else
+        o.tcp.win.setConstant(aux16);
     /* Set a bad TCP checksum */
     } else if (optcmp(long_options[option_index].name, "badsum") == 0) {
         o.enableBadsum();
