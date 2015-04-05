@@ -2350,7 +2350,7 @@ if (this->havePcap()==false){
 /** TARGET SPECIFICATION *****************************************************/
   /* Check if user entered at least one target spec */
   if( this->getRole() == ROLE_NORMAL ){
-    if ( this->targets.getTargetSpecCount() <= 0 )
+    if ( this->total_target_specs <= 0 )
         nping_fatal(QT_3,"WARNING: No targets were specified, so 0 hosts pinged.");
   }else if( this->getRole() == ROLE_CLIENT ){
     if ( this->targets.getTargetSpecCount() <= 0 )
@@ -3163,8 +3163,72 @@ int NpingOps::addTargetSpec(const char *spec){
 } /* End of addTargetSpec() */
 
 
+/* Processes the internal array of specs and turns it into an array of
+ * TargetHosts. */
 int NpingOps::setupTargetHosts(){
-    return OP_SUCCESS;
+  const char *errmsg=NULL;
+  TargetHost *newhost=NULL;
+  struct sockaddr_storage ss;
+  struct route_nfo route;
+  IPAddress *auxaddr;
+
+  /* Turn each target spec into an array of addresses */
+  for(u32 i=0; i<this->total_target_specs; i++){
+    assert(this->af()==AF_INET || this->af()==AF_INET6);
+    if(this->af()==AF_INET){
+      errmsg=spec_to_addresses( this->target_specs[i], AF_INET, this->target_addresses, MAX_IPv4_NETMASK_ALLOWED);
+    }else{
+      errmsg=spec_to_addresses( this->target_specs[i], AF_INET, this->target_addresses, MAX_IPv6_NETMASK_ALLOWED);
+    }
+    if(errmsg!=NULL){
+      nping_warning(QT_1, "WARNING: %s (%s)", errmsg, this->target_specs[i]);
+    }
+  }
+
+  for(u32 i=0; i<this->target_addresses.size(); i++){
+    memset(&ss, 0, sizeof(struct sockaddr_storage));
+    memset(&route, 0, sizeof(struct route_nfo));
+    this->target_addresses[i]->getAddress(&ss);
+    /* Let's see if we can route packets to the current target. */
+    if(route_dst(&ss, &route, this->device_set ? this->device : NULL, NULL) == 1 ){  // TODO: implement spoofsrc
+      /* Yes, we can! Extract the info returned by route_dst() and store it
+       * in the target's class */
+
+      /* Destination IP address */
+      newhost= new TargetHost();
+      newhost->setTargetAddress(this->target_addresses[i]);
+
+      /* Source IP address */
+      auxaddr=new IPAddress();
+      auxaddr->setAddress(route.srcaddr);
+      newhost->setSourceAddress(auxaddr);
+
+      /* Network distance */
+      if(route.direct_connect!=0){
+        newhost->setNetworkDistance(DISTANCE_DIRECT);
+      }else{
+        auxaddr=new IPAddress();
+        auxaddr->setAddress(route.nexthop);
+        newhost->setNextHopAddress(auxaddr);
+      }
+
+      /* Interface information */
+      newhost->setInterfaceInfo(route.ii);
+
+      /* We have all the info we need. Now, just add the new host to the list of
+       * target hosts. */
+      this->target_hosts.push_back(newhost);
+      nping_print(DBG_2, "Added target host %s.", this->target_addresses[i]->toString() );
+    }else{
+      nping_warning(QT_1, "WARNING: Cannot find route for %s. Skipping that target host...", this->target_addresses[i]->toString());
+    }
+  }
+
+  return OP_SUCCESS;
+}/* End of setupTargetHosts() */
+
+u32 NpingOps::totalTargetHosts(){
+  return this->target_hosts.size();
 }
 
 

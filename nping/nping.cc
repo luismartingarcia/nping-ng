@@ -160,7 +160,6 @@ int main(int argc, char *argv[] ){
   time_t now;       /* Stores current time             */
   char tbuf[128];   /* Stores current time as a string */
   ArgParser a;      /* Command line argument parser    */
-  unsigned long int i=0;
   ProbeEngine prob;
   NpingTarget *t=NULL;
 
@@ -186,7 +185,7 @@ int main(int argc, char *argv[] ){
 
   /* Let's parse and validate user supplied args */
   a.parseArguments(argc, argv);
-  o.validateOptions();
+  //o.validateOptions();
 
   /* ISO 8601 date/time -- http://www.cl.cam.ac.uk/~mgk25/iso-time.html */
   if ( strftime(tbuf, sizeof(tbuf), "%Y-%m-%d %H:%M %Z", tm) <= 0)
@@ -200,15 +199,18 @@ int main(int argc, char *argv[] ){
   if(o.issetTargetPorts() && !o.scan_mode_uses_target_ports(o.getMode()))
       nping_fatal(QT_3, "You cannot use -p (explicit port selection) in your current scan mode.\n(Perhaps you meant to use --tcp or --udp)");
 
-
-
-  /* Resolve and cache target specs */
-  nping_print(DBG_2,"Resolving specified targets...");
-  o.setupTargetHosts();
-  if( ((i=o.targets.getTargetsFetched())<=0) && o.getRole()!=ROLE_SERVER )
-    nping_fatal(QT_3, "Execution aborted. Nping needs at least one valid target to operate.");
-  else
-    nping_print(DBG_2,"%lu target IP address%s determined.", i, (i==1)? "":"es" );
+  /* Expand target specs and resolve any hostname that requires DNS resolution  */
+  if(o.getRole()!=ROLE_SERVER){
+    nping_print(DBG_2,"Resolving specified targets...");
+    o.setupTargetHosts();
+    /* Make sure we have at least one target host */
+    if(o.totalTargetHosts()==0){
+      nping_fatal(QT_3, "Execution aborted. Nping needs at least one valid target to operate.");
+    }else{
+      nping_print(DBG_2,"%lu target IP address%s determined.", 
+                  (long unsigned int)o.totalTargetHosts(), (o.totalTargetHosts()==1)? "":"es");
+    }
+  }
 
   switch( o.getRole() ){
 

@@ -172,11 +172,14 @@
 
 #define MAX_ICMP_ADVERT_ENTRIES 128
 #define MAX_TARGET_SPECS 1024
+#define MAX_IPv4_NETMASK_ALLOWED 8
+#define MAX_IPv6_NETMASK_ALLOWED 104
 
 #include "nping.h"
 #include "global_structures.h"
 #include "stats.h"
 #include "NpingTargets.h"
+#include "TargetHost.h"
 #include <string>
 
 class NpingOps {
@@ -354,6 +357,9 @@ class NpingOps {
     bool delayed_rcvd_str_set; /* Do we have a delayed RCVD string?    */
     nsock_event_id delayed_rcvd_event; /* Nsock event for delayed RCVD */
 
+    /* Target-related variables */
+    vector<TargetHost *> target_hosts;
+    vector<IPAddress *> target_addresses;
     const char *target_specs[MAX_TARGET_SPECS];
     u32  total_target_specs;
 
@@ -710,6 +716,7 @@ class NpingOps {
     /* TargetHost handling */
     int addTargetSpec(const char *spec);
     int setupTargetHosts();
+    u32 totalTargetHosts();
 
 }; /* End of class NpingOps */
 
