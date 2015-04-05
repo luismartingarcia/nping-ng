@@ -172,6 +172,7 @@
 
 #define MAX_ICMP_ADVERT_ENTRIES 128
 #define MAX_TARGET_SPECS 1024
+#define MAX_TARGET_SPECS 1024
 #define MAX_IPv4_NETMASK_ALLOWED 8
 #define MAX_IPv6_NETMASK_ALLOWED 104
 
@@ -360,8 +361,7 @@ class NpingOps {
     /* Target-related variables */
     vector<TargetHost *> target_hosts;
     vector<IPAddress *> target_addresses;
-    const char *target_specs[MAX_TARGET_SPECS];
-    u32  total_target_specs;
+    vector<const char *> target_specs;
 
   public:
     NpingTargets targets;

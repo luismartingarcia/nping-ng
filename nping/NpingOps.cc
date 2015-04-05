@@ -368,10 +368,6 @@ NpingOps::NpingOps() {
     delayed_rcvd_str=NULL;
     delayed_rcvd_str_set=false;
 
-    /* Target related variables */
-    memset(target_specs, 0, MAX_TARGET_SPECS * sizeof(char *));
-    total_target_specs=0;
-
 } /* End of NpingOps() */
 
 
@@ -2349,13 +2345,14 @@ if (this->havePcap()==false){
 
 /** TARGET SPECIFICATION *****************************************************/
   /* Check if user entered at least one target spec */
-  if( this->getRole() == ROLE_NORMAL ){
-    if ( this->total_target_specs <= 0 )
-        nping_fatal(QT_3,"WARNING: No targets were specified, so 0 hosts pinged.");
-  }else if( this->getRole() == ROLE_CLIENT ){
-    if ( this->targets.getTargetSpecCount() <= 0 )
-        nping_fatal(QT_3,"No echo server was specified.");
+  if(this->target_specs.size()<=0){
+    if( this->getRole() == ROLE_NORMAL ){
+      nping_fatal(QT_3,"WARNING: No targets were specified, so 0 hosts pinged.");
+    }else if( this->getRole() == ROLE_CLIENT ){
+      nping_fatal(QT_3,"No echo server was specified.");
+    }
   }
+
 
 /** IP VERSION ***************************************************************/
   /* Default to IP version 4 */
@@ -3156,9 +3153,7 @@ int NpingOps::getTotalProbes(){
 int NpingOps::addTargetSpec(const char *spec){
   if(spec==NULL)
     return OP_FAILURE;
-  if(this->total_target_specs>=MAX_TARGET_SPECS)
-    return OP_FAILURE;
-  this->target_specs[ this->total_target_specs++ ] = spec;
+  this->target_specs.push_back(spec);
   return OP_SUCCESS;
 } /* End of addTargetSpec() */
 
@@ -3173,7 +3168,7 @@ int NpingOps::setupTargetHosts(){
   IPAddress *auxaddr;
 
   /* Turn each target spec into an array of addresses */
-  for(u32 i=0; i<this->total_target_specs; i++){
+  for(u32 i=0; i<this->target_specs.size(); i++){
     assert(this->af()==AF_INET || this->af()==AF_INET6);
     if(this->af()==AF_INET){
       errmsg=spec_to_addresses( this->target_specs[i], AF_INET, this->target_addresses, MAX_IPv4_NETMASK_ALLOWED);
