@@ -207,7 +207,7 @@ class NpingOps {
     bool show_eth;
 
     /* Operation and Performance */
-    u32 rounds;               /* No of times a host is targeted        */
+    u64 rounds;               /* No of times a host is targeted        */
     bool rounds_set;
     int sendpref;             /* Sending preference: eth or raw ip     */
     long host_timeout;        /* Timeout for host replies              */
@@ -351,8 +351,8 @@ class NpingOps {
     long getDelay();
     bool issetDelay();
 
-    int setRounds(u32 val);
-    u32 getRounds();
+    int setRounds(u64 val);
+    u64 getRounds();
     bool issetRounds();
 
     int setSendPreference(int v);

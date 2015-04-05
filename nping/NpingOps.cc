@@ -565,10 +565,10 @@ int NpingOps::getDetailLevel(){
 
 /** Sets packet rounds (number of times that we iterate over each target host)
  *  @return OP_SUCCESS on success and OP_FAILURE in case of error.           */
-int NpingOps::setRounds(u32 val){
+int NpingOps::setRounds(u64 val){
   /* If zero is supplied, set highest value */
   if(val==0)
-    this->rounds=0xFFFFFFFF;
+    this->rounds=0xFFFFFFFFFFFFFFFF;
   else
     this->rounds=val;
   this->rounds_set=true;
@@ -578,7 +578,7 @@ int NpingOps::setRounds(u32 val){
 
 /** Returns value of attribute pcount (number of packets that should be sent
  *  to each target)  */
-u32 NpingOps::getRounds(){
+u64 NpingOps::getRounds(){
   return this->rounds;
 } /* End of getRounds() */
 
@@ -1385,7 +1385,7 @@ void NpingOps::validateOptions() {
     if(!this->isRoot()){
       nping_warning(QT_1, "Warning: Setting a source port in TCP-Connect mode may not work if you are not root");
     }else{
-      nping_warning(QT_1, "Warning: In TCP-Connect mode, setting less source ports (%d) than packet rounds (%d) may not work. You may want to reduce the number of rounds or increase the number of source ports. (use --count 1).", this->sportcount, this->getRounds() );
+      nping_warning(QT_1, "Warning: In TCP-Connect mode, setting less source ports than packet rounds may not work. You may want to reduce the number of rounds or increase the number of source ports. (use --count 1).");
     }
   }
 
