@@ -317,6 +317,7 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
   {"nsock-engine", required_argument, 0, 0},
   {"no-capture", no_argument, 0, 'N'},
   {"hide-sent", no_argument, 0, 'H'},
+  {"show-eth", no_argument, 0, 0},
 
   /* Output */
   {"verbose", optional_argument, 0, 'v'},
@@ -995,6 +996,8 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
         o.setBPFFilterSpec( optarg );
         if( o.issetDisablePacketCapture() && o.disablePacketCapture()==true )
             nping_warning(QT_2, "Warning: There is no point on specifying a BPF filter if you disable packet capture. BPF filter will be ignored.");
+    } else if (optcmp(long_options[option_index].name, "show-eth") == 0 ){
+        o.setShowEth(true);
     } else if (optcmp(long_options[option_index].name, "nsock-engine") == 0){
         if (nsock_set_default_engine(optarg) < 0)
           nping_fatal(QT_3, "Unknown or non-available engine: %s", optarg);

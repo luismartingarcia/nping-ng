@@ -416,7 +416,12 @@ int ProbeEngine::send_packet(TargetHost *tgt, PacketElement *pkt, struct timeval
   }
 
   nping_print(VB_0|NO_NEWLINE,"SENT (%.4fs) ", ((double)TIMEVAL_MSEC_SUBTRACT(*now, this->start_time)) / 1000);
-  pkt->print(stdout, 1);
+
+  if(o.showEth()==false && pkt->protocol_id()==HEADER_TYPE_ETHERNET){
+    pkt->getNextElement()->print();
+  }else{
+    pkt->print(stdout, 1);
+  }
   printf("\n");
   return OP_SUCCESS;
 } /* End of send_packet() */
