@@ -981,8 +981,8 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
     } else if (optcmp(long_options[option_index].name, "show-eth") == 0 ){
         o.setShowEth(true);
     } else if (optcmp(long_options[option_index].name, "nsock-engine") == 0){
-        if (nsock_set_default_engine(optarg) < 0)
-          nping_fatal(QT_3, "Unknown or non-available engine: %s", optarg);
+        if(nsock_set_default_engine(optarg)!=0)
+          nping_fatal(QT_3, "Invalid Nsock Engine. Possible values: %s", nsock_list_engines());
     /* Output Options */
     } else if (optcmp(long_options[option_index].name, "quiet") == 0 ){
             o.setVerbosity(-4);
