@@ -428,6 +428,10 @@ class NpingOps {
     u32 getMTU();
     bool issetMTU();
 
+    int setIPProto(u8 proto);
+    u8 getIPProto();
+    bool issetIPProto();
+
     IPAddress *getSpoofAddress();
     int setSpoofAddress(IPAddress *addr);
     int setSpoofAddress(IPAddress addr);
