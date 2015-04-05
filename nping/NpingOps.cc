@@ -218,12 +218,6 @@ NpingOps::NpingOps() {
   sportcount=0;
   source_ports_set=false;
 
-  /* ICMP */
-  memset( icmp_advert_entry_addr, 0, sizeof(u32)*MAX_ICMP_ADVERT_ENTRIES );
-  memset( icmp_advert_entry_pref, 0, sizeof(u32)*MAX_ICMP_ADVERT_ENTRIES );
-  icmp_advert_entry_count=0;
-  icmp_advert_entry_set=false;
-
   /* Ethernet */
   memset(src_mac, 0, 6);
   src_mac_set=false;
@@ -1010,45 +1004,6 @@ u16 *NpingOps::getSourcePorts(u16 *len){
 bool NpingOps::issetSourcePorts(){
   return this->source_ports_set;
 } /* End of issetSourcePorts() */
-
-
-/******************************************************************************
- *  Internet Control Message Protocol                                         *
- ******************************************************************************/
-
-int NpingOps::addICMPAdvertEntry(struct in_addr addr, u32 pref ){
-  if(this->icmp_advert_entry_count > MAX_ICMP_ADVERT_ENTRIES )
-    return OP_FAILURE;
-  this->icmp_advert_entry_addr[this->icmp_advert_entry_count] = addr;
-  this->icmp_advert_entry_pref[this->icmp_advert_entry_count] = pref;
-  this->icmp_advert_entry_count++;
-  this->icmp_advert_entry_set=true;
-  return OP_SUCCESS;
-} /* End of addICMPAdvertEntry() */
-
-
-/** @param num means that the caller wants to obtain the num-th entry.
- *  Count starts in 0 so the supplied value must be
- *  0 <= num < getICMPAdvertEntryCount() */
-int NpingOps::getICMPAdvertEntry(int num, struct in_addr *addr, u32 *pref){
-  if(num<0 || num>=icmp_advert_entry_count )
-    nping_fatal(QT_3,"getICMPAdvertEntry(): Supplied index is out of bounds.\n");
-  if(addr==NULL || pref==NULL)
-    nping_fatal(QT_3,"getICMPAdvertEntry(): NULL pointer supplied\n");
-  *addr =  this->icmp_advert_entry_addr[num];
-  *pref =  this->icmp_advert_entry_pref[num];
-  return OP_SUCCESS;
-} /* End of getICMPAdvertEntry() */
-
-
-int NpingOps::getICMPAdvertEntryCount(){
-  return this->icmp_advert_entry_count;
-} /* End of getICMPAdvertEntryCount()*/
-
-bool NpingOps::issetICMPAdvertEntry(){
-  return this->icmp_advert_entry_set;
-} /* End of issetICMPAdvertEntry()*/
-
 
 
 /******************************************************************************

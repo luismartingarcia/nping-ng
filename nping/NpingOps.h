@@ -177,7 +177,6 @@
 #define NOT_SET -1
 #define SET_RANDOM -2
 
-#define MAX_ICMP_ADVERT_ENTRIES 128
 #define MAX_TARGET_SPECS 1024
 #define MAX_TARGET_SPECS 1024
 #define MAX_IPv4_NETMASK_ALLOWED 8
@@ -259,14 +258,6 @@ class NpingOps {
     u16 *source_ports;        /* Source port for TCP/UPD packets       */
     int sportcount;           /* Total number of source ports          */
     bool source_ports_set;
-
-    /* ICMP */
-
-    /* ICMP Router advertisement entries */
-    struct in_addr icmp_advert_entry_addr[MAX_ICMP_ADVERT_ENTRIES];
-    u32 icmp_advert_entry_pref[MAX_ICMP_ADVERT_ENTRIES];
-    int icmp_advert_entry_count;
-    bool icmp_advert_entry_set;
 
     /* Ethernet */
     u8 src_mac[6];            /* Source MAC address                    */
@@ -441,12 +432,6 @@ class NpingOps {
     int setSourcePorts(u16 *ports_array, u16 total_ports);
     u16 *getSourcePorts(u16 *len);
     bool issetSourcePorts();
-
-    /* ICMPv4 */
-    int addICMPAdvertEntry(struct in_addr addr, u32 pref );
-    int getICMPAdvertEntry(int num, struct in_addr *addr, u32 *pref);
-    int getICMPAdvertEntryCount();
-    bool issetICMPAdvertEntry();
 
     /* Ethernet */
     int setSourceMAC(u8 * val);

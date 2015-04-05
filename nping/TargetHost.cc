@@ -658,16 +658,10 @@ ICMPv4Header *TargetHost::getICMPv4Header(){
     case ICMP_ROUTERADVERT:
       myicmp4->setAddrEntrySize(2);
       myicmp4->setLifetime(this->icmp4->lifetime.getNextValue());
-
-      /* TODO @todo Implement advert entries! */
-      //if(o.issetICMPAdvertEntry()){
-      //  for (int z=0; z<o.getICMPAdvertEntryCount(); z++){
-      //    struct in_addr entryaddr;
-      //    u32 entrypref;
-      //    o.getICMPAdvertEntry(z, &entryaddr, &entrypref );
-      //    myicmp4->addRouterAdvEntry(entryaddr, entrypref);
-      //   }
-      //}
+      assert(this->icmp4->preflevels.size()==this->icmp4->routeraddrs.size());
+      for(u16 z=0; z<this->icmp4->routeraddrs.size();z++){
+        myicmp4->addRouterAdvEntry(this->icmp4->routeraddrs[z].getNextValue(), this->icmp4->preflevels[z].getNextValue());
+      }
     break;
 
     case ICMP_PARAMPROB:

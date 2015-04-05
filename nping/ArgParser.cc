@@ -536,15 +536,21 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
       }
     /* ICMP Router Advertisement entry */
     } else if (optcmp(long_options[option_index].name, "icmp-advert-entry") == 0) {
+      ProtoField_inaddr auxpfinaddr;
+      ProtoField_u32 auxpf32;
       o.addMode(DO_ICMP);
       /* Format should be "IPADDR,PREF":  "192.168.10.99,31337" */
       if( meansRandom(optarg) ){
         while( (auxinaddr.s_addr=get_random_u32()) == 0);
-        o.addICMPAdvertEntry( auxinaddr, get_random_u32() );
+        auxpfinaddr.setConstant(auxinaddr);
+        aux32=get_random_u32();
       }else{
         parseAdvertEntry(optarg, &auxinaddr, &aux32); /* fatal()s on error */
-        o.addICMPAdvertEntry(auxinaddr, aux32);
       }
+      auxpfinaddr.setConstant(auxinaddr);
+      auxpf32.setConstant(aux32);
+      o.icmp4.routeraddrs.push_back(auxpfinaddr);
+      o.icmp4.preflevels.push_back(auxpf32);
     /* ICMP Timestamp originate timestamp */
     } else if (optcmp(long_options[option_index].name, "icmp-orig-time") == 0) {
       o.addMode(DO_ICMP);

@@ -91,8 +91,8 @@
  #define __HEADERTEMPLATES_H__ 1
 
 #include "ProtoField.h"
-
-
+#include <vector>
+using namespace std;
 
 /******************************************************************************
  * DEFAULT PROTOCOL FIELD VALUES                                              *
@@ -266,8 +266,8 @@ class ICMPv4HeaderTemplate : public HeaderTemplate{
     ProtoField_u8 numaddrs;          /* Number of router addresses */
     ProtoField_u8 addrsize;          /* Length of each address     */
     ProtoField_u16 lifetime;         /* Advertisement lifetime     */
-    ProtoField_inaddr routeraddr;    /* Router address             */
-    ProtoField_u32 preflevel;        /* Preference level           */
+    vector<ProtoField_inaddr> routeraddrs; /* Router addresses     */
+    vector<ProtoField_u32> preflevels;     /* Preference levels    */
 
     /* ICMP Netmask */
     ProtoField_inaddr mask;          /* Address mask               */
