@@ -161,6 +161,8 @@ class ProbeEngine  {
     int packet_capture_handler(nsock_pool nsp, nsock_event nse, void *arg);
     int tcpconnect_handler(nsock_pool nsp, nsock_event nse, void *arg);
     int udpunpriv_handler(nsock_pool nsp, nsock_event nse, void *arg);
+    static int delayed_output_handler(nsock_pool nsp, nsock_event nse, void *mydata);
+    static int print_rcvd_pkt(PacketElement *pkt, float timestamp);
 
 }; /* End of class ProbeEngine */
 
@@ -170,6 +172,7 @@ void interpacket_delay_wait_handler(nsock_pool nsp, nsock_event nse, void *arg);
 void packet_capture_handler_wrapper(nsock_pool nsp, nsock_event nse, void *arg);
 void tcpconnect_handler_wrapper(nsock_pool nsp, nsock_event nse, void *arg);
 void udpunpriv_handler_wrapper(nsock_pool nsp, nsock_event nse, void *arg);
+void delayed_output_handler_wrapper(nsock_pool nsp, nsock_event nse, void *arg);
 
 #endif /* __PROBE_ENGINE_H__ */
 

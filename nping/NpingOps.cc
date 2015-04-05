@@ -259,8 +259,9 @@ NpingOps::NpingOps() {
 
   memset(&last_sent_pkt_time, 0, sizeof(struct timeval));
 
-  delayed_rcvd_str=NULL;
-  delayed_rcvd_str_set=false;
+  delayed_rcvd_pkt=NULL;
+  delayed_rcvd_pkt_set=false;
+  delayed_rcvd_ts=0;
 
 } /* End of NpingOps() */
 
@@ -1762,26 +1763,27 @@ struct timeval NpingOps::getLastPacketSentTime(){
 } /* End of getLastPacketSentTime() */
 
 
-/** Sets the RCVD output to be delayed. The supplied string is strdup()ed, so
-  * the caller may safely free() it or modify after calling this function.
-  * The "id" parameter is the nsock timer event scheduled for the output of
-  * the RCVD string (usually scheduled by ProbeMode). It is provided to allow
-  * other objects (like EchoClient) to cancel the event if they take care of
-  * printing the RCVD string before the timer goes off.*/
-int NpingOps::setDelayedRcvd(const char *str, nsock_event_id id){
-  if(str==NULL)
-    return OP_FAILURE;
-  this->delayed_rcvd_str=strdup(str);
+/** Sets the RCVD packet to be delayed. The function stores the packet pointer
+  * so it can be freed after its contents are printed out. So be careful, no
+  * free()ing on that packet! The "id" parameter is the nsock timer event
+  * scheduled for the output of the RCVD string (usually scheduled by ProbeMode)
+  * It is provided to allow other objects (like EchoClient) to cancel the event
+  * if they take care of printing the RCVD string before the timer goes off.
+  * The timestamp parameter is the number to be printed right after the "RCVD"
+  * tag (e.g: RCVD (2.0423s) IPv4[127.0.0.1...)*/
+int NpingOps::setDelayedRcvd(PacketElement *pkt, float timestamp, nsock_event_id id){
+  this->delayed_rcvd_pkt=pkt;
   this->delayed_rcvd_event=id;
-  this->delayed_rcvd_str_set=true;
+  this->delayed_rcvd_ts=timestamp;
+  this->delayed_rcvd_pkt_set=true;
   return OP_SUCCESS;
 } /* End of setDelayedRcvd() */
 
 
-/** Returns a pointer to a delayed RCVD output string. It returns non-NULL
-  * strings only once per prior setDelayedRcvd() call. This is, when a string
+/** Returns a pointer to a delayed RCVD output packet. It returns non-NULL
+  * PacketElements only once per setDelayedRcvd() call. This is, when a packet
   * has been set through a setDelayRcdv() call, the first time getDelayRcvd()
-  * is called, it returns that string. Subsequent calls will return NULL until
+  * is called, it returns that packets. Subsequent calls will return NULL until
   * another string is set, using setDelayRcdv() again.
   * The "id" parameter will be filled with the timer event that was supposed
   * to print the message. If getDelayedRcvd() is called by the timer handler
@@ -1789,18 +1791,21 @@ int NpingOps::setDelayedRcvd(const char *str, nsock_event_id id){
   * If the caller is some other method that wants to print the RCVD string
   * before the timer goes off, it may use the event ID to cancel the scheduled
   * event since it's no longer necessary.
-  * @warning returned string is the strdup()ed version of the string passed
-  * in the call to setDelayedRcvd(), so the caller MUST free the returned
-  * pointer when it's done using it.  */
-char *NpingOps::getDelayedRcvd(nsock_event_id *id){
-  if(delayed_rcvd_str_set==false){
+  * @warning returned packet pointer points to the original memory area passed
+  * to setDelayedRcvd(). The pointer is not freed, so the caller is responsible
+  * for doing that. Note that the proper way to free it is by calling
+  * PacketParser::freePacketChain().  */
+PacketElement *NpingOps::getDelayedRcvd(float *timestamp, nsock_event_id *id){
+  if(delayed_rcvd_pkt_set==false){
     return NULL;
   }else{
-    this->delayed_rcvd_str_set=false;
-    char *old=this->delayed_rcvd_str;
-    this->delayed_rcvd_str=NULL;
+    this->delayed_rcvd_pkt_set=false;
+    PacketElement *old=this->delayed_rcvd_pkt;
+    this->delayed_rcvd_pkt=NULL;
     if(id!=NULL)
       *id=this->delayed_rcvd_event;
+    if(timestamp!=NULL)
+      *timestamp=this->delayed_rcvd_ts;
     return old;
   }
 } /* End of getDelayedRcvd() */

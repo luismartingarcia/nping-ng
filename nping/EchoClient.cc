@@ -372,7 +372,8 @@ int EchoClient::nep_recv_ready(){
 int EchoClient::nep_recv_echo(u8 *packet, size_t packetlen){
   nping_print(DBG_4, "%s(%p, %lu)", __func__, packet, (unsigned long)packetlen);
   EchoHeader pkt_in;
-  char *delayedstr=NULL;
+  PacketElement *delayed_pkt=NULL;
+  float delayed_ts=0;
   nsock_event_id ev_id;
   u8 *pkt=NULL;
   u16 pktlen=0;
@@ -414,10 +415,10 @@ int EchoClient::nep_recv_echo(u8 *packet, size_t packetlen){
   if( o.getVerbosity() >= VB_3)
     luis_hdump((char*)pkt, pktlen);
 
-  /* Check if there is a delayed RCVD string that is waiting to be printed */
-  if( (delayedstr=o.getDelayedRcvd(&ev_id))!=NULL ){
-    printf("%s", delayedstr);
-    free(delayedstr);
+  /* Check if there is a delayed RCVD packet that is waiting to be printed */
+  if( (delayed_pkt=o.getDelayedRcvd(&delayed_ts, &ev_id))!=NULL ){
+    ProbeEngine::print_rcvd_pkt(delayed_pkt, delayed_ts);
+    PacketParser::freePacketChain(delayed_pkt);
     nsock_event_cancel(this->nsp, ev_id, 0);
   }
   return OP_SUCCESS;

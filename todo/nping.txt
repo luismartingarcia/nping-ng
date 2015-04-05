@@ -48,14 +48,6 @@
  * Things that have NOT been done yet                                        *
  *****************************************************************************/
 
-* Fix delayed output of RCVD lines in echo mode. There is this function:
-  NpingOps::setDelayedRcvd(const char *str, nsock_event_id id) in
-  NpingOps, but currently it is not being called by the ProbeEngine. Note that
-  since we now print packets using the PacketElement::print() and don't have
-  access to a proper string, it is possible that we need to save a copy of the
-  packet instead of storing it's ascii representation, so we can call print()
-  on it, and get the info printed out.
-
 * Check int ProbeEngine::packet_capture_handler(). It's probably leaking a
   lot of memory. When run with "sudo ./nping localhost -c0  --delay 0ms"
   allocated memory keeps growing and growing. There are two things to check,
@@ -980,3 +972,11 @@ SENT (1.0580s) ARP who has 192.168.240.139? Tell 192.168.240.1
     Tx time: 4.00116s | Tx bytes/s: 49.99 | Tx pkts/s: 1.25
     Rx time: 4.68375s | Rx bytes/s: 49.11 | Rx pkts/s: 1.07
     Nping done: 1 IP address pinged in 6.08 seconds
+
+[DONE] Fix delayed output of RCVD lines in echo mode. There is this function:
+  NpingOps::setDelayedRcvd(const char *str, nsock_event_id id) in
+  NpingOps, but currently it is not being called by the ProbeEngine. Note that
+  since we now print packets using the PacketElement::print() and don't have
+  access to a proper string, it is possible that we need to save a copy of the
+  packet instead of storing it's ascii representation, so we can call print()
+  on it, and get the info printed out.

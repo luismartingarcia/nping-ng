@@ -289,9 +289,10 @@ class NpingOps {
     bool echo_server_once;   /* Run server for only 1 client and quit? */
     bool echo_server_once_set;
     struct timeval last_sent_pkt_time; /* Time last packet was sent    */
-    char *delayed_rcvd_str;    /* Delayed RCVD output string           */
-    bool delayed_rcvd_str_set; /* Do we have a delayed RCVD string?    */
+    PacketElement *delayed_rcvd_pkt; /* Delayed output RCVD packet*/
+    bool delayed_rcvd_pkt_set; /* Do we have a delayed pkt?    */
     nsock_event_id delayed_rcvd_event; /* Nsock event for delayed RCVD */
+    float delayed_rcvd_ts;             /* Time delayed pkt was received*/
 
    private:
     vector<IPAddress *> target_addresses;  /* List of target IP addresses */
@@ -497,8 +498,8 @@ class NpingOps {
     int setLastPacketSentTime(struct timeval t);
     struct timeval getLastPacketSentTime();
 
-    int setDelayedRcvd(const char *str, nsock_event_id id);
-    char *getDelayedRcvd(nsock_event_id *id);
+    int setDelayedRcvd(PacketElement *pkt, float timestamp, nsock_event_id id);
+    PacketElement *getDelayedRcvd(float *timestamp, nsock_event_id *id);
 
     /* TargetHost handling */
     int addTargetSpec(const char *spec);

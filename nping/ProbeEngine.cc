@@ -708,26 +708,17 @@ int ProbeEngine::packet_capture_handler(nsock_pool nsp, nsock_event nse, void *a
           for(size_t i=0; i<o.target_hosts.size(); i++){
             if(o.target_hosts[i]->is_response(pkt, &now)){
               /* It's a response! Let's print it. */
-              PacketElement *pkt2print=pkt;
-              nping_print(VB_0|NO_NEWLINE,"RCVD (%.4fs) ", ((double)TIMEVAL_MSEC_SUBTRACT(now, this->start_time)) / 1000);
-              /* Skip the Ethernet layer if necessary */
-              if(o.showEth()==false && pkt->protocol_id()==HEADER_TYPE_ETHERNET){
-                pkt2print=pkt->getNextElement();
-              }
-              pkt2print->print(stdout, o.getDetailLevel());
-              if(o.getVerbosity()>=VB_3){
-                int mylen=0;
-                u8 *mybuff = pkt2print->getBinaryBuffer(&mylen);
-                if(mybuff!=NULL){
-                  if(mylen>0){
-                    nping_print(VB_3|NO_NEWLINE,"\n");
-                    print_hexdump(VB_3 | NO_NEWLINE, mybuff,mylen);
-                  }
-                  free(mybuff);
-                }
+              float timestamp=(((double)TIMEVAL_MSEC_SUBTRACT(now, this->start_time)) / 1000);
+
+              if( o.getRole() == ROLE_CLIENT ){
+                int delay=(int)MIN(o.getDelay()*0.33, 333);
+                nsock_event_id ev_id=nsock_timer_create(nsp, delayed_output_handler_wrapper, delay, NULL);
+                o.setDelayedRcvd(pkt, timestamp, ev_id);
               }else{
-                nping_print(VB_0|NO_NEWLINE,"\n");
+                  ProbeEngine::print_rcvd_pkt(pkt, timestamp);
               }
+
+
 
               /* Find which transport layer protocol we have received and
                * update stats accordingly. */
@@ -1065,6 +1056,52 @@ int ProbeEngine::udpunpriv_handler(nsock_pool nsp, nsock_event nse, void *mydata
 } /* End of udpunpriv_handler() */
 
 
+/** Prints a delayed RCVD packet when the nsock timer event goes off. This is used
+  * by the echo client to delay output of received packets for a bit, so we
+  * print the echoed packet (CAPT line) before the RCVD one, so it can be easily
+  * compared with the SENT packet. */
+int ProbeEngine::delayed_output_handler(nsock_pool nsp, nsock_event nse, void *mydata){
+  PacketElement *pkt=NULL;
+  float ts=0;
+  nsock_event_id ev_id;
+  if((pkt=o.getDelayedRcvd(&ts, &ev_id))!=NULL){
+    ProbeEngine::print_rcvd_pkt(pkt, ts);
+    PacketParser::freePacketChain(pkt);
+  }
+  return OP_SUCCESS;
+} /* End of delayed_output_handler() */
+
+
+/** Prints RCVD packets. The result is a line like the following:
+  * RCVD (2.0000s) IPv4[127.0.0.1 > 127.0.0.1 ver=4 ihl=5 tos=0x00 iplen=28...
+  * The supplied packet is not freed(). The caller is responsible for that. */
+int ProbeEngine::print_rcvd_pkt(PacketElement *pkt, float timestamp){
+  PacketElement *pkt2print=pkt;
+  nping_print(VB_0|NO_NEWLINE,"RCVD (%.4fs) ", timestamp);
+  /* Skip the Ethernet layer if necessary */
+  if(o.showEth()==false && pkt->protocol_id()==HEADER_TYPE_ETHERNET){
+    pkt2print=pkt->getNextElement();
+  }
+  if(o.getVerbosity()>=VB_0){
+    pkt2print->print(stdout, o.getDetailLevel());
+  }
+  if(o.getVerbosity()>=VB_3){
+    int mylen=0;
+    u8 *mybuff = pkt2print->getBinaryBuffer(&mylen);
+    if(mybuff!=NULL){
+      if(mylen>0){
+        nping_print(VB_3|NO_NEWLINE,"\n");
+        print_hexdump(VB_3 | NO_NEWLINE, mybuff,mylen);
+      }
+      free(mybuff);
+    }
+  }else{
+    nping_print(VB_0|NO_NEWLINE,"\n");
+  }
+  return OP_SUCCESS;
+} /* End of print_rcvd_pkt() */
+
+
 /******************************************************************************
  * Nsock handlers and handler wrappers.                                       *
  ******************************************************************************/
@@ -1109,3 +1146,13 @@ void udpunpriv_handler_wrapper(nsock_pool nsp, nsock_event nse, void *arg){
   prob.udpunpriv_handler(nsp, nse, arg);
   return;
 } /* End of udpunpriv_handler_wrapper() */
+
+
+/* This handler is a wrapper for the ProbeEngine::delayed_output_handler()
+ * method. We need this because C++ does not allow to use class methods as
+ * callback functions for things like signal() or the Nsock lib. */
+void delayed_output_handler_wrapper(nsock_pool nsp, nsock_event nse, void *arg){
+  nping_print(DBG_4, "%s()", __func__);
+  ProbeEngine::delayed_output_handler(nsp, nse, arg);
+  return;
+} /* End of delayed_output_handler_wrapper() */
