@@ -2977,9 +2977,11 @@ int NpingOps::addTargetSpec(const char *spec){
 int NpingOps::setupTargetHosts(){
   const char *errmsg=NULL;
   TargetHost *newhost=NULL;
+  NetworkInterface *newiface=NULL;
   struct sockaddr_storage ss;
   struct route_nfo route;
   IPAddress *auxaddr;
+  bool iface_found=false;
 
   /* Turn each target spec into an array of addresses */
   for(u32 i=0; i<this->target_specs.size(); i++){
@@ -2994,6 +2996,9 @@ int NpingOps::setupTargetHosts(){
     }
   }
 
+  /* Now for each address, let's determine if we have enough info to route
+   * packets to it. If we have, turn the address into a full TargetHost object
+   * and store it in the list of targets */
   for(u32 i=0; i<this->target_addresses.size(); i++){
     memset(&ss, 0, sizeof(struct sockaddr_storage));
     memset(&route, 0, sizeof(struct route_nfo));
@@ -3021,8 +3026,25 @@ int NpingOps::setupTargetHosts(){
         newhost->setNextHopAddress(auxaddr);
       }
 
-      /* Interface information */
-      newhost->setInterfaceInfo(route.ii);
+      /* Interface information. Let's see if we previously found a target that
+       * requires the same interface. */
+      iface_found=false;
+      for(u32 k=0; k<this->interfaces.size(); k++){
+        if( !strcmp(this->interfaces[k]->getName(), route.ii.devname) ){
+          iface_found=true;
+          newhost->setInterface(this->interfaces[k]);
+          nping_print(DBG_4, "Same interface required. Reusing %s", route.ii.devname);
+          break;
+        }
+      }
+      /* If we haven't seen that interface before, instance a new NetworkInterface
+       * and store it in the interface vector. */
+      if(iface_found==false){
+        newiface=new NetworkInterface(route.ii);
+        newhost->setInterface(newiface);
+        this->interfaces.push_back(newiface);
+        nping_print(DBG_4, "New interface required: %s", route.ii.devname);
+      }
 
       /* We have all the info we need. Now, just add the new host to the list of
        * target hosts. */

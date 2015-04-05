@@ -181,6 +181,7 @@
 #include "stats.h"
 #include "NpingTargets.h"
 #include "TargetHost.h"
+#include "NetworkInterface.h"
 #include <string>
 
 class NpingOps {
@@ -364,6 +365,7 @@ class NpingOps {
    private:
     vector<IPAddress *> target_addresses;
     vector<const char *> target_specs;
+    vector<NetworkInterface *> interfaces;
 
   public:
     NpingTargets targets;
