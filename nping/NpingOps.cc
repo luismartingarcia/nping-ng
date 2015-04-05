@@ -2071,7 +2071,15 @@ int NpingOps::setupTargetHosts(){
 
       /* Now let's see if we need to do address resolution on the target */
       do_eth=false;
-      if(this->getSendPreference()==PACKET_SEND_NOPREF){
+	  /* In Windows, we always try sending packets at the Ethernet level, unless
+	   * the user passed --send-ip.*/
+	  if(this->win32() && this->getSendPreference()==PACKET_SEND_NOPREF){
+        if(newhost->getInterface()->getType()!=devt_ethernet){
+          nping_fatal(QT_3, "Ethernet device required on Windows platforms. Target host only reachable through a non-Ethernet network interface (%s).", newhost->getInterface()->getName());
+        }else{
+          do_eth=true;
+        }
+	  }else if(this->getSendPreference()==PACKET_SEND_NOPREF){
         /* For IPv6 we always try to send at the Ethernet level because many
          * systems impose big limitations on raw IPv6 sockets. We want to be
          * able to produce our own IPv6 headers and injecting packets at
@@ -2188,4 +2196,11 @@ u32 NpingOps::totalTargetHosts(){
   return this->target_hosts.size();
 } /* End of totalTargetHosts() */
 
-
+/* Returns true if the underlying OS is a Microsoft Windows system. */
+bool NpingOps::win32(){
+  #ifdef WIN32
+    return true;
+  #else
+    return false;
+  #endif
+} /* End of win32() */

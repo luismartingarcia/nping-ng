@@ -494,6 +494,7 @@ class NpingOps {
     void displayNpingDoneMsg();
     void displayStatistics();
     int cleanup();
+    bool win32();
 
     int setLastPacketSentTime(struct timeval t);
     struct timeval getLastPacketSentTime();
