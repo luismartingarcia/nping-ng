@@ -1202,12 +1202,7 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
  /* Now it's time to parse target host specifications. As nmap does, Nping
   * treats everything getopt() can't parse as a host specification. At this
   * point, var optind should point to the argv[] position that contains the
-  * first unparsed argument. User may specify multiple target hosts so to
-  * handle this, function grab_next_host_spec() returns the next target
-  * specification available. This function will be called until there are no
-  * more target hosts to parse (returned NULL). Once we have a spec, we use
-  * class NpingTargets, that stores the specs and will provide the targets
-  * through calls to getNextTarget();
+  * first unparsed argument. User may specify multiple target hosts.
   * */
   const char *next_spec=NULL;
   while ( (next_spec= grab_next_host_spec(NULL, false, argc, argv)) != NULL ){

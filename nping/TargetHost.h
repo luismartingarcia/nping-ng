@@ -1,6 +1,6 @@
 
 /***************************************************************************
- * NpingTarget.h -- The NpingTarget class encapsulates much of the         *
+ * TargetHost.h -- The TargetHost class encapsulates much of the           *
  * information Nping has about a host. Things like next hop address or the *
  * network interface that should be used to send probes to the target, are *
  * stored in this class as they are determined.                            *

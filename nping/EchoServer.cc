@@ -128,8 +128,9 @@
 #include "nsock.h"
 #include "output.h"
 #include "NpingOps.h"
-#include "ProbeMode.h"
 #include <signal.h>
+#include "utils_net.h"
+#include "utils.h"
 
 extern NpingOps o;
 extern EchoServer es;

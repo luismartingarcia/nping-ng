@@ -121,8 +121,6 @@
  *                                                                         *
  ***************************************************************************/
 
-#include "NpingTarget.h"
-
 #ifndef UTILS_NET_H
 #define UTILS_NET_H 1
 

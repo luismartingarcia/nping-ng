@@ -185,7 +185,6 @@
 #include "nping.h"
 #include "global_structures.h"
 #include "stats.h"
-#include "NpingTargets.h"
 #include "TargetHost.h"
 #include "NetworkInterface.h"
 #include "HeaderTemplates.h"
