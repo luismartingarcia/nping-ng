@@ -48,6 +48,39 @@
  * Things that have NOT been done yet                                        *
  *****************************************************************************/
 
+* When pinging multiple hosts using more than one protocol, consider printing
+  per-protocol/per-host stats, not only global per-protocol stats. Now it looks
+  like this:
+
+    Statistics for host 192.168.1.1:
+     |_ Raw packets sent: 20 (900B) | Rcvd: 15 (620B) | Lost: 5 (25.00%)
+     |_ Max rtt: 3.326ms | Min rtt: 1.347ms | Avg rtt: 2.398ms
+    Statistics for host 74.207.254.18:
+     |_ Raw packets sent: 20 (900B) | Rcvd: 4 (224B) | Lost: 16 (80.00%)
+     |_ Max rtt: 28.020ms | Min rtt: 21.469ms | Avg rtt: 24.482ms
+    Statistics for host ::1:
+     |_ Raw packets sent: 15 (780B) | Rcvd: 15 (1.020KB) | Lost: 0 (0.00%)
+     |_ Max rtt: 0.469ms | Min rtt: 0.279ms | Avg rtt: 0.361ms
+    Raw packets sent: 55 (2.580KB) | Rcvd: 34 (1.864KB) | Lost: 21 (38.18%)
+    TCP packets sent: 15 | Rcvd: 10 | Lost: 5 (33.33%)
+    UDP packets sent: 15 | Rcvd: 0 | Lost: 15 (100.00%)
+    ARP packets sent: 10 | Rcvd: 5 | Lost: 5 (50.00%)
+    ICMPv4 packets sent: 10 | Rcvd: 9 | Lost: 1 (10.00%)
+    ICMPv6 packets sent: 5 | Rcvd: 10 | Lost: 0 (0.00%)
+    Tx time: 0.13990s | Tx bytes/s: 18441.74 | Tx pkts/s: 393.14
+    Rx time: 0.25161s | Rx bytes/s: 7408.38 | Rx pkts/s: 135.13
+    Nping done: 3 IP addresses pinged in 0.32 seconds
+
+  but per-host stats could be something like:
+
+    Statistics for host 192.168.1.1:
+     |_ Raw packets sent: 20 (900B) | Rcvd: 15 (620B) | Lost: 5 (25.00%)
+     |_ TCP packets sent: 5 | Rcvd: 1 | Lost: 4 (80.00%)
+     |_ UDP packets sent: 5 | Rcvd: 0 | Lost: 5 (100.00%)
+     |_ ARP packets sent: 5 | Rcvd: 0 | Lost: 5 (100.00%)
+     |_ ICMPv4 packets sent: 5 | Rcvd: 4 | Lost: 1 (20.00%)
+     |_ Max rtt: 3.326ms | Min rtt: 1.347ms | Avg rtt: 2.398ms
+
 * Packets captured seem to include things like the 2-byte Ethernet trailing
   checksum. Check nse_readpcap() is working correctly.
 
@@ -66,36 +99,6 @@
 * Now that nping has multi packet support, consider extending the echo protocol
   so multiple types of patches can be matched by the echo server. This could be
   done by allowing one NEP_PACKET_SPEC per transport protocol (IP, TCP, UDP).
-
-* Fix stats for the echo server. Currently it prints "Raw packets sent". That
-  line needs to dissapear from the output.
-
-    Starting Nping 0.5.61TEST4 ( http://nmap.org/nping ) at 2012-08-05 20:09 CEST
-    Packet capture will be performed using network interface wlan0.
-    Waiting for connections...
-    ^C
-    Raw packets captured: 0 (0B) | Echoed: 0 (0B) | Not Matched: 0 (0B) (0.00%)
-    Raw packets sent: 0 (0B) | Rcvd: 0 (0B) | Lost: 0 (0.00%)
-    Tx time: 0.95463s | Tx bytes/s: 0.00 | Tx pkts/s: 0.00
-    Rx time: 0.95463s | Rx bytes/s: 0.00 | Rx pkts/s: 0.00
-    Nping done: 0 clients served in 0.95 seconds
-
-* Improve stats. When sending multiple packets at the same time, provide
-  sent/rcvd stats for each type.
-
-    sudo ./nping google.com --tcp --icmp
-
-    Starting Nping 0.5.61TEST4 ( http://nmap.org/nping ) at 2012-08-05 20:14 CEST
-    SENT (0.0000s) IPv4[192.168.1.171 > 74.125.230.197 ttl=64 id=28991 iplen=40] TCP[32925 > 80 S seq=926182838 win=1480]
-    SENT (0.0000s) IPv4[192.168.1.171 > 74.125.230.197 ttl=64 id=28992 iplen=28] ICMPv4[Echo request id=50987 seq=0]
-    RCVD (0.0250s) IPv4[74.125.230.197 > 192.168.1.171 ttl=55 id=45449 iplen=44] TCP[80 > 32925 SA seq=789301890 ack=926182839 win=14300 <mss 1430>] Payload[2 bytes]
-    RCVD (0.0250s) IPv4[74.125.230.197 > 192.168.1.171 ttl=55 id=45450 iplen=28] ICMPv4[Echo reply id=50987 seq=0] Payload[18 bytes]
-    ^C
-    Max rtt: 25.957ms | Min rtt: 25.141ms | Avg rtt: 25.549ms
-    Raw packets sent: 2 (68B) | Rcvd: 2 (92B) | Lost: 0 (0.00%)
-    Tx time: 0.62958s | Tx bytes/s: 108.01 | Tx pkts/s: 3.18
-    Rx time: 0.62958s | Rx bytes/s: 146.13 | Rx pkts/s: 3.18
-    Nping done: 1 IP address pinged in 0.70 seconds
 
 * For Echo clients, fix CAPT time calculation and delayed output.
   Currently it doesn't work:
@@ -979,4 +982,33 @@ SENT (1.0580s) ARP who has 192.168.240.139? Tell 192.168.240.1
     Tx time: 1.45961s | Tx bytes/s: 54.81 | Tx pkts/s: 1.37
     Rx time: 1.45961s | Rx bytes/s: 63.03 | Rx pkts/s: 1.37
     Nping done: 1 IP address pinged in 3.32 seconds
-  
+
+[DONE] Fix stats for the echo server. Currently it prints "Raw packets sent". That
+  line needs to dissapear from the output.
+
+    Starting Nping 0.5.61TEST4 ( http://nmap.org/nping ) at 2012-08-05 20:09 CEST
+    Packet capture will be performed using network interface wlan0.
+    Waiting for connections...
+    ^C
+    Raw packets captured: 0 (0B) | Echoed: 0 (0B) | Not Matched: 0 (0B) (0.00%)
+    Raw packets sent: 0 (0B) | Rcvd: 0 (0B) | Lost: 0 (0.00%)
+    Tx time: 0.95463s | Tx bytes/s: 0.00 | Tx pkts/s: 0.00
+    Rx time: 0.95463s | Rx bytes/s: 0.00 | Rx pkts/s: 0.00
+    Nping done: 0 clients served in 0.95 seconds
+
+[DONE] Improve stats. When sending multiple packets at the same time, provide
+  sent/rcvd stats for each type.
+
+    sudo ./nping google.com --tcp --icmp
+
+    Starting Nping 0.5.61TEST4 ( http://nmap.org/nping ) at 2012-08-05 20:14 CEST
+    SENT (0.0000s) IPv4[192.168.1.171 > 74.125.230.197 ttl=64 id=28991 iplen=40] TCP[32925 > 80 S seq=926182838 win=1480]
+    SENT (0.0000s) IPv4[192.168.1.171 > 74.125.230.197 ttl=64 id=28992 iplen=28] ICMPv4[Echo request id=50987 seq=0]
+    RCVD (0.0250s) IPv4[74.125.230.197 > 192.168.1.171 ttl=55 id=45449 iplen=44] TCP[80 > 32925 SA seq=789301890 ack=926182839 win=14300 <mss 1430>] Payload[2 bytes]
+    RCVD (0.0250s) IPv4[74.125.230.197 > 192.168.1.171 ttl=55 id=45450 iplen=28] ICMPv4[Echo reply id=50987 seq=0] Payload[18 bytes]
+    ^C
+    Max rtt: 25.957ms | Min rtt: 25.141ms | Avg rtt: 25.549ms
+    Raw packets sent: 2 (68B) | Rcvd: 2 (92B) | Lost: 0 (0.00%)
+    Tx time: 0.62958s | Tx bytes/s: 108.01 | Tx pkts/s: 3.18
+    Rx time: 0.62958s | Rx bytes/s: 146.13 | Rx pkts/s: 3.18
+    Nping done: 1 IP address pinged in 0.70 seconds
