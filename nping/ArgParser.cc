@@ -133,6 +133,8 @@
 #include "utils.h"
 #include "utils_net.h"
 #include "output.h"
+#include <vector>
+using namespace std;
 
 extern NpingOps o;
 
@@ -1011,11 +1013,11 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
 
     case 'p': /* Destination port */
         /* Parse port spec */
-        nping_getpts_simple(optarg, &portlist, &auxint);
+        spec_to_ports(optarg, &portlist, &auxint);
         if( portlist == NULL || auxint <= 0 ){
-            nping_fatal(QT_3,"Invalid target ports specification.");
+          nping_fatal(QT_3,"Invalid target ports specification.");
         }else{
-            o.setTargetPorts(portlist, auxint);
+          o.setTargetPorts(portlist, auxint);
         }
     break; /* case 'p': */
 
@@ -1181,8 +1183,14 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
   * through calls to getNextTarget();
   * */
   const char *next_spec=NULL;
-  while ( (next_spec= grab_next_host_spec(NULL, false, argc, (const char **) argv)) != NULL )
-       o.targets.addSpec( (char *) next_spec );
+  const char *errmsg=NULL;
+  vector<IPAddress *> targetaddrs;
+  while ( (next_spec= grab_next_host_spec(NULL, false, argc, argv)) != NULL ){
+    if( (errmsg=spec_to_addresses(next_spec, AF_INET, targetaddrs, 8))!=NULL)
+      nping_fatal(QT_3,"%s (%s)\n", errmsg, next_spec);
+  }
+  /* TODO: Add the IPAddress vector to NpingOps so we can build NpingTargets
+   * from it later */
 
  return OP_SUCCESS;
 } /* End of parseArguments() */

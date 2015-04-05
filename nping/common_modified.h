@@ -198,6 +198,5 @@ class TargetGroup {
   * STUFF FROM tcpip.cc
   ****************************************************************************/
 int devname2ipaddr_alt(char *dev, struct sockaddr_storage *addr);
-void getpts_aux(const char *origexpr, int nested, u8 *porttbl, int *portwarning);
 
 #endif

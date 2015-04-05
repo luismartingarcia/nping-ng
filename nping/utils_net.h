@@ -161,7 +161,6 @@ int getPacketStrInfo(const char *proto, const u8 *packet, u32 len, u8 *dstbuff, 
 int getPacketStrInfo(const char *proto, const u8 *packet, u32 len, u8 *dstbuff, u32 dstlen);
 int getNetworkInterfaceName(u32 destination, char *dev);
 int getNetworkInterfaceName(struct sockaddr_storage *dst, char *dev);
-int nping_getpts_simple(const char *origexpr, u16 **list, int *count);
 int resolveCached(char *host, struct sockaddr_storage *ss, size_t *sslen,int pf) ;
 struct hostent *gethostbynameCached(char *host);
 struct hostent *hostentcpy(struct hostent *src);
@@ -220,5 +219,7 @@ int getroutes_inet6_linux(route6_t *rtbuf, int max_routes);
 route6_t *route_dst_ipv6_linux(const struct sockaddr_storage *const dst);
 
 const char *spec_to_addresses(const char *target_expr, int af, vector<IPAddress *> &addrlist, u8 max_netmask);
+const char *spec_to_ports(const char *origexpr, u16 **list, int *count);
+const char *getpts_aux(const char *origexpr, int nested, u8 *porttbl);
 
 #endif /* UTILS_NET_H */

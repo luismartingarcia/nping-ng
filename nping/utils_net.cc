@@ -482,50 +482,6 @@ int getPacketStrInfo(const char *proto, const u8 *packet, u32 len, u8 *dstbuff, 
 } /* getPacketStrInfo() */
 
 
-/** This function converts a port ranges specification into an array of u16
-  * integers that represent each of the specified ports. It allocates space
-  * for the port lists and stores the pointer in the supplied "list" parameter.
-  * Also, the number of ports in the array is returned through the supplied
-  * "count" pointer.
-  * @warning the caller is the one responsible for free()ing the allocated
-  * list of ports.
-  */  
-int nping_getpts_simple(const char *origexpr, u16 **list, int *count) {
-  u8 *porttbl;
-  int portwarning = 0;
-  int i, j;
-
-  /* Allocate array to hold 2^16 ports */
-  porttbl = (u8 *) safe_zalloc(65536);
-
-  /* Get the ports but do not allow changing the type with T:, U:, or P:. */
-  getpts_aux(origexpr, 0, porttbl, &portwarning);
-
-  /* Count how many are set. */
-  *count = 0;
-  for (i = 0; i <= 65535; i++) {
-    if (porttbl[i])
-      (*count)++;
-  }
-
-  if (*count == 0){
-    free(porttbl);
-    return OP_FAILURE;
-  }
-
-  *list = (unsigned short *) safe_zalloc(*count * sizeof(u16));
-
-  /* Fill in the list. */
-  for (i = 0, j = 0; i <= 65535; i++) {
-    if (porttbl[i])
-      (*list)[j++] = i;
-  }
-  free(porttbl);
-  return OP_SUCCESS;
-} /* End of nping_getpts_simple() */
-
-
-
 
 /** Determines the net iface that should be used when sending packets
  *  to "destination".
@@ -2275,3 +2231,148 @@ const char *spec_to_addresses(const char *target_expr, int af, vector<IPAddress 
   }
   return NULL;
 } /* End of spec_to_addresses() */
+
+
+
+/** This function converts a port ranges specification into an array of u16
+  * integers that represent each of the specified ports. It allocates space
+  * for the port lists and stores the pointer in the supplied "list" parameter.
+  * Also, the number of ports in the array is returned through the supplied
+  * "count" pointer.
+  * @warning the caller is the one responsible for free()ing the allocated
+  * list of ports. */
+const char *spec_to_ports(const char *origexpr, u16 **list, int *count) {
+  u8 *porttbl;
+  int i=0, j=0;
+  const char *err=NULL;
+
+  /* Allocate array to hold 2^16 ports */
+  porttbl = (u8 *) safe_zalloc(65536);
+
+  /* Get the ports but do not allow changing the type with T:, U:, or P:. */
+  err=getpts_aux(origexpr, 0, porttbl);
+
+  /* Check if we parsed the spec successfully */
+  if(err!=NULL)
+    return err;
+
+  /* Count how many are set. */
+  *count = 0;
+  for (i = 0; i <= 65535; i++) {
+    if (porttbl[i])
+      (*count)++;
+  }
+
+  if (*count == 0){
+    free(porttbl);
+    return "No ports were supplied.";
+  }
+
+  *list = (unsigned short *) safe_zalloc(*count * sizeof(u16));
+
+  /* Fill in the list. */
+  for (i = 0, j = 0; i <= 65535; i++) {
+    if (porttbl[i])
+      (*list)[j++] = i;
+  }
+  free(porttbl);
+  return NULL;
+} /* End of spec_to_ports() */
+
+
+/* Aux function for spec_to_ports(). Must not be used directly. */
+const char *getpts_aux(const char *origexpr, int nested, u8 *porttbl) {
+  long rangestart = -2343242;
+  long rangeend = -9324423;
+  const char *current_range=origexpr;
+  char *endptr=NULL;
+
+  assert(origexpr!=NULL);
+
+  do {
+    while(isspace((int) *current_range))
+      current_range++; /* Spaces allowed here */
+
+    if (*current_range == '[') {
+      if (nested)
+        return "Can't nest [] brackets in port/protocol specification";
+
+        getpts_aux(++current_range, 1, porttbl);
+
+      // Skip past the ']'. This is OK because we can't nest []s
+      while(*current_range != ']') current_range++;
+      current_range++;
+
+      // Skip over a following ',' so we're ready to keep parsing
+      if (*current_range == ',') current_range++;
+
+      continue;
+    } else if (*current_range == ']') {
+      if (!nested)
+        return "Unexpected ] character in port/protocol specification";
+      else
+        return NULL;
+    } else if (*current_range == '-') {
+        rangestart = 1;
+    }
+    else if (isdigit((int) *current_range)) {
+      rangestart = strtol(current_range, &endptr, 10);
+      if (rangestart < 0 || rangestart > 65535)
+	return "Ports to be scanned must be between 0 and 65535 inclusive";
+      current_range = endptr;
+      while(isspace((int) *current_range)) current_range++;
+    }else {
+      return "Error #485: Your port specifications are illegal.";
+    }
+    /* Now I have a rangestart, time to go after rangeend */
+    if (!*current_range || *current_range == ',' || *current_range == ']') {
+      /* Single port specification */
+      rangeend = rangestart;
+    } else if (*current_range == '-') {
+      current_range++;
+      if (!*current_range || *current_range == ',' || *current_range == ']') {
+          rangeend = 65535;
+      } else if (isdigit((int) *current_range)) {
+	rangeend = strtol(current_range, &endptr, 10);
+	  if (rangeend < 0 || rangeend > 65535)
+	    return "Ports to be scanned must be between 0 and 65535 inclusive";
+	current_range = endptr;
+      } else {
+	return "Error #486: Your port specifications are illegal";
+      }
+      if (rangeend < rangestart) {
+        return "Your port range is backwards";
+      }
+    } else {
+	return "Error #487: Your port specifications are illegal.";
+    }
+
+    /* Now I have a rangestart and a rangeend, so I can add these ports */
+    while(rangestart <= rangeend) {
+      if (porttbl[rangestart]) {
+        return "Duplicate port number specified.";
+      } else {
+         porttbl[rangestart]=1;
+      }
+      rangestart++;
+    }
+
+    /* Find the next range */
+    while(isspace((int) *current_range)) current_range++;
+
+    if (*current_range == ']') {
+      if (!nested)
+        return "Unexpected ] character in port specification";
+      else
+        return NULL;
+    }
+    if (*current_range && *current_range != ',') {
+      return "Error #488: Your port specifications are illegal.";
+    }
+    if (*current_range == ',')
+      current_range++;
+  } while(current_range && *current_range);
+
+  return NULL;
+} /* End of getpts_aux() */
+
