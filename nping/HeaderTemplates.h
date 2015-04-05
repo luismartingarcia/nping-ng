@@ -140,6 +140,7 @@ class IPv4HeaderTemplate : public HeaderTemplate{
     ProtoField_bool df;   /* Don't Fragment flag         */
     ProtoField_bool mf;   /* More Fragments flag         */
     ProtoField_u16 off;   /* Fragment Offset             */
+    ProtoField_u16 csum;  /* Checksum                    */
     ProtoField_u8 ttl;    /* Time to Live                */
     ProtoField_u8 nh;     /* Next Header                 */
 

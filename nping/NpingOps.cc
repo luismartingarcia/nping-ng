@@ -207,9 +207,6 @@ NpingOps::NpingOps() {
     ip_proto=0;
     ip_proto_set=false;
 
-    badsum_ip=false;
-    badsum_ip_set=false;
-
     ip_options=NULL;
     ip_options_set=false;
 
@@ -230,9 +227,6 @@ NpingOps::NpingOps() {
     source_ports=NULL;
     sportcount=0;
     source_ports_set=false;
-
-    badsum=false;
-    badsum_set=false;
 
     /* ICMP */
     memset( icmp_advert_entry_addr, 0, sizeof(u32)*MAX_ICMP_ADVERT_ENTRIES );
@@ -943,40 +937,6 @@ bool NpingOps::issetIPProto(){
 } /* End of issetIPProto() */
 
 
-/** Sets attribute badsum_ip to "true". (Generate invalid checksums in IP
- *  packets)
- *  @return previous value of the attribute. */
-bool NpingOps::enableBadsumIP() {
-  bool prev = this->badsum_ip;
-  this->badsum_ip=true;
-  this->badsum_ip_set=true;
-  return prev;
-} /* End of enableBadsumIP() */
-
-
-/** Sets attribute badsum_ip to "false". (Do NOT Generate invalid checksums
- *  in IP packets)
- *  @return previous value of the attribute. */
-bool NpingOps::disableBadsumIP() {
-   bool prev = badsum_ip;
-   badsum_ip=false;
-   this->badsum_ip_set=true;
-   return prev;
-} /* End of disableBadsumIP() */
-
-
-/** Returns value of attribute badsum_ip */
-bool NpingOps::getBadsumIP() {
-   return this->badsum_ip;
-} /* End of getBadsumIP() */
-
-
-/* Returns true if option has been set */
-bool NpingOps::issetBadsumIP(){
-  return this->badsum_ip_set;
-} /* End of issetBadsumIP() */
-
-
 /** Sets the source address to be used in outgoing packets. */
 int NpingOps::setSpoofAddress(IPAddress *addr){
   this->spoof_addr=addr;
@@ -1120,41 +1080,6 @@ u16 *NpingOps::getSourcePorts(u16 *len){
 bool NpingOps::issetSourcePorts(){
   return this->source_ports_set;
 } /* End of issetSourcePorts() */
-
-
-/** Sets attribute badsum to "true". (Generate invalid checksums in UDP / TCP
- *  packets)
- *  @return previous value of the attribute. */
-bool NpingOps::enableBadsum() {
-  bool prev = this->badsum;
-  this->badsum=true;
-  this->badsum_set=true;
-  return prev;
-} /* End of enableBadsumTCP() */
-
-
-/** Sets attribute traceroute to "false". (Do NOT Generate invalid checksums
- *  in UDP / TCP packets)
- *  @return previous value of the attribute. */
-bool NpingOps::disableBadsum() {
-  bool prev = this->badsum;
-  this->badsum=false;
-  this->badsum_set=true;
-  return prev;
-} /* End of disableBadsum() */
-
-
-/** Returns value of attribute badsum */
-bool NpingOps::getBadsum() {
-  return this->badsum;
-} /* End of getBadsum() */
-
-
-/* Returns true if option has been set */
-bool NpingOps::issetBadsum(){
-  return this->badsum_set;
-} /* End of issetBadsum() */
-
 
 
 /******************************************************************************
@@ -1578,7 +1503,7 @@ if(this->source_ports!=NULL && this->mode(DO_TCP_CONNECT) && this->getRounds()>1
 
 /** Returns true if requested mode is a simple TCP connect probe mode */
 bool NpingOps::canRunUDPWithoutPrivileges(){
-  if( this->issetBadsumIP() ||
+  if( this->ip4.csum.getBehavior()==FIELD_TYPE_BADSUM ||
     this->ip4.ttl.is_set() ||
     //this->ip6.hlim.is_set() ||
     this->ip4.tos.is_set() ||

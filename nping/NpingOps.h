@@ -251,8 +251,6 @@ class NpingOps {
     /* IPv4 */
     u32 mtu;                  /* Custom MTU len (for IP fragmentation) */
     bool mtu_set;
-    bool badsum_ip;           /* Generate invalid checksums in TCP/UDP */
-    bool badsum_ip_set;
     char *ip_options;         /* IP Options                            */
     bool ip_options_set;
     IPAddress *spoof_addr;    /* Spoofed source IP address             */
@@ -272,9 +270,6 @@ class NpingOps {
     u16 *source_ports;        /* Source port for TCP/UPD packets       */
     int sportcount;           /* Total number of source ports          */
     bool source_ports_set;
-
-    bool badsum;              /* Generate invalid TCP/UDP checksums?   */
-    bool badsum_set;
 
     /* ICMP */
 
@@ -430,11 +425,6 @@ class NpingOps {
     bool issetRole();
 
     /* IPv4 */
-    bool enableBadsumIP();
-    bool disableBadsumIP();
-    bool getBadsumIP();
-    bool issetBadsumIP();
-
     int setTTL(u8 t);
     u8 getTTL();
     bool issetTTL();
@@ -491,11 +481,6 @@ class NpingOps {
     u16 *getSourcePorts(u16 *len);
     bool issetSourcePorts();
 
-    bool enableBadsum();
-    bool disableBadsum();
-    bool getBadsum();
-    bool issetBadsum();
-
     /* ICMP */
     int setICMPType(u8 type);
     u8 getICMPType();
@@ -504,11 +489,6 @@ class NpingOps {
     int setICMPCode(u8 val);
     u8 getICMPCode();
     bool issetICMPCode();
-
-    bool enableBadsumICMP();
-    bool disableBadsumICMP();
-    bool getBadsumICMP();
-    bool issetBadsumICMP();
 
     int setICMPRedirectAddress(struct in_addr val);
     struct in_addr getICMPRedirectAddress();

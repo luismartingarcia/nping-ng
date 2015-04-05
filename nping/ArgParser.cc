@@ -199,6 +199,7 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
   {"flags", required_argument, 0, 0},
   {"ack", required_argument, 0, 0},
   {"win", required_argument, 0, 0},
+  {"csum", required_argument, 0, 0},
   {"badsum", no_argument, 0, 0},
 
   /* ICMP */
@@ -255,6 +256,7 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
   {"mf", no_argument, 0, 0},
   {"ttl", required_argument, 0, 0},
   {"fragoff", required_argument, 0, 0},
+  {"csum-ip", required_argument, 0, 0},
   {"badsum-ip", no_argument, 0, 0},
   {"ip-options", required_argument, 0, 0},
   {"mtu", required_argument, 0, 0},
@@ -456,9 +458,6 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
         nping_fatal(QT_3, "Invalid TCP Window size. Value must be 0<=N<65535.");
       else
         o.tcp.win.setConstant(aux16);
-    /* Set a bad TCP checksum */
-    } else if (optcmp(long_options[option_index].name, "badsum") == 0) {
-        o.enableBadsum();
 
 /* ICMP OPTIONS **************************************************************/
     /* ICMP Type */
@@ -703,9 +702,16 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
       }else{
         o.ip4.off.setConstant(aux16);
       }
+    /* IP checksum */
+    } else if (optcmp(long_options[option_index].name, "csum-ip") == 0 ){
+      if(parse_u16(optarg, &aux16)!=OP_SUCCESS){
+        nping_fatal(QT_3,"The IP checksum must be a number between 0 65535 (inclusive)");
+      }else{
+        o.ip4.csum.setConstant(aux16);
+      }
     /* Set up a bad IP checksum */
     } else if (optcmp(long_options[option_index].name, "badsum-ip") == 0 ){
-        o.enableBadsumIP();
+      o.ip4.csum.setBehavior(FIELD_TYPE_BADSUM);
     /* IP Options */
     } else if (optcmp(long_options[option_index].name, "ip-options") == 0 ){
         /* We need to know if options specification is correct so we perform
@@ -869,6 +875,23 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
         }
 
 /* MISC OPTIONS **************************************************************/
+    /* Use a bad checksum for protocols above the network layer */
+    } else if (optcmp(long_options[option_index].name, "badsum") == 0) {
+      o.tcp.csum.setBehavior(FIELD_TYPE_BADSUM);
+      //o.udp.csum.setBehavior(FIELD_TYPE_BADSUM);
+      o.icmp4.csum.setBehavior(FIELD_TYPE_BADSUM);
+      //o.icmp6.csum.setBehavior(FIELD_TYPE_BADSUM);
+      // TODO @todo Uncomment these when UDP and ICMPv6 are implemented
+    } else if (optcmp(long_options[option_index].name, "csum") == 0 ){
+      if(parse_u16(optarg, &aux16) == OP_SUCCESS){
+        o.tcp.csum.setConstant(aux16);
+        //o.udp.csum.setConstant(aux16);
+        o.icmp4.csum.setConstant(aux16);
+        //o.icmp6.csum.setConstant(aux16);
+        // TODO @todo Uncomment these when UDP and ICMPv6 are implemented
+      }else{
+        nping_fatal(QT_3, "Invalid ICMP Identifier. Value must be 0<=N<2^16.");
+      }
     } else if (optcmp(long_options[option_index].name, "privileged") == 0 ){
         o.setIsRoot();
     } else if (optcmp(long_options[option_index].name, "unprivileged") == 0 ){
@@ -1152,10 +1175,12 @@ void ArgParser::printUsage(void){
 "   --flags <flag list>             : Set TCP flags (ACK,PSH,RST,SYN,FIN...)\n"
 "   --ack <acknumber>               : Set ACK number.\n"
 "   --win <size>                    : Set window size.\n"
+"   --csum <sum>                    : Set a fixed checksum.\n"
 "   --badsum                        : Use a random invalid checksum. \n"
 "UDP PROBE MODE:\n"
 "   -g, --source-port <portnumber>  : Set source port.\n"
 "   -p, --dest-port <port spec>     : Set destination port(s).\n"
+"   --csum <sum>                    : Set a fixed checksum.\n"
 "   --badsum                        : Use a random invalid checksum. \n"
 "ICMP PROBE MODE:\n"
 "  --icmp-type <type>               : ICMP type.\n"
@@ -1169,6 +1194,8 @@ void ArgParser::printUsage(void){
 "  --icmp-orig-time  <timestamp>    : Set originate timestamp.\n"
 "  --icmp-recv-time  <timestamp>    : Set receive timestamp.\n"
 "  --icmp-trans-time <timestamp>    : Set transmit timestamp.\n"
+"  --csum <sum>                    : Set a fixed checksum.\n"
+"  --badsum                         : Use a random invalid checksum. \n"
 "ARP/RARP PROBE MODE:\n"
 "  --arp-type <type>                : Type: ARP, ARP-reply, RARP, RARP-reply.\n"
 "  --arp-sender-mac <mac>           : Set sender MAC address.\n"
@@ -1186,6 +1213,7 @@ void ArgParser::printUsage(void){
 "  --rf                             : Set the reserved flag.\n"
 "  --ttl <hops>                     : Set time to live [0-255].\n"
 "  --fragoff <offset>               : Set the fragment offset (13 bits)"
+"  --csum-ip                        : Use a fixed checksum. \n"
 "  --badsum-ip                      : Use a random invalid checksum. \n"
 "  --ip-options <S|R [route]|L [route]|T|U ...> : Set IP options\n"
 "  --ip-options <hex string>                    : Set IP options\n"

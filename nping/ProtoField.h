@@ -96,7 +96,7 @@
 #define FIELD_TYPE_INCREMENTAL  1
 #define FIELD_TYPE_RANDOM       2
 #define FIELD_TYPE_DISCRETE_SET 3
-
+#define FIELD_TYPE_BADSUM       4
 
 /*****************************************************************************
  * ProtoField Class                                                          *
