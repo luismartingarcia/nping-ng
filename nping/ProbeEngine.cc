@@ -205,7 +205,7 @@ nsock_pool ProbeEngine::getNsockPool(){
  * @return OP_SUCCESS on success, fatals on error. */
 int ProbeEngine::setup_sniffer(vector<NetworkInterface *> &ifacelist, vector<const char *>bpf_filters){
   nping_print(DBG_4,"%s()", __func__);
-  char *errmsg = NULL;
+  int errcode = 0;
   char pcapdev[128];
   nsock_iod my_pcap_iod;
   assert(ifacelist.size()==bpf_filters.size());
@@ -229,8 +229,8 @@ int ProbeEngine::setup_sniffer(vector<NetworkInterface *> &ifacelist, vector<con
     #endif
 
     /* Obtain the pcap descriptor */
-    if ((errmsg = nsock_pcap_open(this->nsp, my_pcap_iod, pcapdev, 8192, o.getSpoofAddress() ? 1 : 0, bpf_filters[i])) != NULL)
-      nping_fatal(QT_3, "Error opening capture device %s --> %s", pcapdev, errmsg);
+    if ((errcode=nsock_pcap_open(this->nsp, my_pcap_iod, pcapdev, 8192, o.getSpoofAddress() ? 1 : 0, bpf_filters[i]))!=0)
+      nping_fatal(QT_3, "Error opening capture device %s --> Error %d", pcapdev, errcode);
 
     /* Add the IOD for the current interface to the list of pcap IODs */
     this->pcap_iods.push_back(my_pcap_iod);
