@@ -247,8 +247,9 @@ NpingOps::NpingOps() {
     tportcount=0;
     target_ports_set=false;
 
-    source_port=0;
-    source_port_set=false;
+    source_ports=NULL;
+    sportcount=0;
+    source_ports_set=false;
 
     badsum=false;
     badsum_set=false;
@@ -1367,9 +1368,7 @@ bool NpingOps::issetFlowLabel(){
  ******************************************************************************/
 
 /** @warning Returned ports are in HOST byte order */
-u16 *NpingOps::getTargetPorts( int *len ){
-  if( this->tportcount <= 0)
-    return NULL;
+u16 *NpingOps::getTargetPorts(u16 *len){
   if(len!=NULL)
     *len=this->tportcount;
   return this->target_ports;
@@ -1377,11 +1376,9 @@ u16 *NpingOps::getTargetPorts( int *len ){
 
 
 /** @warning ports in the supplied array must be in HOST byte order */
-int NpingOps::setTargetPorts( u16 *pnt, int n ){
-  if(this->tportcount>65536 || this->tportcount<0)
-    nping_fatal(QT_3, "setTargetPorts():: Invalid number of ports supplied.");
-  this->target_ports=pnt;
-  this->tportcount=n;
+int NpingOps::setTargetPorts(u16 *ports_array, u16 total_ports){
+  this->target_ports=ports_array;
+  this->tportcount=total_ports;
   this->target_ports_set=true;
   return OP_SUCCESS;
 } /* End of setTargetPorts() */
@@ -1397,26 +1394,30 @@ bool NpingOps::scan_mode_uses_target_ports(int mode){
     return (mode==TCP_CONNECT || mode==TCP || mode == UDP || mode == UDP_UNPRIV);
 } /*End of scan_mode_uses_target_ports*/
 
-/** Sets TCP/UPD source port. Supplied parameter must be an integer >=0 &&
- * <=65535
- *  @return OP_SUCCESS on success and OP_FAILURE in case of error.           */
-int NpingOps::setSourcePort(u16 val){
-  this->source_port=val;
-  this->source_port_set=true;
+
+/** Sets TCP/UPD source ports.
+ *  @return OP_SUCCESS on success and OP_FAILURE in case of error. */
+int NpingOps::setSourcePorts(u16 *ports_array, u16 total_ports){
+  this->source_ports=ports_array;
+  this->sportcount=total_ports;
+  this->source_ports_set=true;
   return OP_SUCCESS;
-} /* End of setSourcePort() */
+} /* End of setSourcePorts() */
 
 
-/** Returns value of attribute source_port */
-u16 NpingOps::getSourcePort(){
-  return this->source_port;
-} /* End of getSourcePort() */
+/** @warning Returned ports are in HOST byte order */
+u16 *NpingOps::getSourcePorts(u16 *len){
+  if(len!=NULL)
+    *len=this->sportcount;
+  return this->source_ports;
+} /* End of getSourcePorts() */
 
 
 /* Returns true if option has been set */
-bool NpingOps::issetSourcePort(){
-  return this->source_port_set;
-} /* End of issetSourcePort() */
+bool NpingOps::issetSourcePorts(){
+  return this->source_ports_set;
+} /* End of issetSourcePorts() */
+
 
 /** Sets attribute badsum to "true". (Generate invalid checksums in UDP / TCP
  *  packets)
@@ -2093,12 +2094,18 @@ if (this->havePcap()==false){
      * because 1) the echo server does not capture those packets and 2) to
      * avoid messing with the established side-channel tcp connection. */
     if(this->getMode()==TCP){
-        for(int i=0; i<tportcount; i++){
-            if( this->target_ports[i]==this->getEchoPort())
-                nping_fatal(QT_3, "Packets can't be sent to the same port that is used to connect to the echo server (%d)", this->getEchoPort());
-            else if(this->getSourcePort()==this->getEchoPort())
-                nping_fatal(QT_3, "Packets can't be sent from the same port that is used to connect to the echo server (%d)", this->getEchoPort());
+      if(this->target_ports!=NULL && this->tportcount>0){
+        for(int i=0; i<this->tportcount; i++){
+          if(this->target_ports[i]==this->getEchoPort())
+            nping_fatal(QT_3, "Packets can't be sent to the same port that is used to connect to the echo server (%d)", this->getEchoPort());
         }
+      }
+      if(this->source_ports!=NULL && this->sportcount>0){
+        for(int i=0; i<this->sportcount; i++){
+          if(this->source_ports[i]==this->getEchoPort())
+            nping_fatal(QT_3, "Packets can't be sent from the same port that is used to connect to the echo server (%d)", this->getEchoPort());
+        }
+      }
     }
 
     /* Check the echo client only produces TCP/UDP/ICMP packets */
@@ -2129,7 +2136,7 @@ if (this->havePcap()==false){
 #endif
 
 /** MISCELLANEOUS ************************************************************/
-if( this->issetSourcePort() && this->getMode()==TCP_CONNECT && this->getPacketCount()>1 )
+if(this->source_ports!=NULL && this->getMode()==TCP_CONNECT && this->getPacketCount()>1 )
     error("Warning: Setting a source port in TCP-Connect mode with %d rounds may not work after the first round. You may want to do just one round (use --count 1).", this->getPacketCount() );
 } /* End of validateOptions() */
 
@@ -2448,13 +2455,13 @@ int NpingOps::setDefaultHeaderValues(){
     break;
 
     case UDP:
-        if(!this->issetTargetPorts()){
-            u16 *list = (u16 *)safe_zalloc( sizeof(u16) );
-            list[0]=DEFAULT_UDP_TARGET_PORT;
-            this->setTargetPorts(list, 1);
-        }
-        if(!this->issetSourcePort())
-            this->source_port=DEFAULT_UDP_SOURCE_PORT;
+//        if(!this->issetTargetPorts()){
+//            u16 *list = (u16 *)safe_zalloc( sizeof(u16) );
+//            list[0]=DEFAULT_UDP_TARGET_PORT;
+//            this->setTargetPorts(list, 1);
+//        }
+//        if(!this->issetSourcePort())
+//            this->source_port=DEFAULT_UDP_SOURCE_PORT;
     break;
 
     case ICMP:
@@ -2477,13 +2484,13 @@ int NpingOps::setDefaultHeaderValues(){
     break;
 
     case UDP_UNPRIV:
-        if(!this->issetTargetPorts()){
-            u16 *list = (u16 *)safe_zalloc( sizeof(u16) );
-            list[0]=DEFAULT_UDP_TARGET_PORT;
-            this->setTargetPorts(list, 1);
-        }
-        if(!this->issetSourcePort())
-            this->source_port=DEFAULT_UDP_SOURCE_PORT;
+//        if(!this->issetTargetPorts()){
+//            u16 *list = (u16 *)safe_zalloc( sizeof(u16) );
+//            list[0]=DEFAULT_UDP_TARGET_PORT;
+//            this->setTargetPorts(list, 1);
+//        }
+//        if(!this->issetSourcePort())
+//            this->source_port=DEFAULT_UDP_SOURCE_PORT;
     break;
 
     case TCP_CONNECT:
@@ -2585,7 +2592,7 @@ int NpingOps::echoPayload(bool value){
   * the number of rounds, ports, and targets. It returns a positive integer
   * on success and n<=0 in case of error. */
 int NpingOps::getTotalProbes(){
-  int total_ports=0;
+  u16 total_ports=0;
   this->getTargetPorts(&total_ports);
   return this->getPacketCount() * total_ports * this->target_hosts.size();
 }

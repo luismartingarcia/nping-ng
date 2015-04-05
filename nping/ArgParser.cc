@@ -986,14 +986,13 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
     break;
 
     case 'g': /* Source port */
-        if( o.issetSourcePort() ){
-            nping_fatal(QT_3,"Cannot specify source port twice.");
-        }else if ( parse_u16(optarg, &aux16) == OP_SUCCESS ){
-            o.setSourcePort(aux16);
-            if(aux16==0)
-                nping_warning(QT_1, "WARNING: a source port of zero may not work on all systems.");
+        /* Parse port spec */
+        spec_to_ports(optarg, &portlist, &auxint);
+        if( portlist == NULL || auxint <= 0 ){
+          nping_fatal(QT_3,"Invalid source port specification.");
         }else{
-            nping_fatal(QT_3,"Source port must be a number between 0 and 65535 (inclusive)");
+          o.setSourcePorts(portlist, auxint);
+          o.tcp.sport.setDiscreteSet(portlist, (u32)auxint);
         }
     break; /* case 'g': */
 
@@ -1004,6 +1003,7 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
           nping_fatal(QT_3,"Invalid target ports specification.");
         }else{
           o.setTargetPorts(portlist, auxint);
+          o.tcp.dport.setDiscreteSet(portlist, (u32)auxint);
         }
     break; /* case 'p': */
 

@@ -275,8 +275,11 @@ class NpingOps {
     u16 *target_ports;        /* Will point to an array of ports       */
     int tportcount;           /* Total number of target ports          */
     bool target_ports_set;
-    u16 source_port;          /* Source port for TCP/UPD packets       */
-    bool source_port_set;
+
+    u16 *source_ports;        /* Source port for TCP/UPD packets       */
+    int sportcount;           /* Total number of source ports          */
+    bool source_ports_set;
+
     bool badsum;              /* Generate invalid TCP/UDP checksums?   */
     bool badsum_set;
 
@@ -514,16 +517,14 @@ class NpingOps {
     bool issetHopLimit();
 
     /* TCP / UDP */
-    u16 *getTargetPorts( int *len );
-    int setTargetPorts( u16 *pnt, int n );
+    u16 *getTargetPorts(u16 *len);
+    int setTargetPorts(u16 *ports_array, u16 total_ports);
     bool issetTargetPorts();
     bool scan_mode_uses_target_ports(int mode);
 
-
-
-    int setSourcePort(u16 val);
-    u16 getSourcePort();
-    bool issetSourcePort();
+    int setSourcePorts(u16 *ports_array, u16 total_ports);
+    u16 *getSourcePorts(u16 *len);
+    bool issetSourcePorts();
 
     bool enableBadsum();
     bool disableBadsum();
