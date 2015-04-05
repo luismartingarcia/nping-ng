@@ -555,8 +555,7 @@ int IPv4Header::setNextHeader(u8 val){
  *  value. */
 int IPv4Header::setSum(){
   h.ip_sum = 0;
-  /* ip_checksum() comes from libdnet */
-  ip_checksum((void*)&h, 20 + ipoptlen );
+  h.ip_sum = in_cksum((u16 *)&h, 20 + ipoptlen);
   return OP_SUCCESS;
 } /* End of setSum() */
 
