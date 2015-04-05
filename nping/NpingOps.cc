@@ -314,19 +314,6 @@ NpingOps::NpingOps() {
     eth_type=0;
     eth_type_set=false;
 
-    arp_htype=0;
-    arp_htype_set=false;
-
-    /* ARP/RARP */
-    arp_ptype=0;
-    arp_ptype_set=false;
-
-    arp_hlen=0;
-    arp_hlen_set=false;
-
-    arp_plen=0;
-    arp_plen_set=false;
-
     arp_opcode=0;
     arp_opcode_set=false;
 
@@ -1956,89 +1943,6 @@ bool NpingOps::issetEtherType(){
 /******************************************************************************
  *  Address Resolution Protocol / Reverse Address Resolution Protocol         *
  ******************************************************************************/
-/** Sets ARPHardwareType.
- *  @return OP_SUCCESS on success and OP_FAILURE in case of error.           */
-int NpingOps::setARPHardwareType(u16 val){
-  this->arp_htype=val;
-  this->arp_htype_set=true;
-  return OP_SUCCESS;
-} /* End of setARPHardwareType() */
-
-
-/** Returns value of attribute arp_htype */
-u16 NpingOps::getARPHardwareType(){
-  return this->arp_htype;
-} /* End of getARPHardwareType() */
-
-
-/* Returns true if option has been set */
-bool NpingOps::issetARPHardwareType(){
-  return this->arp_htype_set;
-} /* End of issetARPHardwareType() */
-
-
-/** Sets ARPProtocolType.
- *  @return OP_SUCCESS on success and OP_FAILURE in case of error.           */
-int NpingOps::setARPProtocolType(u16 val){
-  this->arp_ptype=val;
-  this->arp_ptype_set=true;
-  return OP_SUCCESS;
-} /* End of setARPProtocolType() */
-
-
-/** Returns value of attribute arp_ptype */
-u16 NpingOps::getARPProtocolType(){
-  return this->arp_ptype;
-} /* End of getARPProtocolType() */
-
-
-/* Returns true if option has been set */
-bool NpingOps::issetARPProtocolType(){
-  return this->arp_ptype_set;
-} /* End of issetARPProtocolType() */
-
-
-/** Sets ARPHwAddrLen.
- *  @return OP_SUCCESS on success and OP_FAILURE in case of error.           */
-int NpingOps::setARPHwAddrLen(u8 val){
-  this->arp_hlen=val;
-  this->arp_hlen_set=true;
-  return OP_SUCCESS;
-} /* End of setARPHwAddrLen() */
-
-
-/** Returns value of attribute arp_hlen */
-u8 NpingOps::getARPHwAddrLen(){
-  return this->arp_hlen;
-} /* End of getARPHwAddrLen() */
-
-
-/* Returns true if option has been set */
-bool NpingOps::issetARPHwAddrLen(){
-  return this->arp_hlen_set;
-} /* End of issetARPHwAddrLen() */
-
-
-/** Sets ARPProtoAddrLen.
- *  @return OP_SUCCESS on success and OP_FAILURE in case of error.           */
-int NpingOps::setARPProtoAddrLen(u8 val){
-  this->arp_plen=val;
-  this->arp_plen_set=true;
-  return OP_SUCCESS;
-} /* End of setARPProtoAddrLen() */
-
-
-/** Returns value of attribute arp_plen */
-u8 NpingOps::getARPProtoAddrLen(){
-  return this->arp_plen;
-} /* End of getARPProtoAddrLen() */
-
-
-/* Returns true if option has been set */
-bool NpingOps::issetARPProtoAddrLen(){
-  return this->arp_plen_set;
-} /* End of issetARPProtoAddrLen() */
-
 
 /** Sets ARPOpCode.
  *  @return OP_SUCCESS on success and OP_FAILURE in case of error.           */
@@ -2392,33 +2296,6 @@ bool NpingOps::canRunUDPWithoutPrivileges(){
   else
     return true;
 } /* End canRunUDPWithoutPrivileges() */
-
-
-/** Returns true if user did not request any special ethernet or ipv6 header
-  * options */
-bool NpingOps::canDoIPv6ThroughSocket(){
-  if( this->issetEtherType() ||
-    this->issetDestMAC() ||
-    this->issetSourceMAC() ||
-    this->issetHopLimit() ||
-    this->issetTrafficClass() ||
-    this->issetFlowLabel() ||
-    this->getSpoofAddress()!=NULL
-  )
-    return false;
-  else
-    return true;
-} /* End canDoIPv6ThroughSocket() */
-
-
-/** Returns true if user supplied all necessary options to allow IPv6 at raw
-  * Ethernet level */
-bool NpingOps::canDoIPv6Ethernet(){
-  if( this->issetDestMAC() &&  this->issetSourceMAC() && this->getSpoofAddress()!=NULL )
-    return true;
-  else
-    return false;
-} /* End canDoIPv6Ethernet() */
 
 
 /******************************************************************************

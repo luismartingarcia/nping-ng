@@ -188,7 +188,7 @@ class NpingOps {
 
   private:
 
-    /* Probe modes */
+ /* Probe modes */
     int mode;                 /* Probe mode (TCP,UDP,ICMP,ARP,RARP...) */
     bool mode_set;
     bool traceroute;          /* Is traceroute mode enabled?           */
@@ -209,15 +209,14 @@ class NpingOps {
     bool sendpref_set;
     bool send_eth;            /* True: send at raw ethernet level      */
     bool send_eth_set;
+    long host_timeout;        /* Timeout for host replies              */
+    bool host_timeout_set;
     long delay;               /* Delay between each probe              */
     bool delay_set;
-
-    char device[MAX_DEV_LEN]; /**< Network interface                     */
+    char device[MAX_DEV_LEN]; /* Network interface                     */
     bool device_set;
-
-    char *bpf_filter_spec;    /**< Custom, user-supplied BPF filter spec */
+    char *bpf_filter_spec;    /* Custom, user-supplied BPF filter spec */
     bool bpf_filter_spec_set;
-    
     int current_round;        /** Current round. Used in traceroute mode */
     bool have_pcap;           /* True if we have access to libpcap     */
     bool disable_packet_capture; /* If false, no packets are captured  */
@@ -234,9 +233,13 @@ class NpingOps {
     bool payload_buff_set;
     int payload_len;          /* Length of payload                     */
     bool payload_len_set;
+    char *payload_file;       /* Name of input filename for payload    */
+    bool payload_file_set;
+    int payload_file_fd;      /* File descriptor for input payload file*/
+    bool payload_file_fd_set;
 
     /* Roles */
-    int role;                 /* Nping's role: normal|client|server.  */
+    int role;                 /* Nping's role: normal|cliente|server.  */
     bool role_set;
 
     /* IPv4 */
@@ -254,25 +257,21 @@ class NpingOps {
     bool mtu_set;
     bool badsum_ip;           /* Generate invalid checksums in TCP/UDP */
     bool badsum_ip_set;
-    
-    u8 ipversion;             /**< IP version to be used in all packets  */
+    u8 ipversion;             /* IP version to be used in all packets  */
     bool ipversion_set;
-
-    char *ip_options;
+    char *ip_options;         /* IP Options                            */
     bool ip_options_set;
-
-    IPAddress *spoof_addr;
+    IPAddress *spoof_addr;    /* Spoofed source IP address             */
 
     /* IPv6 */
-    u8 ipv6_tclass;
-
+    u8 ipv6_tclass;           /* Traffic Class                         */
     bool ipv6_tclass_set;
-    u32 ipv6_flowlabel;
+    u32 ipv6_flowlabel;       /* Flow Label                            */
     bool ipv6_flowlabel_set;
 
     /* TCP / UDP */
-    u16 *target_ports;        /**< Will point to an array of ports       */
-    int tportcount;           /**< Total number of target ports          */
+    u16 *target_ports;        /* Will point to an array of ports       */
+    int tportcount;           /* Total number of target ports          */
     bool target_ports_set;
     u16 source_port;          /* Source port for TCP/UPD packets       */
     bool source_port_set;
@@ -325,14 +324,6 @@ class NpingOps {
     bool eth_type_set;
 
     /* ARP/RARP */
-    u16 arp_htype;            /* ARP Hardware type                     */
-    bool arp_htype_set;
-    u16 arp_ptype;            /* ARP Protocol type                     */
-    bool arp_ptype_set;
-    u8 arp_hlen;              /* ARP Hardware address length           */
-    bool arp_hlen_set;
-    u8 arp_plen;              /* ARP protocol address length           */
-    bool arp_plen_set;
     u16 arp_opcode;           /* ARP Operation code                    */
     bool arp_opcode_set;
     u8 arp_sha[6];            /* ARP Sender hardware address           */
@@ -357,17 +348,15 @@ class NpingOps {
     struct timeval last_sent_pkt_time; /* Time last packet was sent    */
     char *delayed_rcvd_str;    /* Delayed RCVD output string           */
     bool delayed_rcvd_str_set; /* Do we have a delayed RCVD string?    */
-    nsock_event_id delayed_rcvd_event;
+    nsock_event_id delayed_rcvd_event; /* Nsock event for delayed RCVD */
 
-    /* Target-related variables */
-   public:
-    vector<TargetHost *> target_hosts;
    private:
-    vector<IPAddress *> target_addresses;
-    vector<const char *> target_specs;
-    vector<NetworkInterface *> interfaces;
+    vector<IPAddress *> target_addresses;  /* List of target IP addresses */
+    vector<const char *> target_specs;     /* List of user target specs   */
+    vector<NetworkInterface *> interfaces; /* List of relevant net ifaces */
 
   public:
+    vector<TargetHost *> target_hosts;     /* List of Nping target hosts  */
     NpingStats stats;                      /* Global statistics           */
 
   public:
@@ -630,22 +619,6 @@ class NpingOps {
     bool issetEtherType();
 
     /* ARP/RARP */
-    int setARPHardwareType(u16 val);
-    u16 getARPHardwareType();
-    bool issetARPHardwareType();
-
-    int setARPProtocolType(u16 val);
-    u16 getARPProtocolType();
-    bool issetARPProtocolType();
-
-    int setARPHwAddrLen(u8 val);
-    u8 getARPHwAddrLen();
-    bool issetARPHwAddrLen();
-
-    int setARPProtoAddrLen(u8 val);
-    u8 getARPProtoAddrLen();
-    bool issetARPProtoAddrLen();
-
     int setARPOpCode(u16 val);
     u16 getARPOpCode();
     bool issetARPOpCode();
@@ -687,8 +660,6 @@ class NpingOps {
     /* Validation */
     void validateOptions();
     bool canRunUDPWithoutPrivileges();
-    bool canDoIPv6ThroughSocket();
-    bool canDoIPv6Ethernet();
     char *select_network_iface();
 
     /* Misc */
@@ -696,7 +667,6 @@ class NpingOps {
     void displayStatistics();
     int cleanup();
     int setDefaultHeaderValues();
-    int getTotalProbes();
 
     int setLastPacketSentTime(struct timeval t);
     struct timeval getLastPacketSentTime();
