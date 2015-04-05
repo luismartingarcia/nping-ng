@@ -48,13 +48,6 @@
  * Things that have NOT been done yet                                        *
  *****************************************************************************/
 
-* Check int ProbeEngine::packet_capture_handler(). It's probably leaking a
-  lot of memory. When run with "sudo ./nping localhost -c0  --delay 0ms"
-  allocated memory keeps growing and growing. There are two things to check,
-  captured packets, and sent packets. Verify that any captured packet that is
-  not a response is freed. Also, sent and received packets, need to be freed
-  after certain time.
-
 * Packets captured seem to include things like the 2-byte Ethernet trailing
   checksum. Check nse_readpcap() is working correctly.
 
@@ -980,3 +973,12 @@ SENT (1.0580s) ARP who has 192.168.240.139? Tell 192.168.240.1
   access to a proper string, it is possible that we need to save a copy of the
   packet instead of storing it's ascii representation, so we can call print()
   on it, and get the info printed out.
+
+[DONE] Check int ProbeEngine::packet_capture_handler(). It's probably leaking a
+  lot of memory. When run with "sudo ./nping localhost -c0  --delay 0ms"
+  allocated memory keeps growing and growing. There are two things to check,
+  captured packets, and sent packets. Verify that any captured packet that is
+  not a response is freed. Also, sent and received packets, need to be freed
+  after certain time.
+
+  

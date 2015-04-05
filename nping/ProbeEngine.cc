@@ -734,12 +734,14 @@ int ProbeEngine::packet_capture_handler(nsock_pool nsp, nsock_event nse, void *a
                  * event in that case, so it doesn't get printed twice. */
                 nsock_event_id ev_id=nsock_timer_create(nsp, delayed_output_handler_wrapper, delay, NULL);
                 o.setDelayedRcvd(pkt, timestamp, ev_id);
+                return OP_SUCCESS; /* Return now, so we don't run PacketParser::freePacketChain() */
               }else{
                 ProbeEngine::print_rcvd_pkt(pkt, timestamp);
-                PacketParser::freePacketChain(pkt);
               }
             }
           }
+          /* Free the captured packet */
+          PacketParser::freePacketChain(pkt);
         }
       break;
 
