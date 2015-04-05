@@ -171,6 +171,7 @@
 #define SET_RANDOM -2
 
 #define MAX_ICMP_ADVERT_ENTRIES 128
+#define MAX_TARGET_SPECS 1024
 
 #include "nping.h"
 #include "global_structures.h"
@@ -254,9 +255,6 @@ class NpingOps {
 
     char *ip_options;
     bool ip_options_set;
-
-    u8 ip_proto;
-    bool ip_proto_set;
 
     /* IPv6 */
     u8 ipv6_tclass;
@@ -355,6 +353,9 @@ class NpingOps {
     char *delayed_rcvd_str;    /* Delayed RCVD output string           */
     bool delayed_rcvd_str_set; /* Do we have a delayed RCVD string?    */
     nsock_event_id delayed_rcvd_event; /* Nsock event for delayed RCVD */
+
+    const char *target_specs[MAX_TARGET_SPECS];
+    u32  total_target_specs;
 
   public:
     NpingTargets targets;
@@ -509,10 +510,6 @@ class NpingOps {
     int setMTU(u32 t);
     u32 getMTU();
     bool issetMTU();
-
-    int setIPProto(u8 proto);
-    u8 getIPProto();
-    bool issetIPProto();
 
     /* IPv6 */
     int setTrafficClass(u8 val);
@@ -709,6 +706,10 @@ class NpingOps {
 
     int setDelayedRcvd(const char *str, nsock_event_id id);
     char *getDelayedRcvd(nsock_event_id *id);
+
+    /* TargetHost handling */
+    int addTargetSpec(const char *spec);
+    int setupTargetHosts();
 
 }; /* End of class NpingOps */
 

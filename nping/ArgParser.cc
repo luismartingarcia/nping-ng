@@ -743,7 +743,7 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
     /* Destination IP address. This is just another way to specify targets,
      * provided for consistency with the rest of the parameters. */
     } else if (optcmp(long_options[option_index].name, "dest-ip") == 0 ){
-        o.targets.addSpec( strdup(optarg) );
+        o.addTargetSpec( strdup(optarg) );
     /* IP Type of service*/
     } else if (optcmp(long_options[option_index].name, "tos") == 0 ){
         if ( parse_u8(optarg, &aux8) == OP_SUCCESS ){
@@ -1186,11 +1186,8 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
   * through calls to getNextTarget();
   * */
   const char *next_spec=NULL;
-  const char *errmsg=NULL;
-  vector<IPAddress *> targetaddrs;
   while ( (next_spec= grab_next_host_spec(NULL, false, argc, argv)) != NULL ){
-    if( (errmsg=spec_to_addresses(next_spec, AF_INET, targetaddrs, 8))!=NULL)
-      nping_fatal(QT_3,"%s (%s)\n", errmsg, next_spec);
+    o.addTargetSpec(next_spec);
   }
   /* TODO: Add the IPAddress vector to NpingOps so we can build NpingTargets
    * from it later */

@@ -204,7 +204,7 @@ int main(int argc, char *argv[] ){
 
   /* Resolve and cache target specs */
   nping_print(DBG_2,"Resolving specified targets...");
-  o.targets.processSpecs();
+  o.setupTargetHosts();
   if( ((i=o.targets.getTargetsFetched())<=0) && o.getRole()!=ROLE_SERVER )
     nping_fatal(QT_3, "Execution aborted. Nping needs at least one valid target to operate.");
   else

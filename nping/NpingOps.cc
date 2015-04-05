@@ -368,6 +368,10 @@ NpingOps::NpingOps() {
     delayed_rcvd_str=NULL;
     delayed_rcvd_str_set=false;
 
+    /* Target related variables */
+    memset(target_specs, 0, MAX_TARGET_SPECS * sizeof(char *));
+    total_target_specs=0;
+
 } /* End of NpingOps() */
 
 
@@ -3145,6 +3149,22 @@ int NpingOps::getTotalProbes(){
   int total_ports=0;
   this->getTargetPorts(&total_ports);
   return this->getPacketCount() * total_ports * this->targets.Targets.size();
+}
+
+
+/** Adds a target specification to an internal array of specs */
+int NpingOps::addTargetSpec(const char *spec){
+  if(spec==NULL)
+    return OP_FAILURE;
+  if(this->total_target_specs>=MAX_TARGET_SPECS)
+    return OP_FAILURE;
+  this->target_specs[ this->total_target_specs++ ] = spec;
+  return OP_SUCCESS;
+} /* End of addTargetSpec() */
+
+
+int NpingOps::setupTargetHosts(){
+    return OP_SUCCESS;
 }
 
 
