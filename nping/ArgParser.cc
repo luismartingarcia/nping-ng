@@ -706,8 +706,7 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
         }else{
             o.setDestMAC(auxmac);
         }
-        if( !o.issetSendPreference() )
-            o.setSendPreference(PACKET_SEND_ETH_STRONG);
+        o.setSendPreference(PACKET_SEND_ETH);
     /* Source MAC address */
     } else if (optcmp(long_options[option_index].name, "source-mac") == 0 ||
                optcmp(long_options[option_index].name, "spoof-mac") == 0 ){
@@ -716,8 +715,7 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
         }else{
             o.setSourceMAC(auxmac);
         }
-        if( !o.issetSendPreference() )
-            o.setSendPreference(PACKET_SEND_ETH_STRONG);
+        o.setSendPreference(PACKET_SEND_ETH);
     /* Ethernet type field */
     } else if (optcmp(long_options[option_index].name, "ethertype") == 0 ||
                optcmp(long_options[option_index].name, "ethtype") == 0 ||
@@ -729,8 +727,7 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
         }else{
             nping_fatal(QT_3, "Invalid Ethernet Type.");
         }
-        if( !o.issetSendPreference() )
-            o.setSendPreference(PACKET_SEND_ETH_STRONG);
+        o.setSendPreference(PACKET_SEND_ETH);
 
 
 /* IPv4 OPTIONS **************************************************************/
@@ -985,9 +982,9 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
     } else if (optcmp(long_options[option_index].name, "unprivileged") == 0 ){
         o.setIsRoot(0);
     } else if (optcmp(long_options[option_index].name, "send-eth") == 0 ){
-        o.setSendPreference(PACKET_SEND_ETH_STRONG);
+        o.setSendPreference(PACKET_SEND_ETH);
     } else if (optcmp(long_options[option_index].name, "send-ip") == 0 ){
-        o.setSendPreference(PACKET_SEND_IP_STRONG);
+        o.setSendPreference(PACKET_SEND_IP);
     } else if (optcmp(long_options[option_index].name, "bpf-filter") == 0 || optcmp(long_options[option_index].name, "filter") == 0){
         o.setBPFFilterSpec( optarg );
         if( o.issetDisablePacketCapture() && o.disablePacketCapture()==true )

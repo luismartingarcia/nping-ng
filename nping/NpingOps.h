@@ -162,13 +162,9 @@
 #define FLAG_SYN  6
 #define FLAG_FIN  7
 
-#define PACKET_SEND_NOPREF 1 /* These have been taken from NmapOps.h */
-#define PACKET_SEND_ETH_WEAK 2
-#define PACKET_SEND_ETH_STRONG 4
-#define PACKET_SEND_ETH 6
-#define PACKET_SEND_IP_WEAK 8
-#define PACKET_SEND_IP_STRONG 16
-#define PACKET_SEND_IP 24
+#define PACKET_SEND_NOPREF 0x00 /* Send preference not set    */
+#define PACKET_SEND_ETH    0x01 /* Send at the Ethernet level */
+#define PACKET_SEND_IP     0x02 /* Send at the IP level       */
 
 #define IP_VERSION_4 0x04
 #define IP_VERSION_6 0x06
@@ -210,9 +206,6 @@ class NpingOps {
     u32 rounds;               /* No of times a host is targeted        */
     bool rounds_set;
     int sendpref;             /* Sending preference: eth or raw ip     */
-    bool sendpref_set;
-    bool send_eth;            /* True: send at raw ethernet level      */
-    bool send_eth_set;
     long host_timeout;        /* Timeout for host replies              */
     bool host_timeout_set;
     long delay;               /* Delay between each probe              */
