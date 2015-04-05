@@ -849,7 +849,7 @@ int ProbeEngine::tcpconnect_handler(nsock_pool nsp, nsock_event nse, void *mydat
         if(o.showSentPackets()){
           nping_print(VB_0, "DATA (%.4fs) %d byte%s sent to %s:%d", ((double)TIMEVAL_MSEC_SUBTRACT(now, this->start_time)) / 1000, o.getPayloadLen(), o.getPayloadLen()!=1 ? "s" : "", ipstring, peerport);
           if(o.getVerbosity()>=VB_3 && o.getPayloadBuffer()!=NULL)
-            luis_hdump((char *)o.getPayloadBuffer(), o.getPayloadLen()); // TODO @todo Find print_hexdump() and use it!
+            print_hexdump(VB_3 | NO_NEWLINE, o.getPayloadBuffer(),o.getPayloadLen());
         }
         /* Update stats for TCP write() operations. */
         tgt->stats.update_writes(family, HEADER_TYPE_TCP, o.getPayloadLen());
@@ -866,7 +866,7 @@ int ProbeEngine::tcpconnect_handler(nsock_pool nsp, nsock_event nse, void *mydat
         if((recvbuff=(u8 *)nse_readbuf(nse, &recvbytes))!=NULL){
           nping_print(VB_0, "DATA (%.4fs) %d byte%s received from %s:%d", ((double)TIMEVAL_MSEC_SUBTRACT(now, this->start_time)) / 1000, recvbytes, recvbytes!=1 ? "s" : "", ipstring, peerport);
           if(o.getVerbosity()>=VB_3)
-            luis_hdump((char *)recvbuff, recvbytes); // TODO @todo Find print_hexdump() and use it!
+           print_hexdump(VB_3 | NO_NEWLINE, recvbuff, recvbytes);
 
           /* Update statistics for TCP read() operations  */
           tgt->stats.update_reads(family, HEADER_TYPE_TCP, recvbytes);
@@ -999,7 +999,7 @@ int ProbeEngine::udpunpriv_handler(nsock_pool nsp, nsock_event nse, void *mydata
         if(o.showSentPackets()){
           nping_print(VB_0,"SENT (%.4fs) UDP packet with %d bytes to %s:%d", ((double)TIMEVAL_MSEC_SUBTRACT(now, this->start_time)) / 1000, payload_len, ipstring, peerport );
           if(o.getVerbosity()>=VB_3 && o.getPayloadBuffer()!=NULL && o.getPayloadLen()>0)
-            luis_hdump((char *)o.getPayloadBuffer(), o.getPayloadLen()); // TODO @todo Find print_hexdump() and use it!
+            print_hexdump(VB_3 | NO_NEWLINE, o.getPayloadBuffer(), o.getPayloadLen());
         }
         /* Update statistics */
         tgt->stats.update_writes(family, HEADER_TYPE_UDP, payload_len);
@@ -1026,7 +1026,7 @@ int ProbeEngine::udpunpriv_handler(nsock_pool nsp, nsock_event nse, void *mydata
         }
         nping_print(VB_0,"RECV (%.4fs) UDP packet with %d bytes from %s:%d", ((double)TIMEVAL_MSEC_SUBTRACT(now, this->start_time)) / 1000,  readbytes, ipstring, peerport );
         if(o.getVerbosity()>=VB_3 && readbuff!=NULL && readbytes>0)
-          luis_hdump((char *)readbuff, readbytes); // TODO @todo Find print_hexdump() and use it!
+          print_hexdump(VB_3 | NO_NEWLINE, (const u8 *)readbuff, readbytes);
         /* Update statistics */
         tgt->stats.update_reads(family, HEADER_TYPE_UDP, readbytes);
         o.stats.update_reads(family, HEADER_TYPE_UDP, readbytes);

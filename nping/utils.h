@@ -149,7 +149,6 @@ u8 *parseBufferSpec(char *str, size_t *outlen);
 int bitcmp(u8 *a, u8*b, int len);
 int removechar(char *string, char c);
 int removecolon(char *string);
-void luis_hdump(char *cp, unsigned int length);
 int validate_number_spec(const char *str);
 int parse_u8(const char *str, u8 *dstbuff);
 int parse_u16(const char *str, u16 *dstbuff);
