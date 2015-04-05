@@ -179,7 +179,7 @@ int main(int argc, char *argv[] ){
   /* Register the SIGINT signal so when the users presses CTRL-C we print stats
    * before quitting. */
   #if HAVE_SIGNAL
-    signal(SIGINT, signal_handler); 
+    signal(SIGINT, signal_handler);
   #endif
 
   /* Let's parse and validate user supplied args */
@@ -206,7 +206,7 @@ int main(int argc, char *argv[] ){
     if(o.totalTargetHosts()==0){
       nping_fatal(QT_3, "Execution aborted. Nping needs at least one valid target to operate.");
     }else{
-      nping_print(DBG_2,"%lu target IP address%s determined.", 
+      nping_print(DBG_2,"%lu target IP address%s determined.",
                   (long unsigned int)o.totalTargetHosts(), (o.totalTargetHosts()==1)? "":"es");
     }
   }
@@ -237,7 +237,7 @@ int main(int argc, char *argv[] ){
         break;
   }
 
-  /* Display stats, clean up and quit */ 
+  /* Display stats, clean up and quit */
   o.stats.stopRuntime();
   o.displayStatistics();
   o.displayNpingDoneMsg();

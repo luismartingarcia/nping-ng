@@ -332,7 +332,7 @@ class NpingOps {
     bool echo_passphrase_set;
     bool do_crypto;          /* Do encrypted & authenticated sessions? */
     bool echo_payload;       /* Echo application-layer payloads?       */
-    bool echo_payload_set;   
+    bool echo_payload_set;
     bool echo_server_once;   /* Run server for only 1 client and quit? */
     bool echo_server_once_set;
     struct timeval last_sent_pkt_time; /* Time last packet was sent    */

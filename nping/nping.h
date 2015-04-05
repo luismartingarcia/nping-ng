@@ -245,8 +245,8 @@
  * printed. For example, we have some calls to output functions that print out
  * things like "%d target IPs resolved". We don't want that message to always
  * get printed during  Nping's execution. We only want it out when the user
- * has increase the verbosity.
- * 
+ * has increased the verbosity.
+ *
  * So the thing here is that there are two things that should be taken
  * into account:
  *  1. The current verbosity level that user has supplied from the command line
@@ -280,7 +280,7 @@
  *
  *  Check the comments after each level definition to see how they should be
  *  used. Here are some examples:
- * 
+ *
  *  nping_fatal(QT_3,"createIPv4(): NULL pointer supplied.");
  *  nping_print(DBG_2,"Resolving specified targets...");
  *  nping_print(VB_0, "Raw packets sent: %llu ", this->stats.getSentPackets() );
@@ -364,7 +364,7 @@
 #define DEFAULT_DELAY 1000              /**< Milliseconds between each probe */
 
  /** Milliseconds Nping waits for replies after all probes have been sent */
-#define DEFAULT_WAIT_AFTER_PROBES 1000 
+#define DEFAULT_WAIT_AFTER_PROBES 1000
 
 
 
@@ -379,7 +379,7 @@
 #define DEFAULT_UDP_SOURCE_PORT 53      /* Default UDP source port         */
 
 /**< MTU used when user just supplies option -f but no MTU value */
-#define DEFAULT_MTU_FOR_FRAGMENTATION 72   
+#define DEFAULT_MTU_FOR_FRAGMENTATION 72
 
 #define DEFAULT_ICMP_TYPE 8  /**< Default ICMP message: Echo Request         */
 #define DEFAULT_ICMP_CODE 0  /**< Default ICMP code: 0 (standard)            */

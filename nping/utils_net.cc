@@ -376,7 +376,7 @@ int getNetworkInterfaceName(u32 destination, char *dev){
   memset(&src, 0, sizeof(struct sockaddr_in) );
   dst.sin_addr.s_addr = destination;
   dst.sin_family = AF_INET;
-  result=route_dst((struct sockaddr_storage *)&dst, &rnfo, NULL, NULL); 
+  result=route_dst((struct sockaddr_storage *)&dst, &rnfo, NULL, NULL);
   if( result == false )
     return OP_FAILURE;
   strncpy( dev,  rnfo.ii.devname, 16 );
@@ -397,7 +397,7 @@ int getNetworkInterfaceName(struct sockaddr_storage *dst, char *dev){
     nping_fatal(QT_3, "getNetworkInterfaceName(): NULL value supplied.");
   memset(&rnfo, 0, sizeof(struct route_nfo) );
   memset(&src, 0, sizeof(struct sockaddr_in) );
-  result=route_dst(dst, &rnfo, NULL, NULL); 
+  result=route_dst(dst, &rnfo, NULL, NULL);
   if( result == false )
     return OP_FAILURE;
   strncpy( dev,  rnfo.ii.devname, 16 );
@@ -543,7 +543,7 @@ struct hostent *gethostbynameCached(char *host){
       if ( current_index==MAX_CACHED_HOSTS-1 && archive[current_index].h != NULL )
         hostentfree( archive[current_index].h );
 
-      /* Store the hostent entry in the cache */   
+      /* Store the hostent entry in the cache */
 	  memset(&(archive[current_index]), 0, sizeof(gethostbynamecached_t) );
 	  strncpy(archive[current_index].hostname, host, MAX_CACHED_HOSTNAME_LEN);
 	  archive[current_index].h = hostentcpy( result );
@@ -875,14 +875,14 @@ int tcppackethdrinfo(const u8 *packet, size_t len, u8 *dstbuff, size_t dstlen,
     Snprintf(protoinfo, sizeof(protoinfo), "TCP %s:%d > %s:%d %s seq=%lu win=%hu %s",
        srcipstring, ntohs(tcp->th_sport), dstipstring, ntohs(tcp->th_dport),
            tflags, (unsigned long) ntohl(tcp->th_seq),
-           ntohs(tcp->th_win), tcpoptinfo);               
+           ntohs(tcp->th_win), tcpoptinfo);
   }else if( detail == MEDIUM_DETAIL ){
     Snprintf(protoinfo, sizeof(protoinfo), "TCP [%s:%d > %s:%d %s seq=%lu win=%hu csum=0x%04X%s%s]",
        srcipstring, ntohs(tcp->th_sport), dstipstring, ntohs(tcp->th_dport),
            tflags, (unsigned long) ntohl(tcp->th_seq),
            ntohs(tcp->th_win),  ntohs(tcp->th_sum),
            (tcpoptinfo[0]!='\0') ? " " : "",
-           tcpoptinfo);                 
+           tcpoptinfo);
   }else if( detail==HIGH_DETAIL ){
     Snprintf(protoinfo, sizeof(protoinfo), "TCP [%s:%d > %s:%d %s seq=%lu ack=%lu off=%d res=%d win=%hu csum=0x%04X urp=%d%s%s] ",
        srcipstring, ntohs(tcp->th_sport),
@@ -892,7 +892,7 @@ int tcppackethdrinfo(const u8 *packet, size_t len, u8 *dstbuff, size_t dstlen,
        (u8)tcp->th_off, (u8)tcp->th_x2, ntohs(tcp->th_win),
        ntohs(tcp->th_sum), ntohs(tcp->th_urp),
        (tcpoptinfo[0]!='\0') ? " " : "",
-       tcpoptinfo);  
+       tcpoptinfo);
   }
 
   strncpy((char*)dstbuff, protoinfo, dstlen);
@@ -982,7 +982,7 @@ int udppackethdrinfo(const u8 *packet, size_t len, u8 *dstbuff, size_t dstlen,
   * calls will overwrite.
   * Note that the entropy of the returned data is very low (returned
   * values are always formed by lowercase letters and whitespace). */
-const char *getRandomTextPayload(){    
+const char *getRandomTextPayload(){
   int len=0, i=0;
   static char buffer[512+1];
   const char letters[26]={'a','b','c','d','e','f','g','h','i','j','k',
@@ -1077,7 +1077,7 @@ u8 *getUDPheaderLocation(u8 *pkt, size_t pktLen){
   if( i4->ip_v == 4 ){
     if (i4->ip_p == IPPROTO_UDP) {
         if( pktLen >= ((size_t)(i4->ip_hl*4 + 8)) ) /* We have a full IP+UDP packet */
-            return pkt+(i4->ip_hl*4);    
+            return pkt+(i4->ip_hl*4);
     }
     else
         return NULL;
@@ -1107,7 +1107,7 @@ u8 *getTCPheaderLocation(u8 *pkt, size_t pktLen){
   if( i4->ip_v == 4 ){
     if (i4->ip_p == IPPROTO_TCP) { /* Next proto is TCP? */
         if( pktLen >= ((size_t)(i4->ip_hl*4 + 20)) ) /* We have a full IP+TCP packet */
-            return pkt+(i4->ip_hl*4);    
+            return pkt+(i4->ip_hl*4);
     }
     else
         return NULL;
@@ -1228,7 +1228,7 @@ u16 *getDstPortFromUDPHeader(u8 *pkt, size_t pktLen){
 /** This function parses Linux file /proc/net/if_inet6 and returns a list
     of network interfaces that are configured for IPv6.
     @param ifbuff should be a buffer big enough to hold info for max_ifaces
-    interfaces. 
+    interfaces.
 
  Here is some info about the format of /proc/net/if_inet6, written by
  Peter Bieringer and taken from:
@@ -1370,7 +1370,7 @@ int getinterfaces_inet6_linux(if6_t *ifbuf, int max_ifaces){
         if( buffer[i]==' ' || buffer[i]=='\n')
             continue;
         else
-            devname[j++]=buffer[i];            
+            devname[j++]=buffer[i];
     }
     devname[j]='\0';
 
@@ -1393,14 +1393,14 @@ int getinterfaces_inet6_linux(if6_t *ifbuf, int max_ifaces){
 /* Debugging code: This should print the exact same lines that
  * /proc/net/if_inet6 contains. (well, unless that kernel includes colons
  * in the ipv6 address)
- * 
+ *
     for(i=0; i<16; i++)
         printf("%02x", ipv6addr[i]);
     printf(" %02x", dev_no);
     printf(" %02x", prefix_len);
     printf(" %02x", scope_value);
-    printf(" %02x", dev_flags); 
-    printf(" %8s\n", devname);        
+    printf(" %02x", dev_flags);
+    printf(" %8s\n", devname);
  */
 
   } /* End of loop */
@@ -1415,7 +1415,7 @@ int getinterfaces_inet6_linux(if6_t *ifbuf, int max_ifaces){
 /** This function parses Linux file /proc/net/ipv6_route and returns a list
     of routes for IPv6 packets.
     @param ifbuff should be a buffer big enough to hold info for max_routes
-    routes. 
+    routes.
 
  Here is some info about the format of /proc/net/if_inet6, written by
  Peter Bieringer and taken from:
@@ -1425,7 +1425,7 @@ int getinterfaces_inet6_linux(if6_t *ifbuf, int max_ifaces){
  00000000000000000000000000000000 00 00000000000000000000000000000000 00
  +------------------------------+ ++ +------------------------------+ ++
  |                                |  |                                |
- 1                                2  3                                4 
+ 1                                2  3                                4
 
  ¬ 00000000000000000000000000000000 ffffffff 00000001 00000001 00200200 lo
  ¬ +------------------------------+ +------+ +------+ +------+ +------+ ++
@@ -1648,7 +1648,7 @@ int getroutes_inet6_linux(route6_t *rtbuf, int max_routes){
     printf(" %08x", rtbuf[parsed_routes].ref_count);
     printf(" %08x", rtbuf[parsed_routes].use_count);
     printf(" %08x", rtbuf[parsed_routes].flags);
-    printf(" %8s\n", rtbuf[parsed_routes].devname);        
+    printf(" %8s\n", rtbuf[parsed_routes].devname);
 */
    parsed_routes++;
 
