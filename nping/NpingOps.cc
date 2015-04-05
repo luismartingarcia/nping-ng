@@ -1386,9 +1386,6 @@ if (this->havePcap()==false){
       nping_fatal(QT_3,"Mode %s requires %s.", this->mode2Ascii( this->getModes() ), privreq);
   }
 
-/** DEFAULT HEADER PARAMETERS *************************************************/
-  this->setDefaultHeaderValues();
-
 /** ARP MODE RELATED PARAMETERS *********************************************/
   if(this->mode(DO_ARP) && this->ipv6()) {
     nping_fatal(QT_3, "Sorry, ARP does not support IPv6.");
@@ -1722,95 +1719,6 @@ char *NpingOps::select_network_iface(){
     else
        return candidate->name;
 } /* End of select_network_iface() */
-
-
-int NpingOps::setDefaultHeaderValues(){
-  if(this->ipv6()){ /* IPv6 */
-//    if(!this->issetTrafficClass())
-//        this->ipv6_tclass=DEFAULT_IPv6_TRAFFIC_CLASS;
-//    if(!this->issetFlowLabel())
-//        this->ipv6_flowlabel=(get_random_u32() % 1048575);
-  }else{ /* IPv4 */
-
-  }
-  if( this->mode(DO_TCP)){
-//        if(!this->issetTargetPorts()){
-//            u16 *list = (u16 *)safe_zalloc( sizeof(u16) );
-//            list[0]=DEFAULT_TCP_TARGET_PORT;
-//            this->setTargetPorts(list, 1);
-//        }
-//        if(!this->issetSourcePort()){
-//            /* Generate any source port higher than 1024 */
-//            if(this->getRole()!=ROLE_CLIENT){
-//                this->source_port=(1024 + ( get_random_u16()%(65535-1024) ));
-//            }else{
-//                /* For the echo client, avoid choosing the port used for the echo side channel */
-//                while( (this->source_port=(1024 + ( get_random_u16()%(65535-1024) )))==this->echo_port );
-//            }
-//        }
-//        if(!this->issetTCPSequence())
-//            this->tcpseq=get_random_u32();
-//        if(!this->issetTCPAck()){
-//            if(this->getFlagTCP(FLAG_ACK))
-//                this->tcpack=get_random_u32();
-//            else
-//                this->tcpack=0;
-//        }
-//        if(!this->issetTCPFlags())
-//            this->setFlagTCP(FLAG_SYN);
-//        if(!this->issetTCPWindow())
-//            this->tcpwin=DEFAULT_TCP_WINDOW_SIZE;
-        /* @todo ADD urgent pointer handling here when it gets implemented */
-  }
-
-  if( this->mode(DO_UDP)){
-//        if(!this->issetTargetPorts()){
-//            u16 *list = (u16 *)safe_zalloc( sizeof(u16) );
-//            list[0]=DEFAULT_UDP_TARGET_PORT;
-//            this->setTargetPorts(list, 1);
-//        }
-//        if(!this->issetSourcePort())
-//            this->source_port=DEFAULT_UDP_SOURCE_PORT;
-  }
-  if( this->mode(DO_ICMP)){
-//        if(this->ipv6()){
-//            if(!this->issetICMPType()) /* Default to ICMP Echo */
-//                this->icmp_type=DEFAULT_ICMPv6_TYPE;
-//            if(!this->issetICMPCode())
-//                this->icmp_code=DEFAULT_ICMPv6_CODE;
-//        }else{
-//            if(!this->issetICMPType()) /* Default to ICMP Echo */
-//                this->icmp_type=DEFAULT_ICMP_TYPE;
-//            if(!this->issetICMPCode())
-//                this->icmp_code=DEFAULT_ICMP_CODE;
-//        }
-  }
-
-  if( this->mode(DO_ARP)){
-        if(!this->issetARPOpCode())
-            this->arp_opcode=DEFAULT_ARP_OP;
-  }
-
-  if( this->mode(DO_UDP_UNPRIV)){
-//        if(!this->issetTargetPorts()){
-//            u16 *list = (u16 *)safe_zalloc( sizeof(u16) );
-//            list[0]=DEFAULT_UDP_TARGET_PORT;
-//            this->setTargetPorts(list, 1);
-//        }
-//        if(!this->issetSourcePort())
-//            this->source_port=DEFAULT_UDP_SOURCE_PORT;
-  }
-
-  if( this->mode(DO_TCP_CONNECT)){
-//        if( !this->issetTargetPorts() ) {
-//            u16 *list = (u16 *)safe_zalloc( sizeof(u16) );
-//            list[0]=DEFAULT_TCP_TARGET_PORT;
-//            this->setTargetPorts(list, 1);
-//        }
-  }
-
-  return OP_SUCCESS;
-} /* End of setDefaultHeaderValues() */
 
 
 int NpingOps::setLastPacketSentTime(struct timeval t){

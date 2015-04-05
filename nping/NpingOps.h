@@ -349,10 +349,6 @@ class NpingOps {
     bool issetShowSentPackets();
 
     /* Operation and Performance */
-    int setHostTimeout(long t);
-    long getHostTimeout();
-    bool issetHostTimeout();
-
     int setDelay(long t);
     long getDelay();
     bool issetDelay();
@@ -416,27 +412,7 @@ class NpingOps {
     int getRole();
     bool issetRole();
 
-    /* IPv4 */
-    int setTTL(u8 t);
-    u8 getTTL();
-    bool issetTTL();
-
-    int setTOS(u8 tos);
-    u8 getTOS();
-    bool issetTOS();
-
-    int setIdentification(u16 i);
-    u16 getIdentification();
-    bool issetIdentification();
-
-    int setMF();
-    bool getMF();
-    bool issetMF();
-
-    int setDF();
-    bool getDF();
-    bool issetDF();
-
+    /* IP Protocol */
     int setIPOptions(char *txt);
     char *getIPOptions();
     bool issetIPOptions();
@@ -449,20 +425,6 @@ class NpingOps {
     int setSpoofAddress(IPAddress *addr);
     int setSpoofAddress(IPAddress addr);
 
-
-    /* IPv6 */
-    int setTrafficClass(u8 val);
-    u8 getTrafficClass();
-    bool issetTrafficClass();
-
-    int setFlowLabel(u32 val);
-    u32 getFlowLabel();
-    bool issetFlowLabel();
-
-    int setHopLimit(u8 t);
-    u8 getHopLimit();
-    bool issetHopLimit();
-
     /* TCP / UDP */
     u16 *getTargetPorts(u16 *len);
     int setTargetPorts(u16 *ports_array, u16 total_ports);
@@ -473,47 +435,7 @@ class NpingOps {
     u16 *getSourcePorts(u16 *len);
     bool issetSourcePorts();
 
-    /* ICMP */
-    int setICMPType(u8 type);
-    u8 getICMPType();
-    bool issetICMPType();
-
-    int setICMPCode(u8 val);
-    u8 getICMPCode();
-    bool issetICMPCode();
-
-    int setICMPRedirectAddress(struct in_addr val);
-    struct in_addr getICMPRedirectAddress();
-    bool issetICMPRedirectAddress();
-
-    int setICMPParamProblemPointer(u8 val);
-    u8 getICMPParamProblemPointer();
-    bool issetICMPParamProblemPointer();
-
-    int setICMPRouterAdvLifetime(u16 val);
-    u16 getICMPRouterAdvLifetime();
-    bool issetICMPRouterAdvLifetime();
-
-    int setICMPIdentifier(u16 val);
-    u16 getICMPIdentifier();
-    bool issetICMPIdentifier();
-
-    int setICMPSequence(u16 val);
-    u16 getICMPSequence();
-    bool issetICMPSequence();
-
-    int setICMPOriginateTimestamp(u32 val);
-    u32 getICMPOriginateTimestamp();
-    bool issetICMPOriginateTimestamp();
-
-    int setICMPReceiveTimestamp(u32 val);
-    u32 getICMPReceiveTimestamp();
-    bool issetICMPReceiveTimestamp();
-
-    int setICMPTransmitTimestamp(u32 val);
-    u32 getICMPTransmitTimestamp();
-    bool issetICMPTransmitTimestamp();
-
+    /* ICMPv4 */
     int addICMPAdvertEntry(struct in_addr addr, u32 pref );
     int getICMPAdvertEntry(int num, struct in_addr *addr, u32 *pref);
     int getICMPAdvertEntryCount();
@@ -580,7 +502,6 @@ class NpingOps {
     void displayNpingDoneMsg();
     void displayStatistics();
     int cleanup();
-    int setDefaultHeaderValues();
 
     int setLastPacketSentTime(struct timeval t);
     struct timeval getLastPacketSentTime();
