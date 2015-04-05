@@ -249,6 +249,8 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
   {"icmp6-ni-flags", required_argument, 0, 0},
   {"icmp6-ni-nonce", required_argument, 0, 0},
   {"icmp6-ni-data", required_argument, 0, 0},
+  {"icmp6-gm-delay", required_argument, 0, 0},
+  {"icmp6-gm-addr", required_argument, 0, 0},
 
   /* ARP */
   {"arp-type",  required_argument, 0, 0},
@@ -969,6 +971,26 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
           }
         }
       o.icmp6.ni_flags.setConstant(aux16);
+      }
+     /* ICMPv6 MLD Multicast Address */
+    } else if (optcmp(long_options[option_index].name, "icmp6-gm-addr") == 0) {
+      o.addMode(DO_ICMP);
+      if(meansRandom(optarg)){
+        o.icmp6.mld_addr.setBehavior(FIELD_TYPE_RANDOM);
+      }else{
+        if(aux_ip6.setIPv6Address(optarg) != OP_SUCCESS){
+          nping_fatal(QT_3, "Could not resolve specified ICMPv6 MLD Multicast Address.");
+        }else{
+          o.icmp6.mld_addr.setConstant(aux_ip6.getIPv6Address());
+        }
+      }
+    /* ICMPv6 MLD Maximum Response Delay */
+    } else if (optcmp(long_options[option_index].name, "icmp6-gm-delay") == 0) {
+      o.addMode(DO_ICMP);
+      if(parse_u16(optarg, &aux16) == OP_SUCCESS){
+        o.icmp6.mld_delay.setConstant(aux16);
+      }else{
+        nping_fatal(QT_3, "Invalid ICMPv6 MLD Maximum Response Delay. Value must be 0<=N<=65535");
       }
 /* ARP OPTIONS ***************************************************************/
     /* Operation code */

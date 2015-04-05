@@ -354,6 +354,10 @@ class ICMPv6HeaderTemplate : public HeaderTemplate{
     ProtoField_u16 ni_flags;                    /* Node info flags            */
     ProtoField_u64 ni_nonce;                    /* Nonce                      */
 
+    /* Multicast Listener Discovery */
+    ProtoField_u16 mld_delay;                   /* Maximum Response Delay     */
+    ProtoField_in6addr mld_addr;                /* Multicast address          */
+
     ICMPv6HeaderTemplate();
     ~ICMPv6HeaderTemplate();
     void reset();

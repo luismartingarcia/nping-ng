@@ -378,6 +378,17 @@ int ICMPv6Header::print(FILE *output, int detail) const {
       }
     break;
 
+    case ICMPv6_GRPMEMBQUERY:
+    case ICMPv6_GRPMEMBREP:
+    case ICMPv6_GRPMEMBRED:
+      addr=this->getMulticastAddress();  
+      inet_ntop(AF_INET6, &addr, ipstring, sizeof(ipstring));
+      fprintf(output, " addr=%s", ipstring);
+      if(detail>=PRINT_DETAIL_MED){
+        fprintf(output, " delay=%u", this->getMaxDelay());
+      }
+    break;
+
     default:
         /* Print nothing */
     break;
@@ -1233,6 +1244,7 @@ int ICMPv6Header::setMulticastAddress(struct in6_addr addr){
     case ICMPv6_GRPMEMBQUERY:
     case ICMPv6_GRPMEMBREP:
     case ICMPv6_GRPMEMBRED:
+    case ICMPv6_MLDV2:
        memcpy(this->h_mld->mcast_address, addr.s6_addr, 16);
     break;
 

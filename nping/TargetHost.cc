@@ -851,14 +851,23 @@ ICMPv6Header *TargetHost::getICMPv6Header(){
     case ICMPv6_TIMXCEED:
     break;
 
-    /* Unimplemented ICMPv6 types */
+    /* MLD */
     case ICMPv6_GRPMEMBQUERY:
     case ICMPv6_GRPMEMBREP:
     case ICMPv6_GRPMEMBRED:
+      myicmp6->setMaxDelay(this->icmp6->mld_delay.getNextValue());
+      myicmp6->setMulticastAddress(this->icmp6->mld_addr.getNextValue());
+    break;
+    /* MLDv2: Only partial implementation */
+    case ICMPv6_MLDV2:
+      myicmp6->setMulticastAddress(this->icmp6->mld_addr.getNextValue());
+    break;
+
+    /* Unimplemented ICMPv6 types */
     case ICMPv6_ROUTERSOLICIT:
     case ICMPv6_INVNGHBRSOLICIT:
     case ICMPv6_INVNGHBRADVERT:
-    case ICMPv6_MLDV2:
+
     case ICMPv6_AGENTDISCOVREQ:
     case ICMPv6_AGENTDISCOVREPLY:
     case ICMPv6_MOBPREFIXSOLICIT:

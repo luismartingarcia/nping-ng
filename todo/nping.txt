@@ -48,6 +48,8 @@
  * Things that have NOT been done yet                                        *
  *****************************************************************************/
 
+* Implement version 2 of ICMPv6 MLD. Check RFC 3810.
+
 * Provide a way to pass Node Information data. Currently users can use
   --data-string, --data-len or --data, but there is no way to, for example,
   pass an IPv6 address.
