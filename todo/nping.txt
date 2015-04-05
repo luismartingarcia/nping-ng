@@ -57,17 +57,6 @@
     SENT (0.0000s) IPv4[192.168.1.171 > 74.125.230.196 ttl=64 id=56884 iplen=40] TCP[12784 > 80 S seq=1741618064 win=1480]
     RCVD (0.0240s) IPv4[74.125.230.196 > 192.168.1.171 ttl=55 id=19908 iplen=44] TCP[80 > 12784 SA seq=2851297000 ack=1741618065 win=14300 <mss 1430>] Payload[2 bytes]
 
-
-* In Echo mode, sudo ./nping --ec "public" echo.nmap.org --tcp -vvv, one of
-  the stats lines is printed twice (kindof).
-
-    Max rtt: 178.163ms | Min rtt: 168.957ms | Avg rtt: 173.560ms
-    Raw packets sent: 2 (80B) | Rcvd: 2 (92B) | Lost: 0 (0.00%)| Echoed: 1 (40B)
-    Raw packets sent: 2 (80B) | Rcvd: 2 (92B) | Lost: 0 (0.00%)
-    Tx time: 1.45961s | Tx bytes/s: 54.81 | Tx pkts/s: 1.37
-    Rx time: 1.45961s | Rx bytes/s: 63.03 | Rx pkts/s: 1.37
-    Nping done: 1 IP address pinged in 3.32 seconds
-
 * Decide on packet output. Ideally, each PacketElement class should print itself.
   That's what we do now, but the problem is that we don't get "IP:Port > IP:Port"
   things like 192.168.1.3:4456 > 72.1.1.1:80, because the IPv4Header class
@@ -981,4 +970,13 @@ SENT (1.0580s) ARP who has 192.168.240.139? Tell 192.168.240.1
   not a response is freed. Also, sent and received packets, need to be freed
   after certain time.
 
+[DONE] In Echo mode, sudo ./nping --ec "public" echo.nmap.org --tcp -vvv, one of
+  the stats lines is printed twice (kindof).
+
+    Max rtt: 178.163ms | Min rtt: 168.957ms | Avg rtt: 173.560ms
+    Raw packets sent: 2 (80B) | Rcvd: 2 (92B) | Lost: 0 (0.00%)| Echoed: 1 (40B)
+    Raw packets sent: 2 (80B) | Rcvd: 2 (92B) | Lost: 0 (0.00%)
+    Tx time: 1.45961s | Tx bytes/s: 54.81 | Tx pkts/s: 1.37
+    Rx time: 1.45961s | Rx bytes/s: 63.03 | Rx pkts/s: 1.37
+    Nping done: 1 IP address pinged in 3.32 seconds
   

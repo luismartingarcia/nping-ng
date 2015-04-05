@@ -1499,26 +1499,27 @@ void NpingOps::displayStatistics(){
     nping_print(QT_1|NO_NEWLINE,"| Not Matched: %llu ", this->stats.get_pkts_unmatched() );
     nping_print(QT_1|NO_NEWLINE,"(%s) ", format_bytecount(this->stats.get_bytes_rcvd()-this->stats.get_bytes_echoed(), auxbuff, 256));
     nping_print(QT_1,"(%.2lf%%)", this->stats.get_percent_unmatched() );
-  }
-  if(this->mode(DO_TCP_CONNECT)){
-    nping_print(QT_1|NO_NEWLINE, "TCP connection attempts: %llu ", this->stats.get_connects(HEADER_TYPE_TCP) );
-    nping_print(QT_1|NO_NEWLINE,"| Successful connections: %llu ", this->stats.get_accepts(HEADER_TYPE_TCP) );
-    nping_print(QT_1|NO_NEWLINE,"| Failed: %llu ", this->stats.get_connects_failed(HEADER_TYPE_TCP) );
-    nping_print(QT_1,"(%.2lf%%)", this->stats.get_percent_failed(HEADER_TYPE_TCP) );
-  }
-  if(this->mode(DO_UDP_UNPRIV)){
-    nping_print(QT_1|NO_NEWLINE, "UDP write operations: %llu ", this->stats.get_pkts_sent() );
-    nping_print(QT_1|NO_NEWLINE,"| Successful reads: %llu ", this->stats.get_pkts_rcvd() );
-    nping_print(QT_1|NO_NEWLINE,"| Failed: %llu ", this->stats.get_pkts_lost() );
-    nping_print(QT_1|NO_NEWLINE,"(%.2lf%%)\n", this->stats.get_percent_lost() );
-  }
-  if(this->mode(DO_TCP) || this->mode(DO_UDP) || this->mode(DO_ICMP) || this->mode(DO_ARP)){
-    nping_print(QT_1|NO_NEWLINE, "Raw packets sent: %llu ", this->stats.get_pkts_sent() );
-    nping_print(QT_1|NO_NEWLINE, "(%s) ", format_bytecount(this->stats.get_bytes_sent(), auxbuff, 256));
-    nping_print(QT_1|NO_NEWLINE,"| Rcvd: %llu ", this->stats.get_pkts_rcvd() );
-    nping_print(QT_1|NO_NEWLINE,"(%s) ", format_bytecount(this->stats.get_bytes_rcvd(), auxbuff, 256));
-    nping_print(QT_1|NO_NEWLINE,"| Lost: %llu ", this->stats.get_pkts_lost() );
-    nping_print(QT_1,"(%.2lf%%)", this->stats.get_percent_lost() );
+  }else if(this->getRole()==ROLE_NORMAL){
+    if(this->mode(DO_TCP_CONNECT)){
+      nping_print(QT_1|NO_NEWLINE, "TCP connection attempts: %llu ", this->stats.get_connects(HEADER_TYPE_TCP) );
+      nping_print(QT_1|NO_NEWLINE,"| Successful connections: %llu ", this->stats.get_accepts(HEADER_TYPE_TCP) );
+      nping_print(QT_1|NO_NEWLINE,"| Failed: %llu ", this->stats.get_connects_failed(HEADER_TYPE_TCP) );
+      nping_print(QT_1,"(%.2lf%%)", this->stats.get_percent_failed(HEADER_TYPE_TCP) );
+    }
+    if(this->mode(DO_UDP_UNPRIV)){
+      nping_print(QT_1|NO_NEWLINE, "UDP write operations: %llu ", this->stats.get_pkts_sent() );
+      nping_print(QT_1|NO_NEWLINE,"| Successful reads: %llu ", this->stats.get_pkts_rcvd() );
+      nping_print(QT_1|NO_NEWLINE,"| Failed: %llu ", this->stats.get_pkts_lost() );
+      nping_print(QT_1|NO_NEWLINE,"(%.2lf%%)\n", this->stats.get_percent_lost() );
+    }
+    if(this->mode(DO_TCP) || this->mode(DO_UDP) || this->mode(DO_ICMP) || this->mode(DO_ARP)){
+      nping_print(QT_1|NO_NEWLINE, "Raw packets sent: %llu ", this->stats.get_pkts_sent() );
+      nping_print(QT_1|NO_NEWLINE, "(%s) ", format_bytecount(this->stats.get_bytes_sent(), auxbuff, 256));
+      nping_print(QT_1|NO_NEWLINE,"| Rcvd: %llu ", this->stats.get_pkts_rcvd() );
+      nping_print(QT_1|NO_NEWLINE,"(%s) ", format_bytecount(this->stats.get_bytes_rcvd(), auxbuff, 256));
+      nping_print(QT_1|NO_NEWLINE,"| Lost: %llu ", this->stats.get_pkts_lost() );
+      nping_print(QT_1,"(%.2lf%%)", this->stats.get_percent_lost() );
+    }
   }
 #endif
   /* Transmission times & rates */
