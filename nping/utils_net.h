@@ -164,7 +164,6 @@ int arppackethdrinfo(const u8 *packet, u32 len, u8 *dstbuff, u32 dstlen);
 int tcppackethdrinfo(const u8 *packet, size_t len, u8 *dstbuff, size_t dstlen, int detail, struct sockaddr_storage *src, struct sockaddr_storage *dst);
 int udppackethdrinfo(const u8 *packet, size_t len, u8 *dstbuff, size_t dstlen, int detail, struct sockaddr_storage *src, struct sockaddr_storage *dst);
 const char *getRandomTextPayload();
-int send_packet(NpingTarget *target, int rawfd, u8 *pkt, size_t pktLen);
 int print_dnet_interface(const struct intf_entry *entry, void *arg) ;
 int print_interfaces_dnet();
 struct sockaddr_storage *getSrcSockAddrFromIPPacket(u8 *pkt, size_t pktLen);

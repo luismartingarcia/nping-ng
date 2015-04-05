@@ -143,8 +143,8 @@
 #endif
 using namespace std;
 NpingOps o;
-EchoClient ec;
-EchoServer es;
+//EchoClient ec;
+//EchoServer es;
 
 int do_safe_checks();
 void test_stuff();
@@ -161,7 +161,6 @@ int main(int argc, char *argv[] ){
   char tbuf[128];   /* Stores current time as a string */
   ArgParser a;      /* Command line argument parser    */
   ProbeEngine prob;
-  NpingTarget *t=NULL;
 
   /* Get current time */
   now = time(NULL);
@@ -220,17 +219,17 @@ int main(int argc, char *argv[] ){
         break;
 
         case ROLE_CLIENT:
-            t=o.targets.getNextTarget();
-            o.targets.rewind();
-            ec.start(t, o.getEchoPort() );
-            ec.cleanup();
+            //t=o.targets.getNextTarget();
+            //o.targets.rewind();
+            //ec.start(t, o.getEchoPort() );
+            //ec.cleanup();
         break;
 
         case ROLE_SERVER:
-            o.stats.startClocks();
-            es.start();
-            es.cleanup();
-            o.stats.stopClocks();
+            //o.stats.startClocks();
+            //es.start();
+            //es.cleanup();
+            //o.stats.stopClocks();
         break;
 
         default:

@@ -368,7 +368,6 @@ class NpingOps {
     vector<NetworkInterface *> interfaces;
 
   public:
-    NpingTargets targets;
     NpingStats stats;                      /* Global statistics           */
 
   public:

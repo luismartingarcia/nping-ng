@@ -2435,8 +2435,8 @@ void NpingOps::displayNpingDoneMsg(){
               );
   }else{
       nping_print(QT_1, "Nping done: %lu %s pinged in %.2f seconds",
-               this->targets.getTargetsFetched(),
-               (this->targets.getTargetsFetched() == 1)? "IP address" : "IP addresses",
+               this->target_hosts.size(),
+               (this->target_hosts.size() == 1)? "IP address" : "IP addresses",
                this->stats.elapsedRuntime()
               );
   }
@@ -2447,19 +2447,16 @@ void NpingOps::displayNpingDoneMsg(){
 void NpingOps::displayStatistics(){
   char auxbuff[256];
   memset(auxbuff, 0, 256);
-  NpingTarget *target=NULL;
-  this->targets.rewind();
 
   nping_print(VB_0," "); /* Print newline */
 
     /* Per-target statistics */
-    if( this->targets.getTargetsFetched() > 1){
-        while( (target=this->targets.getNextTarget()) != NULL )
-            target->printStats();
+    if( this->target_hosts.size() > 1){
+      for(u32 i=0; i<this->target_hosts.size(); i++){
+        //this->target_hosts[i]->printStats(); /* ##TODO## Finish this */
+      }
     }else{
-        target=this->targets.getNextTarget();
-        if( target!= NULL)
-            target->printRTTs();
+      //this->target_hosts[0]->printRTTs();
     }
 
 #ifdef WIN32
@@ -2551,7 +2548,6 @@ void NpingOps::displayStatistics(){
 
 /* Close open files, free allocated memory, etc. */
 int NpingOps::cleanup(){
-  this->targets.freeTargets();
   return OP_SUCCESS;
 } /* End of cleanup() */
 
