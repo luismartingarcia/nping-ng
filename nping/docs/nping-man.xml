@@ -761,6 +761,33 @@ SENT (4.0330s) TCP 192.168.0.21 &gt; 3.3.3.3:139
       </varlistentry>
 
 
+       <varlistentry>
+        <term>
+          <option>--csum <replaceable>sum</replaceable></option> (TCP Checksum)
+          <indexterm significance="preferred"><primary><option>--csum</option> (Nping option)</primary></indexterm>
+        </term>
+        <listitem>
+          <para>
+           Sets the Checksum field in TCP packets. The TCP checksum is a 16-bit
+           field that is used to detect transmission errors that affect the
+           TCP header, the payload, and also some parts of the IP header.
+
+           By default, Nping computes and sets the correct sum in every TCP
+           packet that it sends. However, users may use this option to set
+           custom, or zero checksums. Additionally, the <option>--badsum</option>
+           option can be used to set a random invalid checksum.
+           <replaceable>sum</replaceable> must be an integer in the range [0&ndash;65535].
+
+           Note that the value set using this option is shared between the
+           TCP, UDP and ICMP protocols. Therefore, when sending multiple packet
+           types, the same sum will be set in all of them.
+        </para>
+        </para>
+        </listitem>
+      </varlistentry>
+
+
+
       <varlistentry>
         <term>
         <option>--badsum</option> (Invalid Checksum)
@@ -827,7 +854,33 @@ SENT (4.0330s) TCP 192.168.0.21 &gt; 3.3.3.3:139
         </para>
         </listitem>
       </varlistentry>
-  
+
+
+         <varlistentry>
+        <term>
+          <option>--csum <replaceable>sum</replaceable></option> (UDP Checksum)
+          <indexterm significance="preferred"><primary><option>--csum</option> (Nping option)</primary></indexterm>
+        </term>
+        <listitem>
+          <para>
+           Sets the Checksum field in UDP packets. The UDP checksum is a 16-bit
+           field that is used to detect transmission errors that affect the
+           UDP header, the payload, and also some parts of the IP header.
+
+           By default, Nping computes and sets the correct sum in every UDP
+           packet that it sends. However, users may use this option to set
+           custom, or zero checksums. Additionally, the <option>--badsum</option>
+           option can be used to set a random invalid checksum.
+           <replaceable>sum</replaceable> must be an integer in the range [0&ndash;65535].
+
+           Note that the value set using this option is shared between the
+           TCP, UDP and ICMP protocols. Therefore, when sending multiple packet
+           types, the same sum will be set in all of them.
+        </para>
+        </para>
+        </listitem>
+      </varlistentry>
+
 
       <varlistentry>
         <term>
@@ -923,6 +976,49 @@ SENT (4.0330s) TCP 192.168.0.21 &gt; 3.3.3.3:139
            in some ICMP messages. In general it is used to match request and 
            reply messages. <replaceable>id</replaceable> must be a number in 
            the range [0&ndash;65535].
+        </para>
+        </listitem>
+      </varlistentry>
+
+
+       <varlistentry>
+        <term>
+          <option>--csum <replaceable>sum</replaceable></option> (ICMP Checksum)
+          <indexterm significance="preferred"><primary><option>--csum</option> (Nping option)</primary></indexterm>
+        </term>
+        <listitem>
+          <para>
+           Sets the Checksum field in ICMP packets. The ICMP checksum is a 16-bit
+           field that is used to detect transmission errors that affect the
+           ICMP header, the payload, and also some parts of the IP header.
+
+           By default, Nping computes and sets the correct sum in every ICMP
+           packet that it sends. However, users may use this option to set
+           custom, or zero checksums. Additionally, the <option>--badsum</option>
+           option can be used to set a random invalid checksum.
+           <replaceable>sum</replaceable> must be an integer in the range [0&ndash;65535].
+
+           Note that the value set using this option is shared between the
+           TCP, UDP and ICMP protocols. Therefore, when sending multiple packet
+           types, the same sum will be set in all of them.
+        </para>
+        </para>
+        </listitem>
+      </varlistentry>
+
+
+      <varlistentry>
+        <term>
+        <option>--badsum</option> (Invalid Checksum)
+        </term>
+        <listitem>
+          <para>
+           Asks Nping to use an invalid ICMP checksum for the packets sent to
+           target hosts. Since virtually all host IP stacks properly drop these
+           packets, any responses received are likely coming from a firewall or
+           an IDS that didn't bother to verify the checksum. For more
+           details on this technique, see
+           <ulink url="http://nmap.org/p60-12.html"/>.
         </para>
         </listitem>
       </varlistentry>
@@ -1995,12 +2091,11 @@ SENT (4.0330s) TCP 192.168.0.21 &gt; 3.3.3.3:139
         </term>
         <listitem>
           <para>
-           Sets the IP TOS field. The TOS field is used to carry information
+           Sets the IPv4 TOS field. The TOS field is used to carry information
            to provide quality of service features. It is normally used to
            support a technique called Differentiated Services. See
            RFC 2474<indexterm><primary>RFC 2474</primary></indexterm>
-           for
-           more information. <replaceable>tos</replaceable> must be a number
+           for more information. <replaceable>tos</replaceable> must be a number
            in the range [0&ndash;255].
         </para>
         </listitem>
@@ -2030,7 +2125,7 @@ SENT (4.0330s) TCP 192.168.0.21 &gt; 3.3.3.3:139
         </term>
         <listitem>
           <para>
-           Sets the Don't Fragment bit in sent packets. When an
+           Sets the Don't Fragment bit in IPv4 packets. When an
            IP datagram has its DF flag set, intermediate devices are not
            allowed to fragment it so if it needs to travel across a network
            with a MTU smaller that datagram length the datagram will have
@@ -2048,7 +2143,7 @@ SENT (4.0330s) TCP 192.168.0.21 &gt; 3.3.3.3:139
         </term>
         <listitem>
           <para>
-           Sets the More Fragments bit in sent packets. The MF
+           Sets the More Fragments bit in IPv4 packets. The MF
            flag is set to indicate the receiver that the current datagram is
            a fragment of some larger datagram. When set to zero it indicates
            that the current datagram is either the last fragment in the set
@@ -2056,6 +2151,20 @@ SENT (4.0330s) TCP 192.168.0.21 &gt; 3.3.3.3:139
         </para>
         </listitem>
       </varlistentry>
+
+
+      <varlistentry>
+        <term>
+          <option>--rf</option> (Reserved Flag)
+          <indexterm significance="preferred"><primary><option>--rf</option> (Nping option)</primary></indexterm>
+        </term>
+        <listitem>
+          <para>
+           Sets the Reserved Flag or X-bit in IPv4 packets.
+        </para>
+        </listitem>
+      </varlistentry>
+
 
        <varlistentry>
         <term>          
@@ -2076,14 +2185,59 @@ SENT (4.0330s) TCP 192.168.0.21 &gt; 3.3.3.3:139
         </listitem>
       </varlistentry>
 
+
+       <varlistentry>
+        <term>
+          <option>--fragoff <replaceable>offset</replaceable></option> (Fragment Offset)
+          <indexterm significance="preferred"><primary><option>--fragoff</option> (Nping option)</primary></indexterm>
+        </term>
+        <listitem>
+          <para>
+           Sets the Fragment Offset field in IPv4 packets. The Fragment Offset
+           field is used to identify the location of an IPv4 fragment, relative
+           to the beginning of the original unfragmented datagram. Fragment
+           offsets are expressed in units of 8 octets. <replaceable>offset</replaceable>
+           must be an integer in the range [0&ndash;8192].
+
+           Note that the use of this flag does not make Nping fragment IPv4
+           packets. Check the documentation for the  <option>--mtu </option>
+           option for information on how to request fragmentation.
+        </para>
+        </listitem>
+      </varlistentry>
+
+
+       <varlistentry>
+        <term>
+          <option>--csum-ip <replaceable>sum</replaceable></option> (IPv4 Checksum)
+          <indexterm significance="preferred"><primary><option>--csum-ip</option> (Nping option)</primary></indexterm>
+        </term>
+        <listitem>
+          <para>
+           Sets the Header Checksum field in IPv4 packets. The IPv4 checksum
+           is a 16-bit field that is used to detect transmission errors that
+           affect the IPv4 header. It only covers the IPv4 header, excluding any
+           additional headers that may follow.
+
+           By default, Nping computes and sets the correct sum in every IPv4
+           packet that it sends. However, users may use this option to set
+           custom, or zero checksums. Additionally, the <option>--badsum-ip</option>
+           option can be used to set a random invalid checksum.
+           <replaceable>sum</replaceable> must be an integer in the range [0&ndash;65535].
+        </para>
+        </para>
+        </listitem>
+      </varlistentry>
+
+
       <varlistentry>
         <term>          
-          <option>--badsum-ip</option> (Invalid IP checksum)
+          <option>--badsum-ip</option> (Invalid IPv4 checksum)
           <indexterm significance="preferred"><primary><option>--badsum-ip</option> (Nping option)</primary></indexterm>
         </term>
         <listitem>
           <para>
-           Asks Nping to use an invalid IP checksum for packets sent to 
+           Asks Nping to use an invalid IPv4 checksum for packets sent to
            target hosts. Note that some systems (like most Linux kernels),
            may fix the checksum before placing the packet on the wire, so
            even if Nping shows the incorrect checksum in its output, the
@@ -2101,7 +2255,7 @@ SENT (4.0330s) TCP 192.168.0.21 &gt; 3.3.3.3:139
         </term>
         <listitem>
           <para>
-           The IP protocol offers several options which may be placed in
+           The IPv4 protocol offers several options which may be placed in
            packet headers. Unlike the ubiquitous TCP options, IP options are
            rarely seen due to practicality and security concerns. In fact,
            many Internet routers block the most dangerous options such as
@@ -2115,7 +2269,7 @@ SENT (4.0330s) TCP 192.168.0.21 &gt; 3.3.3.3:139
           </para>
 
           <para>
-           The most powerful way to specify IP options is to simply pass in hexadecimal data
+           The most powerful way to specify IPv4 options is to simply pass in hexadecimal data
            as the argument to <option>--ip-options</option>. Precede each hex byte value
            with <literal>\x</literal>. You may repeat certain characters by
            following them with an asterisk and then the number of times you
@@ -2126,12 +2280,12 @@ SENT (4.0330s) TCP 192.168.0.21 &gt; 3.3.3.3:139
 
           <para>
            Note that if you specify a number of bytes that is not a multiple
-           of four, an incorrect IP header length will be set in the IP
-           packet. The reason for this is that the IP header length field
+           of four, an incorrect IP header length will be set in the IPv4
+           packet. The reason for this is that the IPv4 header length field
            can only express multiples of four. In those cases, the length is
            computed by dividing the header length by 4 and rounding down.
            This will
-           affect the way the header that follows the IP header is
+           affect the way the header that follows the IPv4 header is
            interpreted, showing bogus information in Nping or in the output
            of any sniffer. Although this kind of situation might be useful
            for some stack stress tests, users would normally want to
@@ -2147,7 +2301,7 @@ SENT (4.0330s) TCP 192.168.0.21 &gt; 3.3.3.3:139
           </para>
 
           <para>
-           For more information and examples of using IP options with Nping,
+           For more information and examples of using IPv4 options with Nping,
            see the mailing list post at
            <ulink url="http://seclists.org/nmap-dev/2006/q3/0052.html"/>.
           </para>
@@ -2193,7 +2347,7 @@ SENT (4.0330s) TCP 192.168.0.21 &gt; 3.3.3.3:139
         </term>
         <listitem>
           <para>
-           Tells Nping to use IP version 6 instead of the default IPv4.
+           Tells Nping to use IP version 6 instead of the default IP version 4.
            It is generally a good idea to specify this option as early as
            possible in the command line so Nping can parse it soon and know in
            advance that the rest of the parameters refer to IPv6. The command
@@ -2226,13 +2380,13 @@ SENT (4.0330s) TCP 192.168.0.21 &gt; 3.3.3.3:139
       <varlistentry>
         <term>
           <option>-S <replaceable>addr</replaceable></option>,
-          <option>--source-ip <replaceable>addr</replaceable></option> (Source IP Address)
+          <option>--source-ip <replaceable>addr</replaceable></option> (Source IPv6 Address)
           <indexterm significance="preferred"><primary><option>--source-ip</option> (Nping option)</primary></indexterm>
         </term>
         <listitem>
           <para>
-           Sets the source IP address. This option lets you specify a custom IP
-           address to be used as source IP address in sent packets. This
+           Sets the source IPv6 address. This option lets you specify a custom IP
+           address to be used as source address in sent packets. This
            allows spoofing the sender of the packets.
            <replaceable>addr</replaceable> can be an IPv6 address or a hostname.
         </para>
@@ -2305,8 +2459,12 @@ SENT (4.0330s) TCP 192.168.0.21 &gt; 3.3.3.3:139
            to exist on the network. It represents the number of hops a packet
            can traverse before being dropped. As with the TTL in IPv4, IPv6 Hop Limit
            tries to avoid a situation in which undeliverable datagrams keep being
-           forwarded from one router to another endlessly.
-           <replaceable>hops</replaceable> must be a number in the range [0&ndash;255].
+           forwarded from one router to another endlessly. Note that the
+           <option>--hop-limit</option> is just and alias for <option>--ttl</option>,
+           so when sending both, IPv4 and IPv6 packets at the same time, both
+           protocol versions will use the same hop limit. <replaceable>hops</replaceable>
+           must be a number in the range [0&ndash;255].
+
         </para>
         </listitem>
       </varlistentry>
