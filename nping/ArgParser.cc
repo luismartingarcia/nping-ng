@@ -329,88 +329,18 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
 
 /* PROBE MODES ***************************************************************/
     if (optcmp(long_options[option_index].name, "tcp-connect") == 0) {
-        if( o.issetMode() && o.getMode()!=TCP_CONNECT)
-            nping_fatal(QT_3,"Cannot specify more than one probe mode. Choose either %s or %s.",
-                   strdup( o.mode2Ascii(TCP_CONNECT) ),  strdup( o.mode2Ascii(o.getMode()) ) );
-        o.setMode(TCP_CONNECT);              	
-    } else if (optcmp(long_options[option_index].name, "tcp") == 0) {
-        if( o.issetMode() && o.getMode()!=TCP)
-            nping_fatal(QT_3,"Cannot specify more than one probe mode. Choose either %s or %s.",
-                   strdup( o.mode2Ascii(TCP) ),  strdup( o.mode2Ascii(o.getMode()) ) );
-        o.setMode(TCP);              	
-    } else if (optcmp(long_options[option_index].name, "udp") == 0) {
-        if( o.issetMode() && o.getMode()!=UDP)
-            nping_fatal(QT_3,"Cannot specify more than one probe mode. Choose either %s or %s.",
-                   strdup( o.mode2Ascii(UDP) ),  strdup( o.mode2Ascii(o.getMode()) ) );
-        o.setMode(UDP);
-    } else if (optcmp(long_options[option_index].name, "icmp") == 0) {
-        if( o.issetMode() && o.getMode()!=ICMP)
-            nping_fatal(QT_3,"Cannot specify more than one probe mode. Choose either %s or %s.",
-                   strdup( o.mode2Ascii(ICMP) ),  strdup( o.mode2Ascii(o.getMode()) ) );
-        o.setMode(ICMP);
-    } else if (optcmp(long_options[option_index].name, "arp") == 0) {
-        if( o.issetMode() && o.getMode()!=ARP)
-            nping_fatal(QT_3,"Cannot specify more than one probe mode. Choose either %s or %s.",
-                   strdup( o.mode2Ascii(ARP) ),  strdup( o.mode2Ascii(o.getMode()) ) );
-        o.setMode(ARP);
-    } else if (optcmp(long_options[option_index].name, "traceroute") == 0 ||
+      o.addMode(DO_TCP_CONNECT);
+    }else if (optcmp(long_options[option_index].name, "tcp") == 0) {
+      o.addMode(DO_TCP);
+    }else if (optcmp(long_options[option_index].name, "udp") == 0) {
+      o.addMode(DO_UDP);
+    }else if (optcmp(long_options[option_index].name, "icmp") == 0) {
+      o.addMode(DO_ICMP);
+    }else if (optcmp(long_options[option_index].name, "arp") == 0) {
+      o.addMode(DO_ARP);
+    }else if (optcmp(long_options[option_index].name, "traceroute") == 0 ||
                optcmp(long_options[option_index].name, "tr") == 0) {
-        o.enableTraceroute();
-
-    /* Now shortcuts that we support but that are not actual modes */
-    } else if (optcmp(long_options[option_index].name, "arp-request") == 0) {
-        if( o.issetMode() && o.getMode()!=ARP)
-            nping_fatal(QT_3,"Cannot specify more than one probe mode. Choose either %s or %s.",
-                   strdup( o.mode2Ascii(ARP) ),  strdup( o.mode2Ascii(o.getMode()) ) );
-        o.setMode(ARP);
-        o.setARPOpCode(OP_ARP_REQUEST);
-    } else if (optcmp(long_options[option_index].name, "arp-reply") == 0) {
-        if( o.issetMode() && o.getMode()!=ARP)
-            nping_fatal(QT_3,"Cannot specify more than one probe mode. Choose either %s or %s.",
-                   strdup( o.mode2Ascii(ARP) ),  strdup( o.mode2Ascii(o.getMode()) ) );
-        o.setMode(ARP);
-        o.setARPOpCode(OP_ARP_REPLY);
-    } else if (optcmp(long_options[option_index].name, "rarp-request") == 0) {
-        if( o.issetMode() && o.getMode()!=ARP)
-            nping_fatal(QT_3,"Cannot specify more than one probe mode. Choose either %s or %s.",
-                   strdup( o.mode2Ascii(ARP) ),  strdup( o.mode2Ascii(o.getMode()) ) );
-        o.setMode(ARP);
-        o.setARPOpCode(OP_RARP_REQUEST);
-    } else if (optcmp(long_options[option_index].name, "rarp-reply") == 0) {
-        if( o.issetMode() && o.getMode()!=ARP)
-            nping_fatal(QT_3,"Cannot specify more than one probe mode. Choose either %s or %s.",
-                   strdup( o.mode2Ascii(ARP) ),  strdup( o.mode2Ascii(o.getMode()) ) );
-        o.setMode(ARP);
-        o.setARPOpCode(OP_RARP_REPLY);
-    } else if (optcmp(long_options[option_index].name, "destination-unreachable") == 0 ||
-               optcmp(long_options[option_index].name, "dest-unr") == 0) {
-        if ( o.issetMode() && o.getMode() != ICMP )
-            nping_fatal(QT_3,"You cannot specify mode %s if you want to send ICMP Destination unreachable messages.", o.mode2Ascii(o.getMode()));
-        o.setMode(ICMP);
-        o.setICMPType( ICMP_UNREACH );
-    } else if( optcmp(long_options[option_index].name, "echo-request") == 0) {
-        if ( o.issetMode() && o.getMode() != ICMP )
-            nping_fatal(QT_3,"You cannot specify mode %s if you want to send ICMP Echo request messages.", o.mode2Ascii(o.getMode()));
-        o.setMode(ICMP);
-        o.setICMPType( ICMP_ECHO );
-    } else if (optcmp(long_options[option_index].name, "timestamp") == 0 ||
-               optcmp(long_options[option_index].name, "timestamp-request") == 0) {
-        if ( o.issetMode() && o.getMode() != ICMP )
-            nping_fatal(QT_3,"You cannot specify mode %s if you want to send ICMP Timestamp request messages.", o.mode2Ascii(o.getMode()));
-        o.setMode(ICMP);
-        o.setICMPType( ICMP_TSTAMP );
-    } else if (optcmp(long_options[option_index].name, "information") == 0 ||
-               optcmp(long_options[option_index].name, "information-request") == 0 ) {
-        if ( o.issetMode() && o.getMode() != ICMP )
-            nping_fatal(QT_3,"You cannot specify mode %s if you want to send ICMP Information request messages.", o.mode2Ascii(o.getMode()));
-        o.setMode(ICMP);
-        o.setICMPType( ICMP_TSTAMP );
-    } else if (optcmp(long_options[option_index].name, "netmask") == 0 ||
-               optcmp(long_options[option_index].name, "netmask-request") == 0) {
-        if ( o.issetMode() && o.getMode() != ICMP )
-            nping_fatal(QT_3,"You cannot specify mode %s if you want to send ICMP Information request messages.", o.mode2Ascii(o.getMode()));
-        o.setMode(ICMP);
-        o.setICMPType( ICMP_MASK );
+      o.addMode(DO_TRACEROUTE);
 
 
 /* TCP/UDP OPTIONS ***********************************************************/
@@ -531,10 +461,9 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
 /* ICMP OPTIONS **************************************************************/
     /* ICMP Type */
     } else if (optcmp(long_options[option_index].name, "icmp-type") == 0) {
-        if ( o.issetMode() && o.getMode() != ICMP )
-            nping_fatal(QT_3,"You cannot specify mode %s if you want to send ICMP messages.", o.mode2Ascii(o.getMode()));
+        o.addMode(DO_ICMP);
         /* User may have supplied type as a number */
-        if ( parse_u8(optarg, &aux8) == OP_SUCCESS )
+        if( parse_u8(optarg, &aux8) == OP_SUCCESS )
             o.setICMPType( aux8 );
         /* Or maybe the supplied arg is a string that we can recognize */        
         else if ( atoICMPType(optarg, &aux8) == OP_SUCCESS )
@@ -547,8 +476,7 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
             nping_warning(QT_1, "Warning: Specified ICMP type (%d) is not RFC compliant.", aux8); 
     /* ICMP Code */
     } else if (optcmp(long_options[option_index].name, "icmp-code") == 0) {
-        if ( o.issetMode() && o.getMode() != ICMP )
-            nping_fatal(QT_3,"You cannot specify mode %s if you want to send ICMP messages.", o.mode2Ascii(o.getMode()));
+        o.addMode(DO_ICMP);
         /* User may have supplied code as a number */
         if ( parse_u8(optarg, &aux8) == OP_SUCCESS )
             o.setICMPCode( aux8 );
@@ -560,24 +488,21 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
            nping_fatal(QT_3, "Invalid ICMP Code. Value must be 0<=N<=255.");
     /* ICMP Identification field */
     } else if (optcmp(long_options[option_index].name, "icmp-id") == 0) {
-        if ( o.issetMode() && o.getMode() != ICMP )
-            nping_fatal(QT_3,"You cannot specify mode %s if you want to send ICMP messages.", o.mode2Ascii(o.getMode()));
+        o.addMode(DO_ICMP);
         if ( parse_u16(optarg, &aux16) == OP_SUCCESS )
             o.setICMPIdentifier( aux16 );
         else
             nping_fatal(QT_3, "Invalid ICMP Identifier. Value must be 0<=N<2^16.");
     /* ICMP Sequence number */
     } else if (optcmp(long_options[option_index].name, "icmp-seq") == 0) {
-        if ( o.issetMode() && o.getMode() != ICMP )
-            nping_fatal(QT_3,"You cannot specify mode %s if you want to send ICMP messages.", o.mode2Ascii(o.getMode()));
+        o.addMode(DO_ICMP);
         if ( parse_u16(optarg, &aux16) == OP_SUCCESS )
             o.setICMPSequence( aux16 );
         else
             nping_fatal(QT_3, "Invalid ICMP Sequence number. Value must be 0<=N<2^16.");
     /* ICMP Redirect Address */
     } else if (optcmp(long_options[option_index].name, "icmp-redirect-addr") == 0) {
-        if ( o.issetMode() && o.getMode() != ICMP )
-            nping_fatal(QT_3,"You cannot specify mode %s if you want to send ICMP messages.", o.mode2Ascii(o.getMode()));
+        o.addMode(DO_ICMP);
         if( meansRandom(optarg) ){
             while ( (auxinaddr.s_addr=get_random_u32()) == 0 );
             o.setICMPRedirectAddress(auxinaddr);
@@ -589,24 +514,21 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
         }
     /* ICMP Parameter problem pointer */
     } else if (optcmp(long_options[option_index].name, "icmp-param-pointer") == 0) {
-        if ( o.issetMode() && o.getMode() != ICMP )
-            nping_fatal(QT_3,"You cannot specify mode %s if you want to send ICMP messages.", o.mode2Ascii(o.getMode()));
+        o.addMode(DO_ICMP);
         if ( parse_u8(optarg, &aux8) == OP_SUCCESS )
             o.setICMPParamProblemPointer( aux8 );
         else
             nping_fatal(QT_3, "Invalid ICMP Parameter problem pointer. Value must be 0<=N<=255..");
     /* ICMP Router Advertisement lifetime */
     } else if (optcmp(long_options[option_index].name, "icmp-advert-lifetime") == 0) {
-        if ( o.issetMode() && o.getMode() != ICMP )
-            nping_fatal(QT_3,"You cannot specify mode %s if you want to send ICMP messages.", o.mode2Ascii(o.getMode()));
+        o.addMode(DO_ICMP);
         if ( parse_u16(optarg, &aux16) == OP_SUCCESS )
             o.setICMPRouterAdvLifetime( aux16 );
         else
             nping_fatal(QT_3, "Invalid ICMP Router advertisement lifetime. Value must be 0<=N<2^16..");
     /* ICMP Router Advertisement entry */
     } else if (optcmp(long_options[option_index].name, "icmp-advert-entry") == 0) {
-        if ( o.issetMode() && o.getMode() != ICMP )
-            nping_fatal(QT_3,"You cannot specify mode %s if you want to send ICMP messages.", o.mode2Ascii(o.getMode()));
+        o.addMode(DO_ICMP);
         /* Format should be "IPADDR,PREF":  "192.168.10.99,31337" */
         if( meansRandom(optarg) ){
             while( (auxinaddr.s_addr=get_random_u32()) == 0);
@@ -617,20 +539,17 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
         }
     /* ICMP Timestamp originate timestamp */
     } else if (optcmp(long_options[option_index].name, "icmp-orig-time") == 0) {
-        if ( o.issetMode() && o.getMode() != ICMP )
-            nping_fatal(QT_3,"You cannot specify mode %s if you want to send ICMP messages.", o.mode2Ascii(o.getMode()));
+        o.addMode(DO_ICMP);
         this->parseICMPTimestamp(optarg, &aux32);
         o.setICMPOriginateTimestamp(aux32);
     /* ICMP Timestamp receive timestamp */
     } else if (optcmp(long_options[option_index].name, "icmp-recv-time") == 0) {
-        if ( o.issetMode() && o.getMode() != ICMP )
-            nping_fatal(QT_3,"You cannot specify mode %s if you want to send ICMP messages.", o.mode2Ascii(o.getMode()));
+        o.addMode(DO_ICMP);
         this->parseICMPTimestamp(optarg, &aux32);
         o.setICMPReceiveTimestamp(aux32);
     /* ICMP Timestamp transmit timestamp */
     } else if (optcmp(long_options[option_index].name, "icmp-trans-time") == 0) {
-        if ( o.issetMode() && o.getMode() != ICMP )
-            nping_fatal(QT_3,"You cannot specify mode %s if you want to send ICMP messages.", o.mode2Ascii(o.getMode()));
+        o.addMode(DO_ICMP);
         this->parseICMPTimestamp(optarg, &aux32);
         o.setICMPTransmitTimestamp(aux32);
     /* TODO: Add more relevant flags for different ICMP options */
@@ -646,11 +565,7 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
                optcmp(long_options[option_index].name, "arp-op") == 0 ||
                optcmp(long_options[option_index].name, "rarp-operation") == 0 ||
                optcmp(long_options[option_index].name, "rarp-op") == 0 ){            
-        if ( o.issetMode() && o.getMode() != ARP ){
-            nping_fatal(QT_3,"You cannot specify mode %s if you want to send ARP messages.", o.mode2Ascii(o.getMode()));
-        }else if( !o.issetMode() ){
-            o.setMode(ARP);
-        }
+        o.addMode(DO_ARP);
         if( atoARPOpCode(optarg, &aux16) != OP_SUCCESS ){
             nping_fatal(QT_3, "Invalid ARP type/operation code");
         }else{

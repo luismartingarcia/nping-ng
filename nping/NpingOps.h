@@ -122,12 +122,18 @@
  ***************************************************************************/
 
 /* Probe Modes */
-#define TCP_CONNECT   0xF1
-#define TCP           0xF2
-#define UDP           0xF3
-#define UDP_UNPRIV    0xF4
-#define ICMP          0xF5
-#define ARP           0xF6
+#define NO_MODE_SET      0x0000   /* No mode was selected                 */
+#define DO_TCP_CONNECT   0x0001   /* Unprivileged TCP connections         */
+#define DO_UDP_UNPRIV    0x0002   /* Unprivileged UDP datagrams           */
+#define DO_TCP           0x0004   /* Raw TCP                              */
+#define DO_UDP           0x0008   /* Raw UDP                              */
+#define DO_ICMP          0x0010   /* Raw ICMP for IPv4/IPv6               */
+#define DO_ARP           0x0040   /* Raw ARP                              */
+#define DO_TRACEROUTE    0x0080   /* Do incremental TTLs (traceroute)     */
+#define DO_EXT_HOPOPT    0x0100   /* Add Hop-By-Hop IPv6 extension header */
+#define DO_EXT_ROUTING   0x0200   /* Add Routing IPv6 extension header    */
+#define DO_EXT_DOPT      0x0400   /* Add destination options IPv6 ext hdr */
+#define DO_EXT_FRAGMENT  0x0800   /* Add Fragmentation IPv6 extension hdr */
 
 /* Roles */
 #define ROLE_NORMAL 0x22
@@ -189,11 +195,8 @@ class NpingOps {
 
   private:
 
- /* Probe modes */
-    int mode;                 /* Probe mode (TCP,UDP,ICMP,ARP,RARP...) */
-    bool mode_set;
-    bool traceroute;          /* Is traceroute mode enabled?           */
-    bool traceroute_set;
+    /* Probe modes */
+    u16 modes;                /* Probe modes (TCP,UDP,ICMP,ARP,RARP...)*/
 
     /* Output */
     int vb;                   /* Current Verbosity level               */
@@ -364,15 +367,12 @@ class NpingOps {
     ~NpingOps();
 
     /* Probe modes */
-    int setMode(int md);
-    int getMode();
-    char *mode2Ascii(int md);
+    int addMode(u16 md);
+    int delMode(u16 md);
+    u16 getModes();
+    const char *mode2Ascii(u16 md);
+    bool mode(u16 test_value);
     bool issetMode();
-
-    bool getTraceroute();
-    bool enableTraceroute();
-    bool disableTraceroute();
-    bool issetTraceroute();
 
     /* Output */
     int setVerbosity(int level);
@@ -437,7 +437,6 @@ class NpingOps {
     bool issetIPVersion();
     bool ipv4();
     bool ipv6();
-    bool ipv6UsingSocket();
     int af();
 
     /* Privileges */

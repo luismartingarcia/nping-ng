@@ -142,11 +142,7 @@
 NpingOps::NpingOps() {
 
     /* Probe modes */
-    mode=0;
-    mode_set=false;
-
-    traceroute=false;
-    traceroute_set=false;
+    modes=NO_MODE_SET;
 
     /* Output */
     vb=DEFAULT_VERBOSITY;
@@ -356,32 +352,38 @@ NpingOps::~NpingOps() {
  *  Nping probe modes                                                         *
  ******************************************************************************/
 
-/** Sets attribute "mode". Mode must be one of: TCP_CONNECT TCP, UDP, ICMP,
- *  ARP
- *  @return OP_SUCCESS on success.
- *  @return OP_FAILURE in case of error. */
-int NpingOps::setMode(int md) {
-  if ( md!=TCP_CONNECT && md!=TCP && md!=UDP && md!=UDP_UNPRIV && md!=ICMP && md!=ARP )
-    return OP_FAILURE;
-  else{
-    this->mode=md;
-    this->mode_set=true;
-  }
+/** Adds a new operation mode.
+  * @return OP_SUCCESS on success.
+  * @return OP_FAILURE in case of error. */
+int NpingOps::addMode(u16 md) {
+  this->modes = this->modes | md;
   return OP_SUCCESS;
-} /* End of setMode() */
+} /* End of addMode() */
+
+
+/* Removes an operation mode */
+int NpingOps::delMode(u16 md){
+  this->modes = this->modes & (~md) ;
+  return OP_SUCCESS;
+} /* End of delMode() */
 
 
 /** Returns value of attribute "mode". The value returned is supposed to be
  *  one of : TCP_CONNECT, TCP, UDP, UDP_UNPRIV, ICMP, ARP */
-int NpingOps::getMode() {
-  return mode;
+u16 NpingOps::getModes() {
+  return this->modes;
 } /* End of getMode() */
 
 
 /* Returns true if option has been set */
 bool NpingOps::issetMode(){
-  return this->mode_set;
+  return (this->modes==NO_MODE_SET);
 } /* End of isset() */
+
+
+bool NpingOps::mode(u16 test_value){
+  return (this->modes & test_value);
+} /* End of mode() */
 
 
 /** Takes a probe mode and returns an ASCII string with the name of the mode.
@@ -390,73 +392,46 @@ bool NpingOps::issetMode(){
  *  @return Pointer to the appropriate string on success and pointer to a
  *          string containing "Unknown probe" in case of failure.
  * */
-char * NpingOps::mode2Ascii(int md) {
-  static char buff[24];
-
-  switch( md ){
-    case TCP_CONNECT:
-        sprintf(buff, "TCP-Connect");
+const char *NpingOps::mode2Ascii(u16 md){
+  switch(md){
+    case DO_TCP_CONNECT:
+      return "TCP-Connect";
     break;
-
-    case TCP:
-        sprintf(buff, "TCP");
+    case DO_UDP_UNPRIV:
+      return "UDP-Unprivileged";
     break;
-
-    case UDP:
-        sprintf(buff, "UDP");
+    case DO_TCP:
+      return "TCP";
     break;
-
-    case UDP_UNPRIV:
-        sprintf(buff, "UDP-Unprivileged");
+    case DO_UDP:
+      return "UDP";
     break;
-
-    case ICMP:
-        sprintf(buff, "ICMP");
+    case DO_ICMP:
+      return "ICMP";
     break;
-
-    case ARP:
-        sprintf(buff, "ARP");
+    case DO_ARP:
+      return "ARP";
     break;
-
+    case DO_TRACEROUTE:
+      return "Traceroute";
+    break;
+    case DO_EXT_HOPOPT:
+      return "IPv6-HopByHop";
+    break;
+    case DO_EXT_ROUTING:
+      return "IPv6-Routing";
+    break;
+    case DO_EXT_DOPT:
+      return "IPv6-DestOpts";
+    break;
+    case DO_EXT_FRAGMENT:
+      return "IPv6-Fragment";
+    break;
     default:
-        sprintf(buff, "Unknown mode");
+      return "Unknown Mode";
     break;
  }
- return buff;
 } /* End of mode2Ascii() */
-
-
-/** Returns value of attribute "traceroute" */
-bool NpingOps::getTraceroute() {
-  return traceroute;
-} /* End of getTraceroute() */
-
-
-/** Sets attribute traceroute to "true".
- *  @return previous value of the attribute. */
-bool NpingOps::enableTraceroute() {
-  bool prev = traceroute;
-  this->traceroute=true;
-  this->traceroute_set=true;
-  return prev;
-} /* End of enableTraceroute() */
-
-
-/** Sets attribute traceroute to "false".
- *  @return previous value of the attribute. */
-bool NpingOps::disableTraceroute() {
-  bool prev = traceroute;
-  this->traceroute=false;
-  this->traceroute_set=true;
-  return prev;
-} /* End of disableTraceroute() */
-
-
-/* Returns true if option has been set */
-bool NpingOps::issetTraceroute(){
-  return this->traceroute_set;
-} /* End of issetTraceroute() */
-
 
 /******************************************************************************
  * Output                                                                     *
@@ -873,17 +848,6 @@ bool NpingOps::ipv6(){
   else
     return false;
 } /* End of ipv6() */
-
-
-/* Returns true if we are sending IPv6 packets at raw TCP level (using a
- * useless and boring IPv6 socket that doesn't let us include our own IPv6
- * header)*/
-bool NpingOps::ipv6UsingSocket(){
-  if( this->getIPVersion() == IP_VERSION_6 && this->sendEth()==false)
-    return true;
-  else
-    return false;
-} /* End of ipv6UsingSocket() */
 
 
 /* Returns AF_INET or AF_INET6, depending on current configuration */
@@ -2024,27 +1988,23 @@ if (this->havePcap()==false){
 
 /** PROBE MODE SELECTION *****************************************************/
   /* Ensure that one probe mode is selected */
-  if( !this->issetMode() ){
-      if ( this->isRoot() ){
-        if( !this->ipv6() )
-            this->setMode(ICMP);
-        else
-            this->setMode(TCP);
-      }
-      else
-        this->setMode(TCP_CONNECT);
+  if( this->getModes()==NO_MODE_SET){
+    if (this->isRoot())
+      this->addMode(DO_ICMP);
+    else
+      this->addMode(DO_TCP_CONNECT);
   }
 
 /** PACKET COUNT / ROUNDS ****************************************************/
   if( !this->issetPacketCount() ){
-      /* If --traceroute is set, the packet count is higher */
-      if(this->issetTraceroute() )
-          this->setPacketCount( TRACEROUTE_PACKET_COUNT );
-      else
-          this->setPacketCount( DEFAULT_PACKET_COUNT );
+    /* If --traceroute is set, the packet count is higher */
+    if(this->mode(DO_TRACEROUTE))
+      this->setPacketCount(TRACEROUTE_PACKET_COUNT);
+    else
+      this->setPacketCount(DEFAULT_PACKET_COUNT);
   }
 
-
+/** INTERPACKET DELAY ********************************************************/
   if( !this->issetDelay() )
     this->setDelay( DEFAULT_DELAY );
 
@@ -2053,34 +2013,39 @@ if (this->havePcap()==false){
    * any option that requires privileges. In that case, we enter
    * UDP-Unprivileged mode, where users can send UDP packets and read responses
    * trough a normal UDP socket.  */
-  if( !this->isRoot() && this->getMode()==UDP && canRunUDPWithoutPrivileges() )
-    this->setMode( UDP_UNPRIV );
+  if( !this->isRoot() && this->mode(DO_UDP) && canRunUDPWithoutPrivileges() ){
+    this->addMode(DO_UDP_UNPRIV);
+    this->delMode(DO_UDP);
+  }
+
 
 /** CHECK PRIVILEGES FOR CURRENT ROLE ****************************************/
   if( !this->isRoot() && (this->getRole()==ROLE_SERVER || this->getRole()==ROLE_CLIENT) )
     nping_fatal(QT_3,"Echo mode requires %s.", privreq);
 
 /** CHECK PRIVILEGES FOR CURRENT MODE ****************************************/
-  if( !this->isRoot() && this->getMode()!=UDP_UNPRIV && this->getMode()!=TCP_CONNECT )
-    nping_fatal(QT_3,"Mode %s requires %s.", this->mode2Ascii( this->getMode() ), privreq);
-
+  if(!this->isRoot()){
+    if( this->mode(DO_TCP) || this->mode(DO_UDP) || this->mode(DO_ARP) ||
+        this->mode(DO_TRACEROUTE) || this->mode(DO_EXT_HOPOPT) || this->mode(DO_EXT_ROUTING) ||
+        this->mode(DO_EXT_DOPT) || this->mode(DO_EXT_FRAGMENT) )
+      nping_fatal(QT_3,"Mode %s requires %s.", this->mode2Ascii( this->getModes() ), privreq);
+  }
 
 /** DEFAULT HEADER PARAMETERS *************************************************/
   this->setDefaultHeaderValues();
 
 /** ARP MODE RELATED PARAMETERS *********************************************/
-  if(this->getMode()==ARP && this->ipv6()) {
-    nping_fatal(QT_3, "Sorry, ARP does not support IPv6 and Nping does not yet support NDP.");
+  if(this->mode(DO_ARP) && this->ipv6()) {
+    nping_fatal(QT_3, "Sorry, ARP does not support IPv6.");
   }
 
 /** TCP CONNECT RELATED PARAMETERS *********************************************/
-  if(this->getMode()==TCP_CONNECT) {
+  if(this->mode(DO_TCP_CONNECT)) {
       if(this->issetPayloadBuffer())
         nping_print(VB_0, "Warning: Payload supplied in TCP Connect mode. Payload will be ignored.");
   }
 
- 
- if( this->getMode()==TCP_CONNECT || this->getMode()==UDP_UNPRIV )
+ if( this->mode(DO_TCP_CONNECT) || this->mode(DO_UDP_UNPRIV) )
     nping_print(DBG_2,"Nping will send packets in unprivileged mode using regular system calls");
  else
     nping_print(DBG_2,"Nping will send packets at %s",  this->sendEth() ? "raw ethernet level" : "raw IP level" );
@@ -2093,7 +2058,7 @@ if (this->havePcap()==false){
      * src port or tcp dst port 9929 (or --echo-port N, if that is set),
      * because 1) the echo server does not capture those packets and 2) to
      * avoid messing with the established side-channel tcp connection. */
-    if(this->getMode()==TCP){
+    if(this->mode(DO_TCP)){
       if(this->target_ports!=NULL && this->tportcount>0){
         for(int i=0; i<this->tportcount; i++){
           if(this->target_ports[i]==this->getEchoPort())
@@ -2109,16 +2074,8 @@ if (this->havePcap()==false){
     }
 
     /* Check the echo client only produces TCP/UDP/ICMP packets */
-    switch( this->getMode() ){
-        case TCP:
-        case UDP:
-        case ICMP:
-        break;
-
-        default:
-            nping_fatal(QT_3, "The echo client can't be run with protocols other than TCP, UDP or ICMP.");
-        break;
-    }
+    if(this->mode(DO_ARP))
+      nping_fatal(QT_3, "The echo client can't be run with protocols other than TCP, UDP or ICMP.");
   }
   #ifndef HAVE_OPENSSL
   if(this->getRole()==ROLE_CLIENT || this->getRole()==ROLE_SERVER ){
@@ -2136,7 +2093,7 @@ if (this->havePcap()==false){
 #endif
 
 /** MISCELLANEOUS ************************************************************/
-if(this->source_ports!=NULL && this->getMode()==TCP_CONNECT && this->getPacketCount()>1 )
+if(this->source_ports!=NULL && this->mode(DO_TCP_CONNECT) && this->getPacketCount()>1 )
     error("Warning: Setting a source port in TCP-Connect mode with %d rounds may not work after the first round. You may want to do just one round (use --count 1).", this->getPacketCount() );
 } /* End of validateOptions() */
 
@@ -2156,7 +2113,7 @@ bool NpingOps::canRunUDPWithoutPrivileges(){
     this->issetSourceMAC() ||
     this->issetDestMAC() ||
     this->issetEtherType() ||
-    this->issetTraceroute() ||
+    this->mode(DO_TRACEROUTE) ||
     this->issetBPFFilterSpec()
   )
     return false;
@@ -2259,17 +2216,22 @@ void NpingOps::displayStatistics(){
           nping_print(QT_1|NO_NEWLINE,"| Not Matched: %llu ", this->stats.getUnmatchedPackets() );
           nping_print(QT_1|NO_NEWLINE,"(%s) ", format_bytecount(this->stats.getRecvBytes()-this->stats.getEchoedBytes(), auxbuff, 256));
           nping_print(QT_1,"(%.2lf%%)", this->stats.getUnmatchedPacketPercentage100() );
-      }else if(this->getMode()==TCP_CONNECT){
+      }
+
+      if(this->mode(DO_TCP_CONNECT)){
           nping_print(QT_1|NO_NEWLINE, "TCP connection attempts: %llu ", this->stats.getSentPackets() );
           nping_print(QT_1|NO_NEWLINE,"| Successful connections: %llu ", this->stats.getRecvPackets() );
           nping_print(QT_1|NO_NEWLINE,"| Failed: %llu ", this->stats.getLostPackets() );
           nping_print(QT_1,"(%.2lf%%)", this->stats.getLostPacketPercentage100() );
-      } else if (this->getMode()==UDP_UNPRIV){
+      }
+      if(this->mode(DO_UDP_UNPRIV)){
           nping_print(QT_1|NO_NEWLINE, "UDP packets sent: %llu ", this->stats.getSentPackets() );
           nping_print(QT_1|NO_NEWLINE,"| Rcvd: %llu ", this->stats.getRecvPackets() );
           nping_print(QT_1|NO_NEWLINE,"| Lost: %llu ", this->stats.getLostPackets() );
           nping_print(QT_1,"(%.2lf%%)", this->stats.getLostPacketPercentage100() );
-      } else{
+      }
+
+      if(this->mode(DO_TCP) || this->mode(DO_UDP) || this->mode(DO_ICMP) ){
           nping_print(QT_1|NO_NEWLINE, "Raw packets sent: %llu ", this->stats.getSentPackets() );
           nping_print(QT_1|NO_NEWLINE, "(%s) ", format_bytecount(this->stats.getSentBytes(), auxbuff, 256));
           nping_print(QT_1|NO_NEWLINE,"| Rcvd: %llu ", this->stats.getRecvPackets() );
@@ -2412,19 +2374,18 @@ int NpingOps::setDefaultHeaderValues(){
         this->ipv6_tclass=DEFAULT_IPv6_TRAFFIC_CLASS;
     if(!this->issetFlowLabel())
         this->ipv6_flowlabel=(get_random_u32() % 1048575);
-    if(!this->issetHopLimit() && !this->issetTraceroute())
+    if(!this->issetHopLimit() && !this->mode(DO_TRACEROUTE))
         this->ttl=DEFAULT_IPv6_TTL;
   }else{ /* IPv4 */
     if(!this->issetTOS())
         this->tos=DEFAULT_IP_TOS;
     if(!this->issetIdentification())
         this->identification=get_random_u16();
-    if(!this->issetTTL() && !this->issetTraceroute())
+    if(!this->issetTTL() && !this->mode(DO_TRACEROUTE))
         this->ttl=DEFAULT_IP_TTL;
 
   }
-  switch( this->getMode() ){
-    case TCP:
+  if( this->mode(DO_TCP)){
 //        if(!this->issetTargetPorts()){
 //            u16 *list = (u16 *)safe_zalloc( sizeof(u16) );
 //            list[0]=DEFAULT_TCP_TARGET_PORT;
@@ -2452,9 +2413,9 @@ int NpingOps::setDefaultHeaderValues(){
 //        if(!this->issetTCPWindow())
 //            this->tcpwin=DEFAULT_TCP_WINDOW_SIZE;
         /* @todo ADD urgent pointer handling here when it gets implemented */
-    break;
+  }
 
-    case UDP:
+  if( this->mode(DO_UDP)){
 //        if(!this->issetTargetPorts()){
 //            u16 *list = (u16 *)safe_zalloc( sizeof(u16) );
 //            list[0]=DEFAULT_UDP_TARGET_PORT;
@@ -2462,9 +2423,8 @@ int NpingOps::setDefaultHeaderValues(){
 //        }
 //        if(!this->issetSourcePort())
 //            this->source_port=DEFAULT_UDP_SOURCE_PORT;
-    break;
-
-    case ICMP:
+  }
+  if( this->mode(DO_ICMP)){
         if(this->ipv6()){
             if(!this->issetICMPType()) /* Default to ICMP Echo */
                 this->icmp_type=DEFAULT_ICMPv6_TYPE;
@@ -2476,14 +2436,14 @@ int NpingOps::setDefaultHeaderValues(){
             if(!this->issetICMPCode())
                 this->icmp_code=DEFAULT_ICMP_CODE;
         }
-    break;
+  }
 
-    case ARP:
+  if( this->mode(DO_ARP)){
         if(!this->issetARPOpCode())
             this->arp_opcode=DEFAULT_ARP_OP;
-    break;
+  }
 
-    case UDP_UNPRIV:
+  if( this->mode(DO_UDP_UNPRIV)){
 //        if(!this->issetTargetPorts()){
 //            u16 *list = (u16 *)safe_zalloc( sizeof(u16) );
 //            list[0]=DEFAULT_UDP_TARGET_PORT;
@@ -2491,18 +2451,14 @@ int NpingOps::setDefaultHeaderValues(){
 //        }
 //        if(!this->issetSourcePort())
 //            this->source_port=DEFAULT_UDP_SOURCE_PORT;
-    break;
+  }
 
-    case TCP_CONNECT:
+  if( this->mode(DO_TCP_CONNECT)){
 //        if( !this->issetTargetPorts() ) {
 //            u16 *list = (u16 *)safe_zalloc( sizeof(u16) );
 //            list[0]=DEFAULT_TCP_TARGET_PORT;
 //            this->setTargetPorts(list, 1);
 //        }
-
-    default:
-        return OP_FAILURE;
-    break;
   }
 
   return OP_SUCCESS;
@@ -2693,6 +2649,9 @@ int NpingOps::setupTargetHosts(){
         this->interfaces.push_back(newiface);
         nping_print(DBG_4, "New interface required: %s", route.ii.devname);
       }
+
+      /* Now, tell the target host which packets it has to send. */
+      newhost->setTCP(&this->tcp);
 
       /* We have all the info we need. Now, just add the new host to the list of
        * target hosts. */
