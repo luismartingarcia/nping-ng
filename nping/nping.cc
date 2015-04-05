@@ -185,7 +185,7 @@ int main(int argc, char *argv[] ){
 
   /* Let's parse and validate user supplied args */
   a.parseArguments(argc, argv);
-  //o.validateOptions();
+  o.validateOptions();
 
   /* ISO 8601 date/time -- http://www.cl.cam.ac.uk/~mgk25/iso-time.html */
   if ( strftime(tbuf, sizeof(tbuf), "%Y-%m-%d %H:%M %Z", tm) <= 0)
@@ -215,7 +215,7 @@ int main(int argc, char *argv[] ){
   switch( o.getRole() ){
 
         case ROLE_NORMAL:
-            //prob.start(o.targets.Targets);
+            prob.start(o.target_hosts);
             prob.cleanup();
         break;
 

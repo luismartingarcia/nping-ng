@@ -356,10 +356,12 @@ class NpingOps {
     struct timeval last_sent_pkt_time; /* Time last packet was sent    */
     char *delayed_rcvd_str;    /* Delayed RCVD output string           */
     bool delayed_rcvd_str_set; /* Do we have a delayed RCVD string?    */
-    nsock_event_id delayed_rcvd_event; /* Nsock event for delayed RCVD */
+    nsock_event_id delayed_rcvd_event;
 
     /* Target-related variables */
+   public:
     vector<TargetHost *> target_hosts;
+   private:
     vector<IPAddress *> target_addresses;
     vector<const char *> target_specs;
 
