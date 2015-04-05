@@ -243,7 +243,7 @@ class NpingOps {
     bool payload_file_fd_set;
 
     /* Roles */
-    int role;                 /* Nping's role: normal|cliente|server.  */
+    int role;                 /* Nping's role: normal|client|server.  */
 
     /* IP Protocol */
     u8 family;                /* IP version to be used in all packets  */
