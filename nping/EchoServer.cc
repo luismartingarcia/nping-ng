@@ -275,7 +275,7 @@ int EchoServer::nep_listen_socket(){
     #endif
     /* Bind to local address and the specified port */
     if( bind(master_sd, (struct sockaddr *)&server_addr6, sizeof(server_addr6)) != 0 ){
-        nping_warning(QT_3, "Failed to bind to source address %s. Trying to bind to port %d...", IPtoa(server_addr6.sin6_addr), port);
+        nping_warning(QT_3, "Failed to bind to source address %s. Trying to bind to port %d...", IPAddress::toString(server_addr6.sin6_addr), port);
         /* If the bind failed for the supplied address, just try again with in6addr_any */
         if( o.spoofSource() ){
             server_addr6.sin6_addr = in6addr_any;
@@ -286,7 +286,7 @@ int EchoServer::nep_listen_socket(){
             }
         }
     }else{
-        nping_print(VB_1, "Server bound to %s:%d", IPtoa(server_addr6.sin6_addr), port);
+        nping_print(VB_1, "Server bound to %s:%d", IPAddress::toString(server_addr6.sin6_addr), port);
     }
 
 
@@ -313,7 +313,7 @@ int EchoServer::nep_listen_socket(){
 
     /* Bind to local address and the specified port */
     if( bind(master_sd, (struct sockaddr *)&server_addr4, sizeof(server_addr4)) != 0 ){
-        nping_warning(QT_3, "Failed to bind to source address %s. Trying to bind to port %d...", IPtoa(server_addr4.sin_addr), port);
+        nping_warning(QT_3, "Failed to bind to source address %s. Trying to bind to port %d...", IPAddress::toString(server_addr4.sin_addr), port);
         /* If the bind failed for the supplied address, just try again with in6addr_any */
         if( o.spoofSource() ){
             server_addr4.sin_addr.s_addr=INADDR_ANY;
@@ -324,7 +324,7 @@ int EchoServer::nep_listen_socket(){
             }
         }
     }else{
-        nping_print(VB_1, "Server bound to %s:%d", IPtoa(server_addr4.sin_addr), port);
+        nping_print(VB_1, "Server bound to %s:%d", IPAddress::toString(server_addr4.sin_addr), port);
     }
 
   }
@@ -949,7 +949,7 @@ int EchoServer::nep_hs_server_handler(nsock_pool nsp, nsock_event nse, void *par
    * NEP_HANDSHAKE_CLIENT message */
   if( (ctx=this->getClientContext(nsi))!=NULL ){
       ctx->setState(STATE_HS_SERVER_SENT);
-      nping_print(DBG_1, "SENT: NEP_HANDSHAKE_SERVER to %s", IPtoa(ctx->getAddress()));
+      nping_print(DBG_1, "SENT: NEP_HANDSHAKE_SERVER to %s", IPAddress::toString(ctx->getAddress()));
       nsock_readbytes(nsp, nsi, hs_client_handler, NSOCK_INFINITE, NULL, NEP_HANDSHAKE_CLIENT_LEN);
   }
   return OP_SUCCESS;
@@ -1043,11 +1043,11 @@ int EchoServer::nep_packetspec_handler(nsock_pool nsp, nsock_event nse, void *pa
   /* Validate received NEP_PACKET_SPEC message */
   if( this->parse_packet_spec(recvbuff, recvbytes, ctx)!=OP_SUCCESS ){
       this->nep_session_ended_handler(nsp, nse, param);
-      nping_print(VB_1, "[%lu] Couldn't establish NEP session with client #%d (%s:%d).", (unsigned long)time(NULL), ctx->getIdentifier(), IPtoa(ctx->getAddress()), sockaddr2port(ctx->getAddress()));
+      nping_print(VB_1, "[%lu] Couldn't establish NEP session with client #%d (%s:%d).", (unsigned long)time(NULL), ctx->getIdentifier(), IPAddress::toString(ctx->getAddress()), sockaddr2port(ctx->getAddress()));
       return OP_FAILURE;
   }
   ctx->setState(STATE_READY_SENT);
-  nping_print(VB_1, "[%lu] NEP handshake with client #%d (%s:%d) was performed successfully", (unsigned long)time(NULL), ctx->getIdentifier(), IPtoa(ctx->getAddress()), sockaddr2port(ctx->getAddress()));
+  nping_print(VB_1, "[%lu] NEP handshake with client #%d (%s:%d) was performed successfully", (unsigned long)time(NULL), ctx->getIdentifier(), IPAddress::toString(ctx->getAddress()), sockaddr2port(ctx->getAddress()));
 
   /* Craft response and send it */
   this->generate_ready(&pkt_out, ctx);
@@ -1081,7 +1081,7 @@ int EchoServer::nep_session_ended_handler(nsock_pool nsp, nsock_event nse, void 
 
   /* Lookup client context */
   if( (ctx=this->getClientContext(nsi))!=NULL ){
-    nping_print(VB_0, "[%lu] Client #%d (%s:%d) disconnected", (unsigned long)time(NULL), ctx->getIdentifier(), IPtoa(ctx->getAddress()), sockaddr2port(ctx->getAddress()));
+    nping_print(VB_0, "[%lu] Client #%d (%s:%d) disconnected", (unsigned long)time(NULL), ctx->getIdentifier(), IPAddress::toString(ctx->getAddress()), sockaddr2port(ctx->getAddress()));
     clnt=ctx->getIdentifier();
     if(this->destroyClientContext(clnt)!=OP_SUCCESS)
         nping_print(DBG_2, "Client #%d disconnected but no context found. This may be a bug.", clnt);
@@ -1479,7 +1479,7 @@ int EchoServer::start() {
         /* Check if we have received a connection*/
         unblock_socket(listen_sd);
         if ((client_sd=accept(listen_sd, (struct sockaddr *)&ss, &sslen)) >= 0){
-            nping_print(VB_0, "[%lu] Connection received from %s:%d", (unsigned long)time(NULL), IPtoa(&ss), sockaddr2port(&ss));
+            nping_print(VB_0, "[%lu] Connection received from %s:%d", (unsigned long)time(NULL), IPAddress::toString(&ss), sockaddr2port(&ss));
             /* Assign a new client identifier. The ID is bound to the IOD */
             if( (idpnt=(clientid_t *)calloc(1, sizeof(clientid_t)))==NULL ){
                 nping_warning(QT_2, "Not enough memory for new clients.");

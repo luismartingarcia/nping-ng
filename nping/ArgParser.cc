@@ -156,7 +156,8 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
   int auxint=0;
   long l=0;
   int option_index=0;
-  struct in_addr aux_ip4;
+  IPAddress aux_ip4;
+  struct in_addr auxinaddr;
   u32 aux32=0;
   u16 aux16=0;
   u8 aux8=0;
@@ -319,7 +320,8 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
   /* Let's get this parsing party started */
   while((arg = getopt_long_only(argc,argv,"46c:d::e:fg:hHK:NP:q::p:S:Vv::", long_options, &option_index)) != EOF) {
 
-   aux8=aux16=aux32=aux_ip4.s_addr=0;
+   aux8=aux16=aux32=auxinaddr.s_addr=0;
+   aux_ip4.reset();
 
    switch(arg) {
 
@@ -591,13 +593,13 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
         if ( o.issetMode() && o.getMode() != ICMP )
             nping_fatal(QT_3,"You cannot specify mode %s if you want to send ICMP messages.", o.mode2Ascii(o.getMode()));
         if( meansRandom(optarg) ){
-            while ( (aux_ip4.s_addr=get_random_u32()) == 0 );
-            o.setICMPRedirectAddress( aux_ip4 );
+            while ( (auxinaddr.s_addr=get_random_u32()) == 0 );
+            o.setICMPRedirectAddress(auxinaddr);
         }else{
-             if ( atoIP(optarg, &aux_ip4) != OP_SUCCESS)
+             if ( aux_ip4.setIPv4Address(optarg) != OP_SUCCESS)
                 nping_fatal(QT_3, "Could not resolve specified ICMP Redirect Address.");
              else
-                o.setICMPRedirectAddress( aux_ip4 );
+                o.setICMPRedirectAddress( aux_ip4.getIPv4Address() );
         }
     /* ICMP Parameter problem pointer */
     } else if (optcmp(long_options[option_index].name, "icmp-param-pointer") == 0) {
@@ -621,13 +623,11 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
             nping_fatal(QT_3,"You cannot specify mode %s if you want to send ICMP messages.", o.mode2Ascii(o.getMode()));
         /* Format should be "IPADDR,PREF":  "192.168.10.99,31337" */
         if( meansRandom(optarg) ){
-            while( (aux_ip4.s_addr=get_random_u32()) == 0);
-            o.addICMPAdvertEntry( aux_ip4, get_random_u32() );
+            while( (auxinaddr.s_addr=get_random_u32()) == 0);
+            o.addICMPAdvertEntry( auxinaddr, get_random_u32() );
         }else{
-            struct in_addr aux_addr;
-            u32 aux_pref=0;
-            parseAdvertEntry(optarg, &aux_addr, &aux_pref); /* fatal()s on error */
-            o.addICMPAdvertEntry(aux_addr, aux_pref);
+            parseAdvertEntry(optarg, &auxinaddr, &aux32); /* fatal()s on error */
+            o.addICMPAdvertEntry(auxinaddr, aux32);
         }
     /* ICMP Timestamp originate timestamp */
     } else if (optcmp(long_options[option_index].name, "icmp-orig-time") == 0) {
@@ -681,10 +681,10 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
     /* ARP Sender IP Address */
     } else if (optcmp(long_options[option_index].name, "arp-sender-ip") == 0 ||
                optcmp(long_options[option_index].name, "rarp-sender-ip") == 0 ){
-        if ( atoIP(optarg, &aux_ip4)!=OP_SUCCESS ){
+        if ( aux_ip4.setIPv4Address(optarg)!=OP_SUCCESS ){
             nping_fatal(QT_3, "Invalid ARP Sender IP address.");
         }else{
-            o.setARPSenderProtoAddr(aux_ip4);
+            o.setARPSenderProtoAddr(aux_ip4.getIPv4Address());
         }
     /* ARP Target MAC Address */
     } else if (optcmp(long_options[option_index].name, "arp-target-mac") == 0 ||
@@ -697,10 +697,10 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
     /* ARP Target IP Address */
     } else if (optcmp(long_options[option_index].name, "arp-target-ip") == 0 ||
                optcmp(long_options[option_index].name, "rarp-target-ip") == 0 ){
-        if ( atoIP(optarg, &aux_ip4)!=OP_SUCCESS ){
+        if ( aux_ip4.setIPv4Address(optarg)!=OP_SUCCESS ){
             nping_fatal(QT_3, "Invalid ARP Target IP address.");
         }else{
-            o.setARPTargetProtoAddr(aux_ip4);
+            o.setARPTargetProtoAddr(aux_ip4.getIPv4Address());
         }
 
 
@@ -1021,35 +1021,38 @@ int ArgParser::parseArguments(int argc, char *argv[]) {
         }
     break; /* case 'p': */
 
-    case 'S': /* Source IP */   
+    case 'S': /* Source IP */
+        /* IPv6 */
         if( o.getIPVersion() == IP_VERSION_6){
-            struct sockaddr_storage sourceaddr;
-            struct sockaddr_in6 *source6=(struct sockaddr_in6 *)&sourceaddr;
-            memset(&sourceaddr, 0, sizeof(struct sockaddr_storage));
+          /* Set random address */
+          if( meansRandom(optarg) ){
             struct in6_addr ipv6addr;
-
-            /* Set random address */
-            if( meansRandom(optarg) ){                
-                for(int i6=0; i6<16; i6++)
-                    ipv6addr.s6_addr[i6]=get_random_u8();                    
+            for(int i6=0; i6<16; i6++)
+               ipv6addr.s6_addr[i6]=get_random_u8();
+           o.setIPv6SourceAddress(ipv6addr);
+          }
+          /* Set user supplied address (if we manage to resolve it) */
+          else{
+            if(aux_ip4.setIPv6Address(optarg)!=OP_SUCCESS){
+              nping_fatal(QT_3, "Could not resolve source IPv6 address.");
+            }else{
+              o.setIPv6SourceAddress(aux_ip4.getIPv6Address());
             }
-            /* Set user supplied address (if we manage to resolve it) */
-            else if ( atoIP(optarg, &sourceaddr, PF_INET6) != OP_SUCCESS){
-                nping_fatal(QT_3, "Could not resolve source IPv6 address.");
-            }else{  
-              ipv6addr = source6->sin6_addr;
-            }
-            o.setIPv6SourceAddress(ipv6addr);
-            o.setSpoofSource();           
+          }
+        /* IPv4 */
+        }else{
+          if( meansRandom(optarg) ){
+            while ( (auxinaddr.s_addr=get_random_u32()) == 0 );
+            o.setIPv4SourceAddress(auxinaddr);
+          }else{
+             if( aux_ip4.setIPv4Address(optarg)!=OP_SUCCESS){
+               nping_fatal(QT_3, "Could not resolve source IPv4 address.");
+             }else{
+               o.setIPv4SourceAddress(aux_ip4.getIPv4Address());
+             }
+          }
         }
-        else{
-            if( meansRandom(optarg) )
-                while ( (aux_ip4.s_addr=get_random_u32()) == 0 );
-            else if ( atoIP(optarg, &aux_ip4) != OP_SUCCESS)
-                nping_fatal(QT_3, "Could not resolve source IPv4 address.");
-            o.setIPv4SourceAddress(aux_ip4);
-            o.setSpoofSource();
-        }
+        o.setSpoofSource();
     break; /* case 'S': */
 
     case '?':
@@ -1334,8 +1337,7 @@ NPING_NAME, NPING_VERSION, NPING_URL);
 
 int ArgParser::parseAdvertEntry(char *str, struct in_addr *addr, u32 *pref){
   char *aux=NULL;
-  struct in_addr auxIP;
-  u32 auxPref=0;
+  IPAddress auxIP;
   size_t len=0;
   static char first[256];
   static char last[256];
@@ -1368,14 +1370,13 @@ int ArgParser::parseAdvertEntry(char *str, struct in_addr *addr, u32 *pref){
   memcpy(first, str, aux-str);
   memcpy(last, aux+1, len-(aux-str) );
 
-  if( atoIP(first, &auxIP) == OP_FAILURE )
+  if(auxIP.setIPv4Address(first)!=OP_SUCCESS)
     nping_fatal(QT_3, "Invalid Router Advertising Entry specification: Unable to resolve %s", first);
-  if( isNumber_u32( last ) == false )
+  if(isNumber_u32(last)==false)
     nping_fatal(QT_3, "Invalid Router Advertising Entry specification: %s is not a valid preference number", last);
 
-  auxPref=strtoul( last, NULL, 10);
-  *pref=auxPref;
-  *addr=auxIP;
+  *pref=strtoul( last, NULL, 10);
+  *addr=auxIP.getIPv4Address();
   return OP_SUCCESS;
 } /* End of parseAdvertEntry() */
 

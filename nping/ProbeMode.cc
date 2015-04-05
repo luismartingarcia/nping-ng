@@ -1362,7 +1362,7 @@ char *ProbeMode::getBPFFilterString(){
         s4->sin_family=AF_INET;
         inet_pton(AF_INET, "127.0.0.1", &s4->sin_addr);
     }
-    nping_print(DBG_2, "Couldn't determine source address. Using address %s in BFP filter", IPtoa(&srcss) );
+    nping_print(DBG_2, "Couldn't determine source address. Using address %s in BFP filter", IPAddress::toString(&srcss) );
   }
   o.targets.rewind();
 

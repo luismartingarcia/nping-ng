@@ -133,121 +133,6 @@
 
 extern NpingOps o;
 
-int atoIP(const char *hostname, struct in_addr *dst){
-  struct sockaddr_in i;
-  unsigned int stlen=0;
-  if ( resolve(hostname, 0, (sockaddr_storage*)&i, (size_t *)&stlen , PF_INET) != 0 )
-    return OP_FAILURE;
-  *dst=i.sin_addr;
-  return OP_SUCCESS;
-} /* End of atoIP */
-
-int atoIP(const char *hostname, struct sockaddr_storage *ss, int family){
-  size_t stlen=0;
-  if(ss==NULL || hostname==NULL)
-    return OP_FAILURE;
-  if(family!=AF_INET && family!=AF_INET6)
-    return OP_FAILURE;
-  if ( resolve(hostname, 0, ss, &stlen , family) != 0 )
-    return OP_FAILURE;
-  return OP_SUCCESS;
-} /* End of atoIP */
-
-
-/** @warning The string is returned in a statically allocated buffer, which
- *  subsequent calls will overwrite.*/
-char *IPtoa(u32 i){
-  static char buffer[24];
-  char *aux=NULL;
-  memset(buffer, 0, 24);
-  struct in_addr myip;
-  myip.s_addr=i;
-  aux=inet_ntoa(myip);
-  /* Get our own copy of the data so only subsequent calls to IPtoa overwrite
-   * the returned buffer (not subsequent calls to inet_ntoa() made by other
-   * methods. */
-  if(aux!=NULL){
-      strncpy(buffer, aux, 23);
-      return buffer;
-  }
-  else
-    return NULL;
-} /* End of IPtoa() */
-
-
-/** @warning The string is returned in a statically allocated buffer, which
- *  subsequent calls will overwrite.*/
-char *IPtoa(struct sockaddr_storage *ss){
-  struct sockaddr_in  *s4=(struct sockaddr_in *)ss;
-  struct sockaddr_in6 *s6=(struct sockaddr_in6 *)ss;
-  static char ipstring[256];
-  memset(ipstring, 0, 256);
-  if( ss==NULL ){
-    snprintf(ipstring,256, "[[NULL address supplied to IPtoa()]]");
-    return ipstring;
-  }
-  if(s6->sin6_family==AF_INET6){
-    inet_ntop(AF_INET6, &s6->sin6_addr, ipstring, sizeof(ipstring));
-  }else if( s4->sin_family == AF_INET ) {
-    inet_ntop(AF_INET, &s4->sin_addr, ipstring, sizeof(ipstring));
-  }else{
-    snprintf(ipstring,256,"[[Unknown address family sockaddr supplied to IPtoa()]]");
-  }
- return ipstring;
-} /* End of IPtoa() */
-
-
-char *IPtoa(struct sockaddr_storage ss){
-  return IPtoa(&ss);
-} /* End of IPtoa() */
-
-char *IPtoa(struct sockaddr_storage *ss, int family){
-  if(ss==NULL){
-      return NULL;
-  }else if(family==AF_INET){
-      struct sockaddr_in *s4=(struct sockaddr_in *)ss;
-      return IPtoa(s4->sin_addr);
-  }else if(family==AF_INET6){
-      struct sockaddr_in6 *s6=(struct sockaddr_in6 *)ss;
-      return IPtoa(s6->sin6_addr);
-  }else{
-    return NULL;
-  }
-} /* End of IPtoa() */
-
-
-/** @warning The string is returned in a statically allocated buffer, which
- *  subsequent calls will overwrite.*/
-char *IPtoa(struct in_addr addr){
-  static char ipstring[256];
-  memset(ipstring, 0, 256);
-  inet_ntop(AF_INET, &addr, ipstring, sizeof(ipstring));
-  return ipstring;
-} /* End of IPtoa() */
-
-
-/** @warning The string is returned in a statically allocated buffer, which
- *  subsequent calls will overwrite.*/
-char *IPtoa(struct in6_addr addr){
-  static char ipstring[256];
-  memset(ipstring, 0, 256);
-  inet_ntop(AF_INET6, &addr, ipstring, sizeof(ipstring));
-  return ipstring;
-} /* End of IPtoa() */
-
-
-/** @warning The string is returned in a statically allocated buffer, which
- *  subsequent calls will overwrite.*/
-char *IPtoa(u8 *ipv6addr){
-  static char ipstring[256];
-  memset(ipstring, 0, 256);
-  struct in6_addr s6;
-  memcpy(s6.s6_addr, ipv6addr, 16);
-  inet_ntop(AF_INET6, &s6, ipstring, sizeof(ipstring));
-  return ipstring;
-} /* End of IPtoa() */
-
-
 /** Returns true if supplied value corresponds to a valid RFC compliant ICMP
  *  type. Otherwise it returns false. */
 bool isICMPType(u8 type){
@@ -843,33 +728,39 @@ const char *arppackethdrinfo(const u8 *packet, u32 len, int detail){
     nping_fatal(QT_3, "arppackethdrinfo(): NULL value supplied");
   if( len < 28 )
     return "BOGUS!  Packet too short.";
+  IPAddress sIP;
+  IPAddress tIP;
+  struct in_addr auxaddr;
   u16 *htype = (u16 *)packet;
   u16 *ptype = (u16 *)(packet+2);
   u8  *hlen = (u8 *)(packet+4);
   u8  *plen = (u8 *)(packet+5);
   u16 *op = (u16 *)(packet+6);
   u8 *sMAC= (u8 *)(packet+8);
-  u32 *sIP = (u32 *)(packet+14);
+  auxaddr.s_addr=*((u32 *)(packet+14));
+  sIP.setAddress(auxaddr);
   u8 *tMAC = (u8 *)(packet+18);
-  u32 *tIP = (u32 *)(packet+24);
+  auxaddr.s_addr=*((u32 *)(packet+24));
+  tIP.setAddress(auxaddr);
 
   if( ntohs(*op) == 1 ){ /* ARP Request */
-    sprintf(protoinfo, "ARP who has %s? ", IPtoa(*tIP));
-    sprintf(protoinfo+strlen(protoinfo),"Tell %s", IPtoa(*sIP) );
+    sprintf(protoinfo, "ARP who has %s? ", tIP.toString());
+    sprintf(protoinfo+strlen(protoinfo),"Tell %s", sIP.toString() );
   }
   else if( ntohs(*op) == 2 ){ /* ARP Reply */
-    sprintf(protoinfo, "ARP reply %s ", IPtoa(*sIP));
+    sprintf(protoinfo, "ARP reply %s ", sIP.toString());
     sprintf(protoinfo+strlen(protoinfo),"is at %s", MACtoa(sMAC) );
   }
   else if( ntohs(*op) == 3 ){ /* RARP Request */
     sprintf(protoinfo, "RARP who is %s? Tell %s", MACtoa(tMAC), MACtoa(sMAC) );
   }
   else if( ntohs(*op) ==4 ){ /* RARP Reply */
-    sprintf(protoinfo, "RARP reply: %s is at %s", MACtoa(tMAC), IPtoa(*tIP) );
+    sprintf(protoinfo, "RARP reply: %s is at %s", MACtoa(tMAC), tIP.toString() );
   }
   else{
-    sprintf(protoinfo, "HTYPE:%04X PTYPE:%04X HLEN:%d PLEN:%d OP:%04X SMAC:%s SIP:%s DMAC:%s DIP:%s",
-            *htype, *ptype, *hlen, *plen, *op, MACtoa(sMAC), IPtoa(*sIP), MACtoa(tMAC), IPtoa(*tIP));
+    sprintf(protoinfo, "HTYPE:%04X PTYPE:%04X HLEN:%d PLEN:%d OP:%04X SMAC:%s SIP:%s ",
+            *htype, *ptype, *hlen, *plen, *op, MACtoa(sMAC), sIP.toString());
+    sprintf(protoinfo+strlen(protoinfo),"DMAC:%s DIP:%s",MACtoa(tMAC), tIP.toString());
   }
  return protoinfo;
 } /* End of arppackethdrinfo() */

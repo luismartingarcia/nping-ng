@@ -139,15 +139,7 @@
 #include <vector>
 using std::vector;
 
-int atoIP(const char *hostname, struct in_addr *dst);
-int atoIP(const char *hostname, struct sockaddr_storage *ss, int family);
-char *IPtoa(u32 i);
-char *IPtoa(struct sockaddr_storage *ss);
-char *IPtoa(struct in_addr addr);
-char *IPtoa(struct in6_addr addr);
-char *IPtoa(struct sockaddr_storage ss);
-char *IPtoa(struct sockaddr_storage *ss, int family);
-char *IPtoa(u8 *ipv6addr);
+
 u16 sockaddr2port(struct sockaddr_storage *ss);
 u16 sockaddr2port(struct sockaddr_storage ss);
 u16 sockaddr2port(struct sockaddr_in *s4);
