@@ -120,6 +120,7 @@ class TargetHost{
     TCPHeaderTemplate *tcp;  /* Header values for TCP                                 */
     UDPHeaderTemplate *udp;  /* Header values for UDP                                 */
     ICMPv4HeaderTemplate *icmp4; /* Header values for ICMPv4                          */
+    ICMPv6HeaderTemplate *icmp6; /* Header values for ICMPv6                          */
 
     int net_distance;        /* If >=0, indicates how many hops away the target is    */
     NetworkInterface *iface; /* Info about the proper interface to reach target       */
@@ -129,6 +130,7 @@ class TargetHost{
     TCPHeader *getTCPHeader();
     UDPHeader *getUDPHeader();
     ICMPv4Header *getICMPv4Header();
+    ICMPv6Header *getICMPv6Header();
 
   public:
     TargetHost();
@@ -160,6 +162,7 @@ class TargetHost{
     int setTCP(TCPHeaderTemplate *hdr);
     int setUDP(UDPHeaderTemplate *hdr);
     int setICMPv4(ICMPv4HeaderTemplate *hdr);
+    int setICMPv6(ICMPv6HeaderTemplate *hdr);
 
     void reset();
     int getNextPacketBatch(vector<PacketElement *> &Packets);

@@ -116,6 +116,7 @@ void TargetHost::reset(){
   this->tcp=NULL;
   this->udp=NULL;
   this->icmp4=NULL;
+  this->icmp6=NULL;
 } /* End of reset() */
 
 
@@ -239,6 +240,15 @@ int TargetHost::setICMPv4(ICMPv4HeaderTemplate *hdr){
 } /* End of setICMPv4() */
 
 
+/* Associates the host with an ICMPv6 header template. */
+int TargetHost::setICMPv6(ICMPv6HeaderTemplate *hdr){
+  assert(hdr!=NULL);
+  this->icmp6=new ICMPv6HeaderTemplate();
+  *this->icmp6=*hdr;
+  return OP_SUCCESS;
+} /* End of setICMPv4() */
+
+
 /* This method inserts whatever packets this TargetHost needs to send into the
  * supplied vector. The number of packets inserted in each call is always the
  * same but it depends on user configuration. If, for example, user passed
@@ -254,6 +264,7 @@ int TargetHost::getNextPacketBatch(vector<PacketElement *> &Packets){
   TCPHeader *mytcp=NULL;
   UDPHeader *myudp=NULL;
   ICMPv4Header *myicmp4=NULL;
+  ICMPv6Header *myicmp6=NULL;
   u16 sum=0, aux=0;
 
   /* Build a TCP packet */
@@ -373,6 +384,29 @@ int TargetHost::getNextPacketBatch(vector<PacketElement *> &Packets){
     }
     /* Once we have the packet ready, insert it into the tx queue */
     Packets.push_back(myip4);
+  }
+
+  /* Build an ICMPv6 packet */
+  if(this->icmp6!=NULL){
+
+    myicmp6=this->getICMPv6Header();
+    myip6=this->getIPv6Header("ICMPv6");
+    myip6->setNextElement(myicmp6);
+    myip6->setPayloadLength();
+
+    /* Set the ICMP checksum (or a bad ICMP checksum if appropriate) */
+    myicmp6->setSum();
+    if(this->icmp6->csum.getBehavior()==FIELD_TYPE_BADSUM){
+      /* Store the correct checksum and pick a different one */
+      sum=myicmp6->getSum();
+      while( (aux=get_random_u16())==sum );
+      myicmp6->setSum(aux);
+    }else if(this->icmp6->csum.is_set()){
+      /* This means the user set a specific value, not --badsum */
+      myicmp6->setSum(this->icmp6->csum.getNextValue());
+    }
+    /* Once we have the packet ready, insert it into the tx queue */
+    Packets.push_back(myip6);
   }
 
   return OP_SUCCESS;
@@ -522,3 +556,69 @@ ICMPv4Header *TargetHost::getICMPv4Header(){
   return myicmp4;
 } /* End of getICMPv4Header() */
 
+
+
+
+
+
+ICMPv6Header *TargetHost::getICMPv6Header(){
+  ICMPv6Header *myicmp6=NULL;
+  assert(this->icmp6!=NULL);
+  myicmp6=new ICMPv6Header();
+
+  myicmp6->setType(this->icmp6->type.getNextValue());
+  myicmp6->setCode(this->icmp6->code.getNextValue());
+
+  switch(myicmp6->getType()){
+
+    case ICMPv6_ECHO:
+    case ICMPv6_ECHOREPLY:
+      myicmp6->setIdentifier(this->icmp6->id.getNextValue());
+      myicmp6->setSequence(this->icmp6->seq.getNextValue());
+    break;
+
+    case ICMPv6_PKTTOOBIG:
+      myicmp6->setMTU(this->icmp6->mtu.getNextValue());
+    break;
+
+    case ICMPv6_PARAMPROB:
+      myicmp6->setPointer(this->icmp6->pointer.getNextValue());
+    break;
+
+    case ICMPv6_UNREACH:
+    case ICMPv6_TIMXCEED:
+
+    case ICMPv6_GRPMEMBQUERY:
+    case ICMPv6_GRPMEMBREP:
+    case ICMPv6_GRPMEMBRED:
+    case ICMPv6_ROUTERSOLICIT:
+    case ICMPv6_ROUTERADVERT:
+    case ICMPv6_NGHBRSOLICIT:
+    case ICMPv6_NGHBRADVERT:
+    case ICMPv6_REDIRECT:
+    case ICMPv6_RTRRENUM:
+    case ICMPv6_NODEINFOQUERY:
+    case ICMPv6_NODEINFORESP:
+    case ICMPv6_INVNGHBRSOLICIT:
+    case ICMPv6_INVNGHBRADVERT:
+    case ICMPv6_MLDV2:
+    case ICMPv6_AGENTDISCOVREQ:
+    case ICMPv6_AGENTDISCOVREPLY:
+    case ICMPv6_MOBPREFIXSOLICIT:
+    case ICMPv6_MOBPREFIXADVERT:
+    case ICMPv6_CERTPATHSOLICIT:
+    case ICMPv6_CERTPATHADVERT:
+    case ICMPv6_EXPMOBILITY:
+    case ICMPv6_MRDADVERT:
+    case ICMPv6_MRDSOLICIT:
+    case ICMPv6_MRDTERMINATE:
+    case ICMPv6_FMIPV6:
+
+    default:
+      /* TODO: What do we do here if user specified a non standard type? */
+    break;
+
+  }
+
+  return myicmp6;
+} /* End of getICMPv6Header() */
