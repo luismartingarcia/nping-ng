@@ -84,8 +84,10 @@
     <ClCompile Include="ICMPv6Header.cc" />
     <ClCompile Include="ICMPv6Option.cc" />
     <ClCompile Include="ICMPv6RRBody.cc" />
+    <ClCompile Include="IPAddress.cc" />
     <ClCompile Include="IPv4Header.cc" />
     <ClCompile Include="IPv6Header.cc" />
+    <ClCompile Include="MACAddress.cc" />
     <ClCompile Include="netutil.cc" />
     <ClCompile Include="NetworkLayerElement.cc" />
     <ClCompile Include="PacketElement.cc" />
@@ -109,8 +111,10 @@
     <ClInclude Include="ICMPv6Header.h" />
     <ClInclude Include="ICMPv6Option.h" />
     <ClInclude Include="ICMPv6RRBody.h" />
+    <ClInclude Include="IPAddress.h" />
     <ClInclude Include="IPv4Header.h" />
     <ClInclude Include="IPv6Header.h" />
+    <ClInclude Include="MACAddress.h" />
     <ClInclude Include="netutil.h" />
     <ClInclude Include="NetworkLayerElement.h" />
     <ClInclude Include="npacket.h" />
